@@ -150,15 +150,21 @@ public class ExerciseLiveService {
         if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
             return new ModelAndView("login");
         }
-        MSRUser patient = userController.findEntity(patientid).get();
+        MSRUser patient = userController.findEntity(patientid).orElse(null);
 
-        List<Exercise> es;
-        es = exerciseController.getAllEntities();
 
-        List<History> lh = new ArrayList<History>(); //historyController.findAllByUser(patientid);
+        if(patient == null)
+            return new ModelAndView("/error")
+                    .addObject("message", "Patient not found");
+
+
+        List<Exercise> es = exerciseController.getAllEntities();
+
+        List<History> lh = new ArrayList<>(); //historyController.findAllByUser(patientid);
         JSONArray jhistory = new JSONArray();
 
         jhistory = loadFilterHistory(lh, es, jhistory, patient);
+
 
         model.addAttribute("exercise", es);
         model.addAttribute("history", jhistory);
@@ -190,21 +196,23 @@ public class ExerciseLiveService {
                 HttpStatus.OK);
     }
 
-    private JSONArray loadFilterHistory(List<History> lh, List<Exercise> es, JSONArray jhistory, MSRUser patient) {
+    private JSONArray loadFilterHistory(List<History> lh, List<Exercise> es, JSONArray jhistory, MSRUser patient)
+    {
         Integer patientid = patient.getId();
         List<MSRSession> sessions = sessionController.findAllActiveByUserOrGroup(patientid);
-        if (sessions.size() <= 0) {
+        if (sessions.isEmpty())
             return new JSONArray();
-        }
+
 
         MSRSession session = sessions.get(0);
         String json = session.getExercises();
         JSONArray js = new JSONArray(json);
-        for (int i = 0; i < js.length(); i++) {
+        for (int i = 0; i < js.length(); i++)
+        {
             JSONObject o = js.getJSONObject(i);
-            if (o.getBoolean("done") == false) {
+            if (!o.getBoolean("done")) {
                 List<History> lhe = historyController.findAllByUserAndExerciseAndSessid(patientid, o.getInt("id"), session.getId());
-                if (lhe.size() > 0) {
+                if (!lhe.isEmpty()) {
                     List<ChangeDifficulty> cdlist = changeDiffController.findFromHistory(lhe.get(0).getId());//FIXME PLEASE
 
                     lh.add(lhe.get(0));

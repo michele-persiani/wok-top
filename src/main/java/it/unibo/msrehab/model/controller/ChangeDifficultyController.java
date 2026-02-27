@@ -35,4 +35,12 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
                 .sorted(Comparator.comparing(ChangeDifficulty::getId).reversed())
                 .collect(Collectors.toList());
     }
+
+    public ChangeDifficulty findLastFromHistory(Integer historyid)
+    {
+        return findFromHistory(historyid)
+                .stream()
+                .max(Comparator.comparing(ChangeDifficulty::getId))
+                .orElse(null);
+    }
 }

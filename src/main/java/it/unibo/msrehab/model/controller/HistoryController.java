@@ -123,7 +123,7 @@ public class HistoryController extends BaseEntityController<History>
                 .orElse(new ArrayList<>());
     }
 
-    public History findLastByUserAndExercise(Integer userid, Integer exid, Integer sessid)
+    public History findLastByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
     {
         return findAllByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()

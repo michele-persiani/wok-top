@@ -74,16 +74,23 @@ public class ThresholdAgent implements NextLevelAgent
 
 
     @Override
-    public Integer selectAction(Integer currentLevel, Double currentThreshold, double performance, boolean exerciseIsPassed)
+    public Integer selectAction(Integer currentLevel) // , Double currentThreshold, double performance, boolean exerciseIsPassed
     {
         State state = new State(
-                currentLevel,
-                currentThreshold
+                history.stream()
+                        .min(Comparator.comparing(StateTransition::getTimestampEpochMillis))
+                        .map(StateTransition::getFromState)
+                        .orElse(minLevel)
+                ,
+                startThreshold
         );
+        /*
         if(Math.round(performance * 1e3) >= Math.round(state.getCurrentThreshold() * 1e3))
             state.onSuccessTransition();
         else
             state.onFailTransition();
+            */
+
 
 
 

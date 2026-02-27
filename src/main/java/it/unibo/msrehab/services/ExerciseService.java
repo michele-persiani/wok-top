@@ -95,6 +95,9 @@ public class ExerciseService
 
     private final PassThresholdController thresholdController;
 
+    private final ExerciseController exerciseController;
+
+
     private final IModel model = JPAController.getInstance();
 
     public ExerciseService()
@@ -107,6 +110,7 @@ public class ExerciseService
         this.changeDiffController = new ChangeDifficultyController();
         this.assignedExerciseController = new AssignedExerciseController();
         this.thresholdController = new PassThresholdController();
+        this.exerciseController = new ExerciseController();
 
         ApplicationContextLoader l = new ApplicationContextLoader();
         l.load(Configuration.class,
@@ -1933,7 +1937,7 @@ public class ExerciseService
     }
 
 
-    private int findNextLevel(Integer exerciseId, Integer userId, String difficulty, @Nullable Integer rlagent)
+    private int findNextLevel(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, @Nullable Integer rlagent)
     {
         Exercise exercise = model.getEntityController(Exercise.class).findEntity(exerciseId).orElse(null);
         MSRUser user = model.getEntityController(MSRUser.class).findEntity(userId).orElse(null);
@@ -1941,15 +1945,36 @@ public class ExerciseService
         if (exercise == null || user == null)
             throw new IllegalArgumentException("Exercise or user not found");
 
+        PassThreshold nextThrehsold;
+
         if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 0))
-            return findNextLevelFromAgent(exerciseId, userId, difficulty, RLAgents.LEVEL_AGENT.createAgent(exercise, user));
+            nextThrehsold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, RLAgents.LEVEL_AGENT.createAgent(exercise, user));
         if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
-            return findNextLevelFromAgent(exerciseId, userId, difficulty, RLAgents.THRESHOLD_AGENT.createAgent(exercise, user));
+            nextThrehsold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
+            //return findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, RLAgents.THRESHOLD_AGENT.createAgent(exercise, user));
         else
-            return findNextLevelFromAgent(exerciseId, userId, difficulty, RLAgents.INCREMENTAL_AGENT.createAgent(exercise, user));
+            nextThrehsold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, RLAgents.INCREMENTAL_AGENT.createAgent(exercise, user));
+
+        AssignedExercise assignedExercise = new AssignedExercise();
+        assignedExercise.setSessionId(sessionId);
+        assignedExercise.setExerciseId(exerciseId);
+        assignedExercise.setUserId(userId);
+        assignedExercise.setRlAgent(rlagent);
+        assignedExercise.setLevel(nextThrehsold.getLevel());
+
+        if(!assignedExerciseController.insertEntity(assignedExercise))
+            logger.error("Error inserting assignment");
+
+        nextThrehsold.setAssignmentId(assignedExercise.getId());
+        if(!thresholdController.insertEntity(nextThrehsold))
+            logger.error("Error inserting threshold");
+
+        logger.info("Next level/threshold: " + nextThrehsold.getLevel() + "/" + nextThrehsold.getThreshold());
+
+        return nextThrehsold.getLevel();
     }
 
-    private PassThreshold getNextThreshold(Integer exerciseId, Integer userId, String difficulty)
+    private PassThreshold getNextThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
     {
         ExerciseHelper helper = ExerciseHelper.create(exerciseId);
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
@@ -1959,16 +1984,15 @@ public class ExerciseService
         double thresholdDeltaPassed = config.getThresholdDeltaPassed();
         double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
 
-        AssignedExercise assignment = assignedExerciseController.findLastAssignedExercise(userId, exerciseId);
+        AssignedExercise assignment = assignedExerciseController.findLastAssignedExercise(userId, exerciseId, sessionId);
 
 
         int nextLevel = helper.getLevel(difficulty);
 
 
         if(assignment == null) // Previously no exercises were assigned
-        {
             return PassThreshold.create(-1, nextLevel, startThreshold);
-        }
+
 
         // Search if there is a pass threshold (should be also there)
         PassThreshold passThreshold = thresholdController.findPassThreshold(assignment.getId());
@@ -1977,17 +2001,11 @@ public class ExerciseService
 
         assert passThreshold == null || passThreshold.getLevel() == assignment.getLevel();
 
-
-        History history = historyController.findLastByUserAndExercise(userId, exerciseId);
-
-
+        History history = historyController.findLastByUserAndExercise(userId, exerciseId, sessionId);
 
 
         if (history == null) // Exercises were assigned but none solved
-        {
             return PassThreshold.create(-1, assignment.getLevel(), currentThreshold);
-        }
-
 
 
 
@@ -1999,7 +2017,8 @@ public class ExerciseService
         {
             currentThreshold = Math.min(currentThreshold + thresholdDeltaPassed, 1);
             nextLevel += 1;
-        } else
+        }
+        else
         {
             currentThreshold = Math.max(currentThreshold + thresholdDeltaNotPassed, lowerThreshold);
             if (currentThreshold <= lowerThreshold)
@@ -2007,6 +2026,24 @@ public class ExerciseService
         }
 
         return PassThreshold.create(-1, nextLevel, currentThreshold);
+    }
+
+
+    private boolean storeAssignmentAndThreshold(PassThreshold threshold, int exerciseId, int userId, int sessionId, int rlAgent)
+    {
+        AssignedExercise assignedExercise = new AssignedExercise();
+        assignedExercise.setSessionId(sessionId);
+        assignedExercise.setExerciseId(exerciseId);
+        assignedExercise.setUserId(userId);
+        assignedExercise.setRlAgent(rlAgent);
+        assignedExercise.setLevel(threshold.getLevel());
+
+        if(!assignedExerciseController.insertEntity(assignedExercise))
+            return false;
+
+        threshold.setAssignmentId(assignedExercise.getId());
+
+        return thresholdController.insertEntity(threshold);
     }
 
 
@@ -2030,13 +2067,19 @@ public class ExerciseService
 
      */
 
-    private int findNextLevelFromAgent(Integer exerciseId, Integer userId, String difficulty, @Nullable NextLevelAgent agent)
+    private PassThreshold findNextLevelFromAgent(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, @Nullable NextLevelAgent agent)
     {
         ExerciseHelper helper = ExerciseHelper.create(exerciseId);
 
+        double threshold = model.getEntityController(FitnessWeight.class)
+                .findEntity(f -> Objects.equals(f.getExid(), exerciseId))
+                .map(FitnessWeight::getThr)
+                .orElse(0.8)
+                ;
+
         return model.getEntityController(History.class)
                 // Get all histories with given exerciseId and userId
-                .getAllEntities(h -> Objects.equals(h.getExid(), exerciseId) && Objects.equals(h.getUserid(), userId))
+                .getAllEntities(h -> Objects.equals(h.getExid(), exerciseId) && Objects.equals(h.getUserid(), userId) && Objects.equals(h.getSessid(), sessionId))
                 .stream()
                 // Get most recent history
                 .max(Comparator.comparing(History::getTimestamp))
@@ -2052,9 +2095,10 @@ public class ExerciseService
                                 .orElse(agent != null ? agent.getNextLevel(h.getLevel()) : h.getLevel())
                 )
                 .map(helper::clampLevel)
+                .map(lvl -> PassThreshold.create(-1, lvl, threshold))
                 // If the previous level is not present (no histories were found),
                 // return the level for the given difficulty string
-                .orElse(helper.getLevel(difficulty))
+                .orElse(PassThreshold.create(-1, helper.getLevel(difficulty), threshold))
                 ;
     }
 
@@ -2092,15 +2136,9 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_1];
 
 
-
-
-
-
-
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-        int level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
-
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
 
 
         difficulty = helper.getDifficultyString(level);
@@ -2197,36 +2235,7 @@ public class ExerciseService
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             Model model)
     {
-
         logger.info("attention1phase1()");
-
-        PassThreshold nextThreshold = getNextThreshold(exerciseid, patientid, difficulty);
-
-
-        AssignedExercise assignedExercise = new AssignedExercise();
-        assignedExercise.setExerciseId(exerciseid);
-        assignedExercise.setUserId(patientid);
-        assignedExercise.setUserId(sessid);
-        assignedExercise.setRlAgent(rlagent);
-        assignedExercise.setLevel(nextThreshold.getLevel());
-
-
-        if(!assignedExerciseController.insertEntity(assignedExercise))
-        {
-            return new ModelAndView("redirect:/error")
-                    .addObject("message", "Errore durante l'inserimento dell'esercizio, riprovare o contattare un amministratore")
-                    ;
-        }
-
-        nextThreshold.setAssignmentId(assignedExercise.getId());
-
-        if(!thresholdController.insertEntity(nextThreshold))
-        {
-            return new ModelAndView("redirect:/error")
-                    .addObject("message", "Errore durante l'inserimento della soglia, riprovare o contattare un amministratore")
-                    ;
-        }
-
 
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
@@ -2254,6 +2263,7 @@ public class ExerciseService
         model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention1a");
     }
+
 
     @RequestMapping(value = "/attention1phase2", method = RequestMethod.GET)
     public ModelAndView attention1phase2(
@@ -2334,7 +2344,6 @@ public class ExerciseService
             HttpServletResponse response,
             Model model)
     {
-
         logger.info("attention1phase2()");
         if (patientid == -1)
         {
@@ -2384,12 +2393,14 @@ public class ExerciseService
         }
 
 
-        // Forward user to next exercise
+        // Forward user to the next exercise
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
 
-        level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
+
         difficulty = helper.getDifficultyString(level);
 
         if (level > helper.getMaxLevel())  // Max level is reached, session is stored and user redirected to home
@@ -2447,12 +2458,12 @@ public class ExerciseService
                 + "&ncols=" + ncols
                 + "&sessid=" + sessid
                 + "&type=" + type
-                + "&exname=" + exname;
+                + "&exname=" + exname
+                + "&rlagent=" + rlagent;
+
 
 
         return new ModelAndView("redirect:" + url);
-
-
     }
 
     @RequestMapping(value = "/createattention2", method = RequestMethod.GET)
@@ -2487,7 +2498,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_2];
         }
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
 
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
@@ -3146,7 +3157,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_3];
         }
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
 
 
         Map<String, Object> parameters = createParametersAttention3(level, diffVar);
@@ -3921,7 +3932,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_4];
         }
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
 
         Map<String, Object> parameters = createParametersAttention4(level, diffVar);
         if (ATT_DIV.toString().equals(type))
@@ -4178,7 +4190,8 @@ public class ExerciseService
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-        level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
         difficulty = helper.getDifficultyString(level);
 
         if (level > helper.getMaxLevel())
@@ -4407,7 +4420,7 @@ public class ExerciseService
         history.setpCorrect(pCorrect);
         history.setpMissed(pMissed);
         history.setpWrong(pWrong);
-        history.setMaxtime((double) time);
+        history.setMaxtime(time);
         history.setPassed(passed);
         history.setLevel(level);
         history.setDifficulty(difficulty);
@@ -4439,7 +4452,7 @@ public class ExerciseService
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-        level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
 
         if (level > helper.getMaxLevel()) // Max level is reached, session is stored and user redirected to home
         {
@@ -4509,7 +4522,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_1];
         }
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
         Map<String, Object> parameters = createParametersMemory1(level, diffVar);
@@ -5057,7 +5071,8 @@ public class ExerciseService
             Model model)
     {
 
-        int level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
         HttpSession httpSess = request.getSession();
@@ -5307,7 +5322,8 @@ public class ExerciseService
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-        level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
         difficulty = helper.getDifficultyString(level);
 
         if (level > helper.getMaxLevel()) // Max level is completed, mark session as done and redirect user to home
@@ -5386,7 +5402,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
 
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
 
@@ -5609,7 +5626,7 @@ public class ExerciseService
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-        level = findNextLevel(exerciseid, patientid, difficulty, rlagent);
+        level = findNextLevel(exerciseid, patientid, sessid, difficulty, rlagent);
 
 
         if (level > helper.getMaxLevel())
@@ -5694,7 +5711,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_LONG_1];
 
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
         Map<String, Object> parameters = createParametersMemory4(level, diffVar);
@@ -6240,7 +6258,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_5];
         }
 
-        Integer level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
         Map<String, Object> parameters = createParametersMemory5(level, diffVar);
@@ -6719,7 +6738,8 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
         }
 
-        int level = findNextLevel(exerciseid, patientid, difficulty, null);
+        int level = findNextLevel(exerciseid, patientid, sessid, difficulty, null);
+
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
 
 

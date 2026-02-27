@@ -189,7 +189,7 @@
                                            sessid: '${sessid}',
                                            type: '${type}',
                                            exname: '${exname}',
-                                           agent: '${agent}'
+                                           rlagent: '${rlagent}'
                                         }, 'get');
                                     ">
                         </div> 

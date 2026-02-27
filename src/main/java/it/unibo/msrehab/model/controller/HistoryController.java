@@ -123,9 +123,9 @@ public class HistoryController extends BaseEntityController<History>
                 .orElse(new ArrayList<>());
     }
 
-    public History findLastByUserAndExercise(Integer userid, Integer exid)
+    public History findLastByUserAndExercise(Integer userid, Integer exid, Integer sessid)
     {
-        return findAllByUserAndExercise(userid, exid)
+        return findAllByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
                 .max(Comparator.comparing(History::getTimestamp))
                 .orElse(null);

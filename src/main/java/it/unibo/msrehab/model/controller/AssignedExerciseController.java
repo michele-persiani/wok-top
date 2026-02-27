@@ -4,6 +4,7 @@ import it.unibo.msrehab.model.entities.AssignedExercise;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public class AssignedExerciseController extends BaseEntityController<AssignedExercise>
 {
@@ -13,9 +14,9 @@ public class AssignedExerciseController extends BaseEntityController<AssignedExe
     }
 
 
-    public AssignedExercise findLastAssignedExercise(int userId, int exerciseId)
+    public AssignedExercise findLastAssignedExercise(int userId, int exerciseId, int sessionId)
     {
-        return getAllEntities(ae -> ae.getUserId() == userId && ae.getExerciseId() == exerciseId)
+        return getAllEntities(ae -> Objects.equals(ae.getUserId(), userId) && Objects.equals(ae.getExerciseId(), exerciseId) && Objects.equals(ae.getSessionId(), sessionId))
                 .stream()
                 .max(Comparator.comparing(AssignedExercise::getTimestampMillis))
                 .orElse(null)

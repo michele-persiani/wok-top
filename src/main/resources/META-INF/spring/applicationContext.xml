@@ -1,0 +1,40 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    	http://www.springframework.org/schema/beans/spring-beans.xsd
+    	http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/task 
+		http://www.springframework.org/schema/task/spring-task.xsd">
+    	
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" id="corePlaceHolder">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="searchSystemEnvironment" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath*:META-INF/*.properties</value>	            
+            </list>
+        </property>
+    </bean>   
+    <bean class="it.unibo.msrehab.config.Configuration"  id="config">
+        <property name="proxy" value="${proxy}"/>
+        <property name="proxyPort" value="${proxyPort}"/>
+        <property name="proxyUser" value="${proxyUser}"/>
+        <property name="proxyPassword" value="${proxyPassword}"/>
+        <property name="dbUser" value="${dbUser}"/>
+        <property name="dbPassword" value="${dbPassword}"/>
+        <property name="photosPath" value="${photosPath}"/>
+        <property name="pddlPath" value="${pddlPath}"/>
+        <property name="mrReportsPath" value="${mrReportsPath}"/>
+        <property name="cvssPath" value="${cvssPath}"/>
+        <property name="dbPath" value="${dbPath}"/>
+    </bean>
+    <context:annotation-config />
+    
+</beans>

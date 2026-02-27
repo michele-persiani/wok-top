@@ -1,0 +1,6 @@
+target
+production_builds
+*.db
+src/main/resources/META-INF/msrehab.properties
+src/main/resources/META-INF/persistence.xml
+

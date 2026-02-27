@@ -1,0 +1,27 @@
+.progress-bar[aria-valuenow="1"],
+.progress-bar[aria-valuenow="2"] {
+  min-width: 3%;
+}
+
+.progress-bar[aria-valuenow="0"] {
+  color: black;
+  min-width: 3%;
+  background: transparent;
+  box-shadow: none;
+}
+
+.progress {
+	background-color: darkgray;
+	color:white;
+	text-align:center;
+	margin-top: -10px;
+}
+
+#set white on default value of bootstrap-select
+.bootstrap-select>.dropdown-toggle.bs-placeholder, .bootstrap-select>.dropdown-toggle.bs-placeholder:active, .bootstrap-select>.dropdown-toggle.bs-placeholder:focus, .bootstrap-select>.dropdown-toggle.bs-placeholder:hover {
+	color: white;
+}
+
+.bootstrap-select>.dropdown-toggle.bs-placeholder, .bootstrap-select>.dropdown-toggle.bs-placeholder:active, .bootstrap-select>.dropdown-toggle.bs-placeholder:focus, .bootstrap-select>.dropdown-toggle.bs-placeholder:hover {
+	color: white;
+}

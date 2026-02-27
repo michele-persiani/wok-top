@@ -1,0 +1,14 @@
+{
+    "elements": {},
+    "attributes": {
+        "placeholder": {
+            "context": "input"
+        },
+        "autofocus": {
+            "context": "input"
+        },
+        "required": {
+            "context": "input"
+        }
+    }
+}

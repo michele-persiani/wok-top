@@ -137,10 +137,15 @@ public enum RLAgents
     private final BiFunction<Exercise, MSRUser, NextLevelAgent> agentFactoryMethod;
 
 
+
+
     RLAgents(BiFunction<Exercise, MSRUser, NextLevelAgent> agentFactoryMethod)
     {
         this.agentFactoryMethod = agentFactoryMethod;
     }
+
+
+
 
     public NextLevelAgent createAgent(Exercise exercise, MSRUser user)
     {

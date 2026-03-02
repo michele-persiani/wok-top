@@ -2045,25 +2045,9 @@ public class ExerciseService
                 nextLevel -= 1;
         }
 
+        nextLevel = helper.clampLevel(nextLevel);
+
         return PassThreshold.create(-1, nextLevel, currentThreshold);
-    }
-
-
-    private boolean storeAssignmentAndThreshold(PassThreshold threshold, int exerciseId, int userId, int sessionId, int rlAgent)
-    {
-        AssignedExercise assignedExercise = new AssignedExercise();
-        assignedExercise.setSessionId(sessionId);
-        assignedExercise.setExerciseId(exerciseId);
-        assignedExercise.setUserId(userId);
-        assignedExercise.setRlAgent(rlAgent);
-        assignedExercise.setLevel(threshold.getLevel());
-
-        if(!assignedExerciseController.insertEntity(assignedExercise))
-            return false;
-
-        threshold.setAssignmentId(assignedExercise.getId());
-
-        return thresholdController.insertEntity(threshold);
     }
 
 

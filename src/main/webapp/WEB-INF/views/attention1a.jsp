@@ -178,6 +178,7 @@
                                             sessid: '${sessid}',
                                             type: '${type}',
                                             exname: '${exname}',
+                                            assignmentid : '${assignmentid}',
                                             rlagent: '${rlagent}'
                                         }, 'get');">
                                 Inizia

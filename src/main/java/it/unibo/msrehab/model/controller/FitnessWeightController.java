@@ -19,19 +19,34 @@ public class FitnessWeightController extends BaseEntityController<FitnessWeight>
     }
 
 
-    public FitnessWeight getFitnessWeight(Integer exId)
+    public FitnessWeight getFitnessWeightOrThrow(Integer exId)
     {
         return getAllEntities(fw -> Objects.equals(fw.getExid(), exId))
                 .stream()
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalArgumentException("No FitnessWeight found for exercise id " + exId));
+    }
+
+    public double calculateRelativePerformance(String difficulty, double absPerformance)
+    {
+        switch (difficulty)
+        {
+            case "easy":
+                return absPerformance * 0.33;
+            case "medium":
+                return absPerformance * 0.66;
+            case "hard":
+            case "difficult":
+            default:
+                return absPerformance;
+        }
     }
 
     public Double calculateFitness(Boolean difficultyFlag, History h)
     {
         double ft = 0;
 
-        FitnessWeight w = getFitnessWeight(h.getExid());
+        FitnessWeight w = getFitnessWeightOrThrow(h.getExid());
 
         double pC = h.getpCorrect();
         double pM = h.getpMissed();

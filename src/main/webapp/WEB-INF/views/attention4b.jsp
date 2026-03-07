@@ -410,13 +410,13 @@
                             "maxtime": Math.round(2000*nelements),
                             "sessid": ${sessid},
                             "difficulty": '${difficulty}',
-                            "level": ${level}
+                            "level": ${level},
+                            "assignmentid": '${assignmentid}',
                         },
                         function(data2, status2) {
                             var js2=JSON.parse(data2);
                             perf2 = js2.perf;
                             //passed2 = js2.passed;
-
 
                             var perf1;
                             var passed=false;
@@ -433,7 +433,8 @@
                                     "maxtime": Math.round(time*nelements),
                                     "sessid": ${sessid},
                                     "difficulty": '${difficulty}',
-                                    "level": ${level}
+                                    "level": ${level},
+                                    "assignmentid": '${assignmentid}',
                                 },
                                 function(data, status) {
                                     var js=JSON.parse(data);
@@ -442,9 +443,8 @@
                                     var thr = js.thr;
 
                                     var perf=(perf1+perf2)/2;
-                                    if (perf>=thr) {
+                                    if (perf>=thr)
                                         passed = true;
-                                    }
 
                                     var passedMessage='';
                                     <c:if test="${difficulty!='training'}">
@@ -467,14 +467,11 @@
                                             '<br><b>Suoni mancati</b>: ' + Math.max(0, soundCounter - rightSoundCounter) +
                                             //'<br><b>Suoni totali</b>: ' + soundCounter +
                                             '<br>' +
-                                            //'<br><b>Perf</b>: ' + perf1 +
-                                            //'<br><b>Perf2</b>: ' + perf2 +
-                                            //'<br><b>Prestazione</b>: ' + Math.round((perf1+perf2)*50) + ' %' +
-                                            '<br><b>Prestazione</b>: ' + Math.max(0, Math.min(Math.round(perf * 100), 100)) + ' %' +
-                                            //'<br><b>Prestazione 1</b>: ' + perf1 +
-                                            //'<br><b>Prestazione 2</b>: ' + perf2 +
+                                            '<br><b>Performance</b>: ' + perf + '%' +
+                                            '<br><b>Soglia Superamento</b>: ' + thr + '%' +
+                                            '<br><b>Prestazione</b>: ' + Math.round(perf / thr * 100) + '%' +
                                             '<br>' +
-                                            '<br>' + passedMessage +'</h4>',
+                                            '<br>' + passedMessage + '</h4>',
                                         callback:function() {
                                             post('attention4phase3', {
                                                 difficulty: '${difficulty}',
@@ -502,7 +499,8 @@
                                                 perf: perf,
                                                 sessid: '${sessid}',
                                                 type: '${type}',
-                                                exname: '${exname}'
+                                                exname: '${exname}',
+                                                assignmentid: '${assignmentid}',
                                             }, 'get');
                                         }
                                     });

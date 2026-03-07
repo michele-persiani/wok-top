@@ -199,7 +199,8 @@
                                             soundinterval: '${soundinterval}',
                                             sessid: '${sessid}',
                                             type: '${type}',
-                                            exname: '${exname}'
+                                            exname: '${exname}',
+                                            assignmentid: '${assignmentid}',
                                         }, 'get');">
                                 Inizia esercizio
                             </button>

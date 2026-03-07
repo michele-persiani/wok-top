@@ -108,7 +108,7 @@ public class PddlWeekendRomeService {
         if (difficulty.equals("training") || difficulty.equals("demo")) {
             level = 1;
         } else {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
             if (historyList.isEmpty()) {
                 if ("easy".equals(difficulty)) {
                     level = 1;
@@ -160,7 +160,7 @@ public class PddlWeekendRomeService {
             level = 1;
         }
         else {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
             if (historyList.isEmpty()) {
                 if (difficulty.equals("easy")) {
                     level = EASY_MIN;
@@ -322,7 +322,7 @@ public class PddlWeekendRomeService {
 
       
 
-        List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+        List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
         int newLevel = ExerciseService.findChangedLevel(changeDiffController, lastHistory);
         History history = new History();
         history.setExid(exerciseid);
@@ -377,7 +377,7 @@ public class PddlWeekendRomeService {
         
          double perf = fitnessController.calculateFitness(false, h);
         //history.setAbsperformance(perf);
-        double thr = fitnessController.getFitnessWeight(exerciseid).getThr();
+        double thr = fitnessController.getFitnessWeightOrThrow(exerciseid).getThr();
         passed = (perf >= thr);
         
         
@@ -432,10 +432,11 @@ public class PddlWeekendRomeService {
 
             HttpSession httpSess = request.getSession();
             int newLevel=level;
-            List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
             if(lastHistory==null&&level==1)
                  newLevel=level;
-            else{
+            else
+            {
                 newLevel = ExerciseService.findChangedLevel(changeDiffController,lastHistory);
             if(newLevel==-1 && level!=-1)
                 newLevel=level;

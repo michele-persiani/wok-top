@@ -445,9 +445,11 @@
                                 '<br><b>Risposte sbagliate</b>: ' + nWrong +
                                 '<br><b>Omissioni</b>: ' + nMissed +
                                 '<br>' +
-                                '<br><b>Prestazione</b>: ' + Math.round(perf*100) + ' %' +                                    
+                                '<br><b>Performance</b>: ' + perf + '%' +
+                                '<br><b>Soglia Superamento</b>: ' + thr + '%' +
+                                '<br><b>Prestazione</b>: ' + Math.round(perf / thr * 100) + '%' +
                                 '<br>' +
-                                '<br>' + passedMessage +'</h4>',
+                                '<br>' + passedMessage + '</h4>',
                         callback:function() {
                             post('attention2phase3', {
                                 difficulty: '${difficulty}',
@@ -468,7 +470,8 @@
                                 pWrong: nWrong,
                                 sessid: '${sessid}',
                                 type: '${type}',
-                                exname: '${exname}'
+                                exname: '${exname}',
+                                assignmentid : '${assignmentid}'
                             },'get');
                                 }
                     });

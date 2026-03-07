@@ -39,7 +39,9 @@ import javax.xml.bind.annotation.XmlRootElement;
     ,
     @NamedQuery(name = "Exercise.findFromCategory", query = "SELECT l FROM Exercise l WHERE l.category = :category")
     ,
-    @NamedQuery(name = "Exercise.delete", query = "DELETE FROM Exercise l WHERE l.id= :exerciseid")})
+    @NamedQuery(name = "Exercise.delete", query = "DELETE FROM Exercise l WHERE l.id= :exerciseid")
+    ,
+    @NamedQuery(name = "Exercise.findById", query = "SELECT l FROM Exercise l WHERE l.id = :exerciseid")})
 
 @XmlRootElement
 public class Exercise extends BaseEntity
@@ -145,8 +147,17 @@ public class Exercise extends BaseEntity
     @Basic
     private boolean enabled;
 
+    @Column(name = "medium_level", table = "exercise")
+    @Basic
+    private int mediumLevel;
+
+    @Column(name = "difficult_level", table = "exercise")
+    @Basic
+    private int difficultLevel;
+
     @Transient
     private String status;
+
 
 
     public ExerciseNameValue getName() {
@@ -244,5 +255,62 @@ public class Exercise extends BaseEntity
     public void setEnabled(boolean enabled)
     {
         this.enabled = enabled;
+    }
+
+
+    public int getLevel(String difficulty)
+    {
+        switch (difficulty)
+        {
+            case "training":
+            case "demo":
+                return -1;
+            case "medium":
+                return getMediumLevel();
+            case "difficult":
+            case "hard":
+                return getDifficultLevel();
+            case "easy":
+            default:
+                return 1;
+        }
+    }
+
+
+    public String getDifficulty(int level)
+    {
+        if(level >= getDifficultLevel())
+            return "difficult";
+        if(level >= getMediumLevel())
+            return "medium";
+        if(level >= 1)
+            return "easy";
+        return "training";
+    }
+
+
+    public int clampLevel(int level)
+    {
+        return Math.max(-1, Math.min(level, getMaxLevel()));
+    }
+
+    public int getDifficultLevel()
+    {
+        return difficultLevel;
+    }
+
+    public void setDifficultLevel(int difficultLevel)
+    {
+        this.difficultLevel = difficultLevel;
+    }
+
+    public int getMediumLevel()
+    {
+        return mediumLevel;
+    }
+
+    public void setMediumLevel(int mediumLevel)
+    {
+        this.mediumLevel = mediumLevel;
     }
 }

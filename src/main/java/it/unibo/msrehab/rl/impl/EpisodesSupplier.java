@@ -210,7 +210,7 @@ public interface EpisodesSupplier extends Supplier<List<List<History>>>
         return () -> model.getEntityController(History.class)
                 .getAllEntities()
                 .stream()
-                .filter(filter)
+                .filter(h -> filter.test(h) && h.isSolved())
                 .sorted(Comparator.comparing(History::getTimestamp))
                 .collect(Collectors.groupingBy(episodeKeyExtractor, Collectors.toList()))
                 .values()

@@ -126,7 +126,8 @@
                                                 sessid: '${sessid}',
                                                 type: '${type}',
                                                 exname: '${exname}',
-                                                rlagent: '${rlagent}'
+                                                rlagent: '${rlagent}',
+                                                assignmentid: ${assignmentid}
                                             }, 'get');">
                                 Prova esercizio
                             </button>                        

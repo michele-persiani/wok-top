@@ -47,6 +47,17 @@ public interface IEntityController<T>
     int countEntities();
 
     /**
+     * Gets the entity with the specified identifier, or throw an exception if not found.
+     *
+     * @param id entity id
+     * @return entity with the given id
+     */
+    default T getEntityOrThrow(Object id)
+    {
+        return findEntity(id).orElseThrow(() -> new IllegalArgumentException("Entity with id " + id + " not found"));
+    }
+
+    /**
      * Finds and retrieves an entity based on the given identifier.
      *
      * @param id the identifier of the entity to be retrieved

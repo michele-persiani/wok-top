@@ -4,8 +4,8 @@ import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.rl.rewardmodel.RewardModel;
 import it.unibo.msrehab.rl.model.IModel;
 import it.unibo.msrehab.rl.model.JPAController;
-import it.unibo.msrehab.rl.model.LevelAgentConfig;
-import it.unibo.msrehab.rl.model.ThresholdAgentConfig;
+import it.unibo.msrehab.model.entities.LevelAgentConfig;
+import it.unibo.msrehab.model.entities.ThresholdAgentConfig;
 import it.unibo.msrehab.rl.utils.Maps;
 import it.unibo.msrehab.rl.utils.XYFunction;
 import it.unibo.msrehab.rl.utils.regression.LinearRegression;
@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 
-public enum RLAgents
+public enum ExerciseAgent
 {
     LEVEL_AGENT(
             (exercise, user) -> {
@@ -137,7 +137,7 @@ public enum RLAgents
     private final BiFunction<Exercise, MSRUser, NextLevelAgent> agentFactoryMethod;
 
 
-    RLAgents(BiFunction<Exercise, MSRUser, NextLevelAgent> agentFactoryMethod)
+    ExerciseAgent(BiFunction<Exercise, MSRUser, NextLevelAgent> agentFactoryMethod)
     {
         this.agentFactoryMethod = agentFactoryMethod;
     }

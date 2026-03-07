@@ -8,6 +8,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
+/**
+ * Entity controller wrapper that uses a lock to synchronize access to the underlying entity controller.
+ * Only one thread at a time can perform sensitive operations of creating entities, retrieving entities, insert, update and remove.
+ *
+ * @param <T>
+ */
 public class SynchronizedEntityController<T> extends EntityController<T>
 {
     private final IEntityController<T> controller;
@@ -36,12 +42,10 @@ public class SynchronizedEntityController<T> extends EntityController<T>
         try
         {
             result = fcn.call();
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             result = defaultValue;
-        }
-        finally
+        } finally
         {
             lock.unlock();
         }

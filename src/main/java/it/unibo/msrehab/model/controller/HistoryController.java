@@ -8,10 +8,10 @@ package it.unibo.msrehab.model.controller;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
+
+
 
 /**
  * TODO: add documentation
@@ -123,12 +123,20 @@ public class HistoryController extends BaseEntityController<History>
                 .orElse(new ArrayList<>());
     }
 
-    public History findLastByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
+    public Optional<History> findLastByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid, Boolean solved)
+    {
+        return findAllByUserAndExerciseAndSessid(userid, exid, sessid, solved)
+                .stream()
+                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
+                ;
+    }
+
+    public Optional<History> findLastByUserAndExerciseAndSessionSolvedAgent(Integer userid, Integer exid, Integer sessid, Boolean solved)
     {
         return findAllByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
-                .max(Comparator.comparing(History::getTimestamp))
-                .orElse(null);
+                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
+                ;
     }
 
     public List<History> findAllByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
@@ -138,8 +146,37 @@ public class HistoryController extends BaseEntityController<History>
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid);
-                })
-                .orElse(new ArrayList<>());
+                }).get();
+    }
+    
+
+    @Override
+    public History getEntityOrThrow(Object id)
+    {
+        return getTransactionManager()
+                .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
+                {
+                    q.setParameter("assignmentId", id);
+                }).orElseThrow(() -> new IllegalArgumentException("History not found"));
+    }
+
+    public History findAssignmentById(Integer assignmentId)
+    {
+        return getTransactionManager()
+                .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
+                {
+                    q.setParameter("assignmentId", assignmentId);
+                }).orElse(null);
+    }
+
+    public List<History> findAllByUserAndExerciseAndSessidUnsolved(Integer userid, Integer exid, Integer sessid, Boolean solved)
+    {
+        return getTransactionManager()
+                .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessid", History.class,q -> {
+                    q.setParameter("userid", userid)
+                            .setParameter("exid", exid)
+                            .setParameter("sessid", sessid);
+                }).get();
     }
 
     public List<History> findAllByExerciseAndSessid(Integer exid, Integer sessid)
@@ -151,6 +188,7 @@ public class HistoryController extends BaseEntityController<History>
                 })
                 .orElse(new ArrayList<>());
     }
+
 
     public List<History> findAllByUser(Integer userid)
     {

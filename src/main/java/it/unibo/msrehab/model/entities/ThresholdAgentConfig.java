@@ -1,6 +1,7 @@
-package it.unibo.msrehab.rl.model;
+package it.unibo.msrehab.model.entities;
 
-import it.unibo.msrehab.model.entities.BaseEntity;
+import it.unibo.msrehab.rl.model.IEntityController;
+import it.unibo.msrehab.rl.model.IModel;
 
 import javax.persistence.Entity;
 

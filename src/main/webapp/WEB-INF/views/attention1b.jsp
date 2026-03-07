@@ -189,7 +189,8 @@
                                            sessid: '${sessid}',
                                            type: '${type}',
                                            exname: '${exname}',
-                                           rlagent: '${rlagent}'
+                                           rlagent: '${rlagent}',
+                                           assignmentid: '${assignmentid}'
                                         }, 'get');
                                     ">
                         </div> 
@@ -335,6 +336,7 @@
                 let maxtime = ${time}*${nelements};
                 $.get("getperformance",
                     {
+                        "assignmentid" : ${assignmentid},
                         "exerciseid": ${exerciseid},
                         "patientid": ${patientid},
                         "ptime": dTime,
@@ -348,8 +350,9 @@
                     },
                     function(data, status) {
                         var js=JSON.parse(data);
-                        let perf = js.perf;
+                        let perf = Math.round(js.perf * 100);
                         passed = js.passed;
+                        let thr = Math.round(js.thr * 100);
                         var passedMessage='';
                         <c:if test="${difficulty!='training'}">
                         if(passed) {
@@ -367,7 +370,9 @@
                                 '<br><b>Risposte sbagliate</b>: ' + nWrong +
                                 '<br><b>Omissioni</b>: ' + nMissed +
                                 '<br>' +
-                                '<br><b>Prestazione</b>: ' + Math.round(perf*100) + ' %' +
+                                '<br><b>Performance</b>: ' + perf + '%' +
+                                '<br><b>Soglia Superamento</b>: ' + thr + '%' +
+                                '<br><b>Prestazione</b>: ' + Math.round(perf / thr * 100) + '%' +
                                 '<br>' +
                                 '<br>' + passedMessage + '</h4>',
                             callback:function() {

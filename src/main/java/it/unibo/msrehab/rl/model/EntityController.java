@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * Controller to manage a set of entities
+ * Abstract controller to manage a set of entities
  * @param <T> entity class
  */
 public abstract class EntityController<T> implements IEntityController<T>

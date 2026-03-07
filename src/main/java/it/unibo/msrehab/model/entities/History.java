@@ -2,12 +2,7 @@ package it.unibo.msrehab.model.entities;
 
 import flexjson.JSON;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -205,16 +200,33 @@ import javax.xml.bind.annotation.XmlRootElement;
                                                                         "ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByUser", query = "SELECT l FROM History l WHERE l.userid= :userid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByUserAndExercise", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid ORDER BY l.timestamp DESC"),
-    @NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
+    @NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not NULL ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByExerciseAndSessid", query = "SELECT l FROM History l WHERE l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.delete", query = "DELETE FROM History l WHERE l.id= :id"),
     @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
-    @NamedQuery(name = "History.findLastInterruptedExercise", query = "SELECT h.exid FROM History h WHERE h.exid IN :interruptedExs AND h.sessid=:sessid ORDER BY h.timestamp DESC")
+    @NamedQuery(name = "History.findLastInterruptedExercise", query = "SELECT h.exid FROM History h WHERE h.exid IN :interruptedExs AND h.sessid=:sessid ORDER BY h.timestamp DESC"),
+        @NamedQuery(name = "History.findAllByUserAndExerciseAndSessidSolvedAgent", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not null and l.levelStrategy= :rlagent ORDER BY l.timestamp DESC")
+        ,
+        @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
+        @NamedQuery(name = "History.findAssignmentById", query = "SELECT h FROM History h WHERE h.id=:id"),
+
+
 })
 
 @XmlRootElement
 public class History extends BaseEntity
 {
+
+    /**
+     * Strategy that was used to select the level and threhsold for the history
+     */
+    public enum LevelStrategy
+    {
+        TRAINING, // For trainings (level always = -1)
+        LEVEL, // Agente a livelli (RL).
+        ADAPTIVE, // Agente adattivo.
+        INCREMENTAL // Strategia incrementale. Due successi di fila per passare di livello.
+    }
 
     @JSON(include = false)
     private static final long serialVersionUID = 1L;
@@ -278,6 +290,21 @@ public class History extends BaseEntity
     private Double maxtime;
 
 
+    @Column(name = "threshold", table = "history")
+    @Basic
+    private Double threshold;
+
+
+    @Column(name = "strategy", table = "history")
+    @Basic
+    @Enumerated(EnumType.ORDINAL)
+    private LevelStrategy levelStrategy;
+
+
+    public boolean isSolved()
+    {
+        return passed != null;
+    }
 
     public Integer getUserid() {
         return userid;
@@ -303,7 +330,8 @@ public class History extends BaseEntity
         this.sessid = sessid;
     }
 
-    public Double getAbsperformance() {
+    public Double getAbsperformance()
+    {
         if(Double.isNaN(absperformance)){
             return 0.0;
         }else{
@@ -404,4 +432,23 @@ public class History extends BaseEntity
         this.maxtime = maxtime;
     }
 
+    public Double getPassThreshold()
+    {
+        return threshold;
+    }
+
+    public void setPassThreshold(Double threshold)
+    {
+        this.threshold = threshold;
+    }
+
+    public LevelStrategy getLevelStrategy()
+    {
+        return levelStrategy;
+    }
+
+    public void setLevelStrategy(LevelStrategy rlagent)
+    {
+        this.levelStrategy = rlagent;
+    }
 }

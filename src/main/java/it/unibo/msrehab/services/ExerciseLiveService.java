@@ -211,7 +211,7 @@ public class ExerciseLiveService {
         {
             JSONObject o = js.getJSONObject(i);
             if (!o.getBoolean("done")) {
-                List<History> lhe = historyController.findAllByUserAndExerciseAndSessid(patientid, o.getInt("id"), session.getId());
+                List<History> lhe = historyController.findAllByUserAndExerciseAndSessid(patientid, o.getInt("id"), session.getId(), true);
                 if (!lhe.isEmpty()) {
                     List<ChangeDifficulty> cdlist = changeDiffController.findFromHistory(lhe.get(0).getId());//FIXME PLEASE
 

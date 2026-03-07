@@ -37,7 +37,6 @@ public class ExerciseController extends BaseEntityController<Exercise>
         return getAllEntities(ex -> Objects.equals(ex.getCategory(), category) && ex.isEnabled());
     }
 
-
     public Integer findMinIdFromType(String exerciseType)
     {
         return getAllEntities(ex -> Objects.equals(ex.getType(), exerciseType))

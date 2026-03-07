@@ -8,7 +8,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 /**
- * A utility class for handling JPA-based queries.
+ * A utility class for handling JPA-based queries such as joins.
  * This class provides methods to facilitate querying operations.
  */
 public class JPAQueries implements IModel

@@ -108,7 +108,7 @@ public class PddlWeekendRomeService {
         if (difficulty.equals("training") || difficulty.equals("demo")) {
             level = 1;
         } else {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
             if (historyList.isEmpty()) {
                 if ("easy".equals(difficulty)) {
                     level = 1;
@@ -160,7 +160,7 @@ public class PddlWeekendRomeService {
             level = 1;
         }
         else {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
             if (historyList.isEmpty()) {
                 if (difficulty.equals("easy")) {
                     level = EASY_MIN;
@@ -322,7 +322,7 @@ public class PddlWeekendRomeService {
 
       
 
-        List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
+        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
         int newLevel = ExerciseService.findChangedLevel(changeDiffController, lastHistory);
         History history = new History();
         history.setExid(exerciseid);
@@ -432,7 +432,7 @@ public class PddlWeekendRomeService {
 
             HttpSession httpSess = request.getSession();
             int newLevel=level;
-            List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, true);
+            List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
             if(lastHistory==null&&level==1)
                  newLevel=level;
             else

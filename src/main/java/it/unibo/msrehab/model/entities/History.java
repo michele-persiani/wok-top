@@ -200,7 +200,10 @@ import javax.xml.bind.annotation.XmlRootElement;
                                                                         "ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByUser", query = "SELECT l FROM History l WHERE l.userid= :userid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByUserAndExercise", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid ORDER BY l.timestamp DESC"),
-    @NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not NULL ORDER BY l.timestamp DESC"),
+    @NamedQuery(name = "History.findAllSolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not NULL ORDER BY l.timestamp DESC"),
+    @NamedQuery(name = "History.findAllUnsolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is NULL ORDER BY l.timestamp DESC"),
+
+    @NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByExerciseAndSessid", query = "SELECT l FROM History l WHERE l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.delete", query = "DELETE FROM History l WHERE l.id= :id"),
     @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),

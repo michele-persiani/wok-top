@@ -390,6 +390,7 @@
                     function(data, status){
                         var js=JSON.parse(data);
                         perf = js.perf;
+                        var thr = js.thr;
                         passed = js.passed;
                             var passedMessage='';
                             <c:if test="${difficulty!='training'}">
@@ -409,7 +410,8 @@
                                 '<br><b>Risposte sbagliate</b>: ' + nWrong +
                                 '<br><b>Omissioni</b>: ' + nMissed +
                                 '<br>' +
-                                '<br><b>Prestazione</b>: ' + Math.round(perf*100) + ' %' +                                    
+                                '<br><b>Prestazione</b>: ' + Math.round(perf*100) + ' %' +
+                                '<br><b>Soglia Superamento</b>: ' + Math.round(thr*100) + ' %' +
                                 '<br>' +
                                 '<br>' + passedMessage + '</h4>',
                             callback:function() {

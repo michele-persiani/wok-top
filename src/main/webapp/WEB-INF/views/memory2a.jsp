@@ -158,7 +158,8 @@
                                     distractor: '${distractor}',
                                     time: '${time}',
                                     sessid: '${sessid}',
-                                        exname: '${exname}'
+                                    exname: '${exname}',
+                                    assignmentid: ${assignmentid}
                                 }, 'get');">
                             Inizia esercizio
                         </button>

@@ -1947,7 +1947,7 @@ public class ExerciseService
     private History createNextAssigment(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, @Nullable Integer rlagent)
     {
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
-        //MSRUser user = userController.getEntityOrThrow(userId);
+        MSRUser user = userController.getEntityOrThrow(userId);
 
 
         History history = new History();//new history
@@ -1961,7 +1961,7 @@ public class ExerciseService
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 0))
         {
-            passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, userId));
+            passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, user));
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
         {
@@ -1971,7 +1971,7 @@ public class ExerciseService
         {
             //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
 
-            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, Exercise exercise);
+            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise);
 
         }
 
@@ -1998,35 +1998,44 @@ public class ExerciseService
     }
 
 
+    private static long epochMillisToEpochDay(long epochMillis)
+    {
+        return epochMillis / (24L * 60L * 60L * 1000L);
+    }
+
     private PassThreshold getNextLevelIncrementally(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, Exercise exercise)
     {
+        int level = exercise.getLevel(difficulty);
 
+        List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(userId, exerciseId, sessionId)
+                .stream()
+                .filter(h -> epochMillisToEpochDay(h.getTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
+                .sorted(Comparator.comparing(History::getTimestamp).reversed())
+                .limit(2)
+                .collect(Collectors.toList())
+                ;
 
-        int level = -1;
-        if (difficulty.equals("training") || difficulty.equals("demo"))
+        double threshold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
+
+        if (lastHistory.isEmpty())
+            return PassThreshold.create(-1, level, threshold);
+
+        if (lastHistory.size() == 1)
+            level = lastHistory.get(0).getLevel();
+
+        if (lastHistory.size() == 2)
         {
-            level = -1;
-        } else
-        {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(userId, exerciseId, sessionId);
-            if (historyList.isEmpty())
-            {
-                level = exercise.getLevel(difficulty);
-
-            } else
-            {
-                level = historyList.get(0).getLevel();
-                List<ChangeDifficulty> cdl = changeDiffController.findFromHistory(historyList.get(0).getId());
-                if ((cdl != null) && (!cdl.isEmpty()))
-                {
-                    level = cdl.get(0).getLevel();
-                }
-                difficulty = exercise.getDifficulty(level);
-            }
+            level = lastHistory.get(0).getLevel();
+            level += lastHistory.get(0).getPassed() && lastHistory.get(1).getPassed() ? 1 : 0;
         }
-        double threhsold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
 
-        return PassThreshold.create(-1, level, threhsold);
+        if(!lastHistory.isEmpty())
+            level = changeDiffController.findLastFromHistory(lastHistory.get(0).getId())
+                    .map(ChangeDifficulty::getLevel)
+                    .orElse(level)
+                    ;
+
+        return PassThreshold.create(-1, level, threshold);
     }
 
 
@@ -2041,8 +2050,7 @@ public class ExerciseService
         double thresholdDeltaPassed = config.getThresholdDeltaPassed();
         double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
 
-        Optional<History> history = historyController.findLastByUserAndExerciseAndSession(userId, exerciseId, sessionId);
-
+        Optional<History> history = historyController.findLastByUserAndExerciseAndSessid(userId, exerciseId, sessionId);
 
 
         int nextLevel = exercise.getLevel(difficulty);
@@ -2055,10 +2063,8 @@ public class ExerciseService
         History lastHistory = history.get();
 
 
-
-        //if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
-        //    return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
-
+        if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
+            return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
 
 
         // Here we know last history was solved so it has performance, threshold, etc.
@@ -2066,7 +2072,6 @@ public class ExerciseService
         double performance = lastHistory.getAbsperformance();
         nextLevel = lastHistory.getLevel();
         nextThreshold = lastHistory.getPassThreshold();
-
 
 
         if (performance >= nextThreshold) // ie. exercise is passed
@@ -2096,7 +2101,7 @@ public class ExerciseService
 
         double threshold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
 
-        Optional<History> lastHistory = historyController.findLastByUserAndExerciseAndSession(userId, exerciseId, sessionId, null);
+        Optional<History> lastHistory = historyController.findLastByUserAndExerciseAndSessid(userId, exerciseId, sessionId);
 
         if(lastHistory.isPresent())
             threshold = lastHistory.get().getPassThreshold();
@@ -3430,12 +3435,13 @@ public class ExerciseService
                 return new ModelAndView("redirect: patientrehabilitation");
             } else
             {
-                List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, null);
+                List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
                 int newLevel = findChangedLevel(changeDiffController, lastHistory);
 
-                History history = historyController.findLastByUserAndExerciseAndSession(patientid, exerciseid, sessid, false)
+                History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
                         .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
                 ;
+
                 history.setExid(exerciseid);
                 history.setPassed(passed);
                 history.setUserid(patientid);
@@ -4642,7 +4648,7 @@ public class ExerciseService
             int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
 
 
-            History history = historyController.findLastByUserAndExerciseAndSession(patientid, exerciseid, sessid, false)
+            History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
                     .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
 
             history.setExid(exerciseid);
@@ -5080,14 +5086,12 @@ public class ExerciseService
             @RequestParam(value = "assignmentid", required = true) String assignmentid,
             Model model)
     {
-
         logger.debug("memory2phase2()");
 
-        List<ExElement> exElementList
-                = exElementController.getUniqueRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
+        List<ExElement> exElementList = exElementController.getUniqueRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
 
+        List<ExElement> target = new ArrayList<>();
 
-        List<ExElement> target = new ArrayList<ExElement>();
         for (int i = 0; i < ntargets; )
         {
 
@@ -5127,6 +5131,7 @@ public class ExerciseService
         return new ModelAndView("memory2b");
 
     }
+
 
     @RequestMapping(value = "/memory2phase3", method = RequestMethod.GET)
     public ModelAndView memory2phase3(
@@ -5263,6 +5268,7 @@ public class ExerciseService
     }
 
 
+
     // RL Exercise
 
     @RequestMapping(value = "/createnback", method = RequestMethod.GET)
@@ -5350,7 +5356,6 @@ public class ExerciseService
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             Model model)
     {
-
         logger.debug("nback()");
 
         model.addAttribute("difficulty", difficulty);
@@ -5362,7 +5367,7 @@ public class ExerciseService
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
         model.addAttribute("rlagent", rlagent);
-
+        model.addAttribute("rl", true);
         return new ModelAndView("nback");
     }
 
@@ -5380,9 +5385,9 @@ public class ExerciseService
             @RequestParam(value = "nelements", required = true) Integer nelements,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) ExerciseNameValue assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
 
@@ -5425,9 +5430,9 @@ public class ExerciseService
             @RequestParam(value = "exElementList", required = true) String exElementIds,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) ExerciseNameValue assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
         logger.debug("nbackphase2()");
@@ -5475,7 +5480,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) ExerciseNameValue assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
@@ -5584,7 +5589,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId();
+                + "&assignmentid=" + assignment.getId()
                 ;
 
 
@@ -5875,7 +5880,7 @@ public class ExerciseService
                 int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
 
 
-                History history = historyController.findLastByUserAndExerciseAndSession(patientid, exerciseid, sessid, false)
+                History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
                         .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
                 ;
                 history.setExid(exerciseid);
@@ -6358,7 +6363,7 @@ public class ExerciseService
             {
                 int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
 
-                History history = historyController.findLastByUserAndExerciseAndSession(patientid, exerciseid, sessid, false)
+                History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
                         .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
                 ;
                 history.setExid(exerciseid);
@@ -6828,9 +6833,11 @@ public class ExerciseService
                 int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
 
 
-                History history = historyController.findLastByUserAndExerciseAndSession(patientid, exerciseid, sessid, false)
+                History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
                         .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
                 ;
+
+
                 history.setExid(exerciseid);
                 history.setPassed(passed);
                 history.setUserid(patientid);
@@ -6994,7 +7001,7 @@ public class ExerciseService
             level = -1;
         } else
         {
-            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid, null);
+            List<History> historyList = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
             if (historyList.isEmpty())
             {
                 if ("easy".equals(difficulty))

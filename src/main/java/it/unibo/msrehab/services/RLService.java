@@ -3,6 +3,7 @@ package it.unibo.msrehab.services;
 
 import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
+import it.unibo.msrehab.model.controller.FitnessWeightController;
 import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.rl.impl.NextLevelAgent;
 import it.unibo.msrehab.rl.impl.TemplateNextLevelAgent;
@@ -34,6 +35,8 @@ public class RLService
     JSONDeserializer<List<Map<String, String>>> dataDeserializer = new JSONDeserializer<>();
     JSONSerializer serializer = new JSONSerializer();
 
+    FitnessWeightController fitnessController = new FitnessWeightController();
+
     @RequestMapping(value = "/rlconfig", method = RequestMethod.GET)
     public ModelAndView rlConfigPage()
     {
@@ -48,18 +51,19 @@ public class RLService
 
     @RequestMapping(value = "/rl-threshold-agent-config", method = {RequestMethod.POST})
     public HttpEntity<String> thresholdAgentConfig(
-            @RequestParam Optional<Double> lowerThreshold,
-            @RequestParam Optional<Double> startThreshold,
-            @RequestParam Optional<Double> thresholdDeltaPassed,
-            @RequestParam Optional<Double> thresholdDeltaNotPassed
+            @RequestParam(required = false, defaultValue = "0.2") Double deltaInferiorLevel,
+            @RequestParam(required = false, defaultValue = "0.8") Double startThreshold,
+            @RequestParam(required = false, defaultValue = "0.03") Double thresholdDeltaPassed,
+            @RequestParam(required = false, defaultValue = "-0.07") Double thresholdDeltaNotPassed
     )
     {
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
 
-        lowerThreshold.ifPresent(config::setLowerThreshold);
-        startThreshold.ifPresent(config::setStartThreshold);
-        thresholdDeltaPassed.ifPresent(config::setThresholdDeltaPassed);
-        thresholdDeltaNotPassed.ifPresent(config::setThresholdDeltaNotPassed);
+        config.setLowerThreshold(startThreshold - deltaInferiorLevel);
+        config.setStartThreshold(startThreshold);
+        config.setThresholdDeltaPassed(thresholdDeltaPassed);
+        config.setThresholdDeltaNotPassed(thresholdDeltaNotPassed);
+
 
 
         if(!config.isValid())

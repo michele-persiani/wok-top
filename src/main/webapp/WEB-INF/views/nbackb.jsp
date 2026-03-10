@@ -303,12 +303,14 @@
                         "maxtime": maxTime,
                         "sessid": ${sessid},
                         "difficulty": '${difficulty}',
-                        "level": ${level}
+                        "level": ${level},
+                        "assignmentid": ${assignmentid}
                     },
                     function(data, status){
                         var js=JSON.parse(data);
                         perf = js.perf;
                         passed = js.passed;
+                        var thr = js.thr;
                             var passedMessage='';
                             <c:if test="${difficulty!='training'}">
                                 if(passed) {
@@ -325,7 +327,8 @@
                                         '<br><b>Risposte sbagliate</b>: ' + nWrong +
                                         '<br><b>Omissioni</b>: ' + nMissed +
                                         '<br>' +
-                                        '<br><b>Prestazione</b>: ' + Math.round(perf*100) + ' %' +                                    
+                                        '<br><b>Performance</b>: ' + Math.round(perf*100) + '%' +
+                                        '<br><b>Soglia Superamento</b>: ' + Math.round(thr*100) + '%' +
                                         '<br>' +
                                         '<br>' + passedMessage + '</h4>',
                             callback:function() {
@@ -348,7 +351,8 @@
                                     pWrong: nWrong,
                                     type: '${type}',
                                     exname : '${exname}',
-                                    rlagent: '${rlagent}'
+                                    rlagent: '${rlagent}',
+                                    assignmentid: '${assignmentid}'
                                 }, 'get');
                             }
                         });

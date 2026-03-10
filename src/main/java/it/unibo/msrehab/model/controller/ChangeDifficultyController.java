@@ -6,7 +6,6 @@
 package it.unibo.msrehab.model.controller;
 
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
-import it.unibo.msrehab.model.entities.History;
 
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +27,7 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
         super(ChangeDifficulty.class);
     }
 
+
     /**
      * Gets all the ChangeDifficulty associated to the given historyid, sorted by id. The first in the result is the last
      * recorded (with higher id)
@@ -43,6 +43,7 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
                 .collect(Collectors.toList());
     }
 
+
     /**
      * Gets the last ChangeDifficulty associated with the given historyid.
      *
@@ -56,6 +57,7 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
                 .max(Comparator.comparing(ChangeDifficulty::getId));
     }
 
+
     /**
      * Gets the last ChangeDifficulty associated with the given exerciseId, userId, sessionId.
      * exerciseId, userId, sessionId are first used to find the last history associated with the given exerciseId, userId, sessionId
@@ -68,10 +70,11 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
      */
     public Optional<ChangeDifficulty> findLastFromExerciseUserSession(int exerciseId, int userId, int sessionId)
     {
-        return historyController.findLastByUserAndExerciseAndSession(exerciseId, userId, sessionId, null)
+        return historyController.findLastByUserAndExerciseAndSessid(exerciseId, userId, sessionId)
                 .flatMap(h -> findLastFromHistory(h.getId()))
                 ;
     }
+
 
     /**
      * Gets the level of the last ChangeDifficulty associated with the given exerciseId, userId, sessionId. If no such

@@ -140,10 +140,10 @@
         </div>
         <div class="row">
           <div class="col-sm-12">
-            <label for="lowerThreshold">Soglia inferiore</label>
+            <label for="lowerThreshold">Delta Livello Inferiore</label>
           </div>
           <div class="col-sm-12">
-            <input type="number" id="lowerThreshold" name="lowerThreshold" required min="0" max="1" step="any" value="${thresholdAgentConfig.lowerThreshold}">
+            <input type="number" id="deltaInferiorLevel" name="deltaInferiorLevel" required min="0" max="1" step="any" value="${thresholdAgentConfig.deltaInferiorLevel}">
           </div>
         </div>
         <div class="row">

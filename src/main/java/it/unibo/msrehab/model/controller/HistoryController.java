@@ -9,8 +9,6 @@ import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 
 import java.util.*;
-import java.util.stream.Collectors;
-
 
 
 /**
@@ -123,21 +121,50 @@ public class HistoryController extends BaseEntityController<History>
                 .orElse(new ArrayList<>());
     }
 
-    public Optional<History> findLastByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid, Boolean solved)
+    public Optional<History> findLastSolvedByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
     {
-        return findAllByUserAndExerciseAndSessid(userid, exid, sessid, solved)
+        return findAllSolvedByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
                 .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
                 ;
     }
 
-    public Optional<History> findLastByUserAndExerciseAndSessionSolvedAgent(Integer userid, Integer exid, Integer sessid, Boolean solved)
+    public List<History> findAllSolvedByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
+    {
+        return getTransactionManager()
+                .executeResultListNamedQuery("History.findAllSolvedByUserAndExerciseAndSessid", History.class,q -> {
+                    q.setParameter("userid", userid)
+                            .setParameter("exid", exid)
+                            .setParameter("sessid", sessid);
+                }).get();
+    }
+
+    public Optional<History> findLastUnsolvedByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
+    {
+        return findAllUnsolvedByUserAndExerciseAndSessid(userid, exid, sessid)
+                .stream()
+                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
+                ;
+    }
+
+    public List<History> findAllUnsolvedByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
+    {
+        return getTransactionManager()
+                .executeResultListNamedQuery("History.findAllUnsolvedByUserAndExerciseAndSessid", History.class,q -> {
+                    q.setParameter("userid", userid)
+                            .setParameter("exid", exid)
+                            .setParameter("sessid", sessid);
+                }).get();
+    }
+
+    public Optional<History> findLastByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
         return findAllByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
                 .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
                 ;
     }
+
 
     public List<History> findAllByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
@@ -148,7 +175,6 @@ public class HistoryController extends BaseEntityController<History>
                             .setParameter("sessid", sessid);
                 }).get();
     }
-    
 
     @Override
     public History getEntityOrThrow(Object id)
@@ -156,7 +182,7 @@ public class HistoryController extends BaseEntityController<History>
         return getTransactionManager()
                 .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
                 {
-                    q.setParameter("assignmentId", id);
+                    q.setParameter("id", id);
                 }).orElseThrow(() -> new IllegalArgumentException("History not found"));
     }
 
@@ -165,11 +191,11 @@ public class HistoryController extends BaseEntityController<History>
         return getTransactionManager()
                 .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
                 {
-                    q.setParameter("assignmentId", assignmentId);
+                    q.setParameter("id", assignmentId);
                 }).orElse(null);
     }
 
-    public List<History> findAllByUserAndExerciseAndSessidUnsolved(Integer userid, Integer exid, Integer sessid, Boolean solved)
+    public List<History> findAllByUserAndExerciseAndSessidUnsolved(Integer userid, Integer exid, Integer sessid)
     {
         return getTransactionManager()
                 .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessid", History.class,q -> {

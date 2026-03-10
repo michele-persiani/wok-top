@@ -196,13 +196,6 @@
                                 <a href="patientrehabilitation" class="btn btn-lg btn-warning pull-right" role="button">Interrompi esercizio</a>
                             </c:if>                            
                         </div>
-                       
-       
-                        
-                        
-                        
-                        
-           
                     </div>
                 </div>
             </div>
@@ -392,7 +385,6 @@
                                         '<br>' +
                                         '<br><b>Performance</b>: ' + perf + '%' +
                                         '<br><b>Soglia Superamento</b>: ' + thr + '%' +
-                                        '<br><b>Prestazione</b>: ' + Math.round(perf / thr * 100) + '%' +
                                         '<br>' +
                                         '<br>' + passedMessage + '</h4>',
                         callback:function() {

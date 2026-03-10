@@ -77,7 +77,6 @@ export class Game
             this.createObstacle(type);
         }, 2000);
 
-        this.obstacleTimeInterval.
     }
 
     /**

@@ -499,6 +499,7 @@
                                                 sessid: '${sessid}',
                                                 type: '${type}',
                                                 exname: '${exname}',
+                                                rlagent: '${rlagent}',
                                                 assignmentid: '${assignmentid}',
                                             }, 'get');
                                         }

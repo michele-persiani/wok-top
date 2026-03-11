@@ -1944,13 +1944,21 @@ public class ExerciseService
      * @param rlagent
      * @return
      */
-    private History createNextAssigment(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, @Nullable Integer rlagent)
+    private History createNextAssigment(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId,
+            String difficulty,
+            @Nullable Integer rlagent,
+            @Nullable Integer currentLevel
+    )
     {
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
         MSRUser user = userController.getEntityOrThrow(userId);
 
 
-        History history = new History();//new history
+        History history = new History();
+
 
 
         // Get next level and threshold
@@ -1961,19 +1969,22 @@ public class ExerciseService
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 0))
         {
+            // Non usato al momento
             passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, user));
+            history.setLevelStrategy(History.LevelStrategy.LEVEL);
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
         {
             passThreshold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
+            history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else
         {
             //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
-
-            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise);
-
+            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
+            history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
+
 
 
         // Store history for assigned exercise
@@ -1984,7 +1995,7 @@ public class ExerciseService
         history.setLevel(passThreshold.getLevel());
         history.setPassThreshold(passThreshold.getThreshold());
         history.setTimestamp(System.currentTimeMillis());
-
+        if (!("training".equals(difficulty) || "demo".equals(difficulty)) ){
         if (!historyController.insertEntity(history))
         {
             logger.error("Error inserting assignment");
@@ -1992,7 +2003,7 @@ public class ExerciseService
         }
 
         logger.info("Next level/threshold: " + history.getLevel() + "/" + history.getPassThreshold());
-
+    }
 
         return history;
     }
@@ -2003,39 +2014,52 @@ public class ExerciseService
         return epochMillis / (24L * 60L * 60L * 1000L);
     }
 
-    private PassThreshold getNextLevelIncrementally(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, Exercise exercise)
-    {
-        int level = exercise.getLevel(difficulty);
 
-        List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(userId, exerciseId, sessionId)
+    private PassThreshold getNextLevelIncrementally(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId,
+            String difficulty,
+            Exercise exercise,
+            @Nullable Integer currentLevel
+    )
+    {
+        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(userId, exerciseId, sessionId)
                 .stream()
                 .filter(h -> epochMillisToEpochDay(h.getTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
-                .sorted(Comparator.comparing(History::getTimestamp).reversed())
+                //.sorted(Comparator.comparing(History::getTimestamp).reversed())  La query ordina gia in modo decrescente
                 .limit(2)
                 .collect(Collectors.toList())
                 ;
 
+
         double threshold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
 
-        if (lastHistory.isEmpty())
-            return PassThreshold.create(-1, level, threshold);
 
-        if (lastHistory.size() == 1)
-            level = lastHistory.get(0).getLevel();
-
-        if (lastHistory.size() == 2)
+        if(currentLevel == null)
         {
-            level = lastHistory.get(0).getLevel();
-            level += lastHistory.get(0).getPassed() && lastHistory.get(1).getPassed() ? 1 : 0;
+            // currentLevel == null -> siamo in create
+            if (lastHistory.isEmpty())
+                return PassThreshold.create(-1, exercise.getLevel(difficulty), threshold);
+            else
+                return PassThreshold.create(-1, lastHistory.get(0).getLevel(), threshold);
         }
+        else
+        {
+            // currentLevel != null -> siamo in phase3
+            if (lastHistory.size() <= 1)
+                return PassThreshold.create(-1, currentLevel, threshold);
+            else
+            {
+                History h0 = lastHistory.get(0);
+                History h1 = lastHistory.get(1);
 
-        if(!lastHistory.isEmpty())
-            level = changeDiffController.findLastFromHistory(lastHistory.get(0).getId())
-                    .map(ChangeDifficulty::getLevel)
-                    .orElse(level)
-                    ;
-
-        return PassThreshold.create(-1, level, threshold);
+                int level = currentLevel;
+                if(h0.getPassed() && h1.getPassed() && h0.getLevel() == currentLevel && h1.getLevel() == currentLevel)
+                    level += 1;
+                return PassThreshold.create(-1, level, threshold);
+            }
+        }
     }
 
 
@@ -2062,19 +2086,22 @@ public class ExerciseService
 
         History lastHistory = history.get();
 
-
-        if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
-            return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
+        // Non serve in quanto si prendono solo gli esercizi gia risolti
+        //if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
+        //    return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
 
 
         // Here we know last history was solved so it has performance, threshold, etc.
 
-        double performance = lastHistory.getAbsperformance();
+
+        // Il campo is passed ha gia considerato l'esito dell'esercizio (performance >= threshold)
+        //double performance = lastHistory.getAbsperformance();
+
         nextLevel = lastHistory.getLevel();
         nextThreshold = lastHistory.getPassThreshold();
 
 
-        if (performance >= nextThreshold) // ie. exercise is passed
+        if (lastHistory.getPassed()) // ie. exercise is passed
         {
             nextThreshold = Math.min(nextThreshold + thresholdDeltaPassed, 1);
             nextLevel += 1;
@@ -2152,7 +2179,7 @@ public class ExerciseService
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
 
         int level = assignment.getLevel();
         int assignmentId = assignment.getId();
@@ -2392,6 +2419,11 @@ public class ExerciseService
         history.setLevel(level);
         history.setDifficulty(difficulty);
         history.setSessid(sessid);
+        // Copiato dall'altro  Non si capisce perche qui non c'era?
+        Long t = LocalDateTime.now().toDateTime().getMillis();
+        history.setTimestamp(t);
+
+
 
         // Calculate performance
         double ft;
@@ -2401,9 +2433,6 @@ public class ExerciseService
 
         ft = fitnessController.calculateFitness(true, history);
         history.setRelperformance(ft);
-
-        Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
 
         if (!historyController.putEntity(history))
         {
@@ -2429,9 +2458,9 @@ public class ExerciseService
 
 
         // Forward user to the next exercise
+//siamo sicuri che la vecchia history sia sul db salvata e committata
 
-
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -2518,7 +2547,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_2];
 
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
@@ -2604,7 +2633,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
 
@@ -2652,7 +2681,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
 
@@ -2704,7 +2733,7 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) throws ServletException, IOException
@@ -2997,7 +3026,7 @@ public class ExerciseService
                         }
 
 
-                        History nextAssignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, -1);
+                        History nextAssignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, -1, level);
 
                         url = "/attention2phase1"
                                 + "?difficulty=" + difficulty
@@ -3094,7 +3123,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_3];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention3(level, diffVar);
@@ -3802,8 +3831,13 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_4];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
         int level = assignment.getLevel();
+
+        // Uguale a creationattention1 viene individuato il livello di difficolta dato il livello dell'esercizio
+        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        difficulty=exercise.getDifficulty(level);
+
 
         Map<String, Object> parameters = createParametersAttention4(level, diffVar);
         if (ATT_DIV.toString().equals(type))
@@ -3893,7 +3927,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
 
@@ -3948,7 +3982,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
         logger.debug("attention4phase2()");
@@ -4007,7 +4041,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -4072,7 +4106,7 @@ public class ExerciseService
 
 
         // Forward patient to next level
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
         level = assignment.getLevel();
         difficulty = exercise.getDifficulty(level);
 
@@ -4089,6 +4123,8 @@ public class ExerciseService
 
 
         Map<String, Object> parameters = createParametersAttention4(level, diffVar);
+
+        // Non presente in attention1, non e' chiaro il perche
         httpSess.setAttribute("diffVar6", diffVar);
 
         ParametersParser parser = new ParametersParser(parameters);
@@ -4141,7 +4177,7 @@ public class ExerciseService
             HttpServletRequest request,
             Model model)
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
 
 
         Map<String, Object> parameters = new HashMap<>();
@@ -4199,7 +4235,7 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             HttpServletRequest request,
             Model model)
     {
@@ -4231,7 +4267,7 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             HttpServletRequest request,
             Model model)
     {
@@ -4275,7 +4311,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) throws ServletException, IOException
@@ -4346,8 +4382,7 @@ public class ExerciseService
 
         // Forward user to next exercise
 
-
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
 
         level = assignment.getLevel();
 
@@ -4404,7 +4439,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_1];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
 
         int level = assignment.getLevel();
 
@@ -4956,7 +4991,7 @@ public class ExerciseService
             HttpServletRequest request,
             Model model)
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
 
         int level = assignment.getLevel();
 
@@ -5040,7 +5075,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
 
@@ -5154,13 +5189,12 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model,
             HttpServletRequest request,
             HttpServletResponse response
     )
     {
-
         if (patientid == -1)
             if (difficulty.equals("training"))
                 return new ModelAndView("redirect: patienttraining");
@@ -5229,7 +5263,7 @@ public class ExerciseService
         HttpSession httpSess = request.getSession();
         Integer[] diffVar = (Integer[]) (httpSess.getAttribute("diffVar6"));
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -5301,7 +5335,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
 
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
         int level = assignment.getLevel();
 
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
@@ -5543,7 +5577,7 @@ public class ExerciseService
             return new ModelAndView("redirect:patienthome");
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
         level = assignment.getLevel();
 
 
@@ -5614,7 +5648,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_LONG_1];
 
 
-        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
         int level = assigment.getLevel();
 
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
@@ -6164,7 +6198,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_5];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
         int level = assignment.getLevel();
 
         difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
@@ -6646,7 +6680,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
 
         int level = assignment.getLevel();
 

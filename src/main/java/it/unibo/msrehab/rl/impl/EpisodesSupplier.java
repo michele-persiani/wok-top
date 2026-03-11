@@ -204,7 +204,6 @@ public interface EpisodesSupplier extends Supplier<List<List<History>>>
     }
 
 
-
     static EpisodesSupplier modelBased(IModel model, Predicate<History> filter, Function<History, Object> episodeKeyExtractor)
     {
         return () -> model.getEntityController(History.class)

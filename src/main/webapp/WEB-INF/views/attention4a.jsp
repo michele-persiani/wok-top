@@ -200,6 +200,7 @@
                                             sessid: '${sessid}',
                                             type: '${type}',
                                             exname: '${exname}',
+                                            rlagent: '${rlagent}',
                                             assignmentid: '${assignmentid}',
                                         }, 'get');">
                                 Inizia esercizio

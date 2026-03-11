@@ -201,15 +201,18 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "History.findAllByUser", query = "SELECT l FROM History l WHERE l.userid= :userid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByUserAndExercise", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllSolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not NULL ORDER BY l.timestamp DESC"),
-    @NamedQuery(name = "History.findAllUnsolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is NULL ORDER BY l.timestamp DESC"),
+    // None serve perche si usa solo quella da id
+        //@NamedQuery(name = "History.findAllUnsolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is NULL ORDER BY l.timestamp DESC"),
 
-    @NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
+        // Non serve perche si usa findAllUnsolvedByUserAndExerciseAndSessid e findAssignmentById
+    //@NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.findAllByExerciseAndSessid", query = "SELECT l FROM History l WHERE l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
     @NamedQuery(name = "History.delete", query = "DELETE FROM History l WHERE l.id= :id"),
     @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
     @NamedQuery(name = "History.findLastInterruptedExercise", query = "SELECT h.exid FROM History h WHERE h.exid IN :interruptedExs AND h.sessid=:sessid ORDER BY h.timestamp DESC"),
-        @NamedQuery(name = "History.findAllByUserAndExerciseAndSessidSolvedAgent", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not null and l.levelStrategy= :rlagent ORDER BY l.timestamp DESC")
-        ,
+        // Non serve
+        //@NamedQuery(name = "History.findAllByUserAndExerciseAndSessidSolvedAgent", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not null and l.levelStrategy= :rlagent ORDER BY l.timestamp DESC")
+
         @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
         @NamedQuery(name = "History.findAssignmentById", query = "SELECT h FROM History h WHERE h.id=:id"),
 

@@ -169,7 +169,7 @@ public class HistoryController extends BaseEntityController<History>
     public List<History> findAllByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
         return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessid", History.class,q -> {
+                .executeResultListNamedQuery("History.findAllSolvedByUserAndExerciseAndSessid", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid);

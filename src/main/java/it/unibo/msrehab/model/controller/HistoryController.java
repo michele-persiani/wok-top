@@ -123,6 +123,7 @@ public class HistoryController extends BaseEntityController<History>
 
     public Optional<History> findLastSolvedByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
     {
+
         return findAllSolvedByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
                 .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))

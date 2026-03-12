@@ -211,7 +211,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
     @NamedQuery(name = "History.findLastInterruptedExercise", query = "SELECT h.exid FROM History h WHERE h.exid IN :interruptedExs AND h.sessid=:sessid ORDER BY h.timestamp DESC"),
         // Non serve
-        //@NamedQuery(name = "History.findAllByUserAndExerciseAndSessidSolvedAgent", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not null and l.levelStrategy= :rlagent ORDER BY l.timestamp DESC")
+        @NamedQuery(name = "History.findAllByUserAndExerciseAndSessidSolvedAgent", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not null and (:rlagent IS NULL OR l.levelStrategy = :rlagent) ORDER BY l.timestamp DESC"),
 
         @NamedQuery(name = "History.countExerciseInSession", query = "SELECT count(h) FROM History h WHERE h.sessid=:sessid AND h.exid=:exid"),
         @NamedQuery(name = "History.findAssignmentById", query = "SELECT h FROM History h WHERE h.id=:id"),

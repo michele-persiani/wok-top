@@ -5,6 +5,7 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import com.sun.istack.internal.Nullable;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 
@@ -121,24 +122,30 @@ public class HistoryController extends BaseEntityController<History>
                 .orElse(new ArrayList<>());
     }
 
-    public Optional<History> findLastSolvedByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
+    public Optional<History> findLastSolvedByUserAndExerciseAndSessionAndAgent(Integer userid, Integer exid, Integer sessid, History.LevelStrategy agentStrategy)
     {
-
-        return findAllSolvedByUserAndExerciseAndSessid(userid, exid, sessid)
+        return findAllSolvedByUserAndExerciseAndSessidAndAgent(userid, exid, sessid, agentStrategy)
                 .stream()
                 .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
                 ;
     }
 
-    public List<History> findAllSolvedByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
+
+    // La funziona va sistemata con l'interfaccia
+    // TODO: restituisce solo l'agente adattivo
+    public List<History> findAllSolvedByUserAndExerciseAndSessidAndAgent(Integer userid, Integer exid, Integer sessid, @Nullable History.LevelStrategy agentStrategy)
     {
         return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllSolvedByUserAndExerciseAndSessid", History.class,q -> {
+                .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessidSolvedAgent", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
-                            .setParameter("sessid", sessid);
+                            .setParameter("sessid", sessid)
+                            .setParameter("rlagent", agentStrategy)
+                    ;
                 }).get();
     }
+
+
 
     public Optional<History> findLastUnsolvedByUserAndExerciseAndSession(Integer userid, Integer exid, Integer sessid)
     {

@@ -1960,7 +1960,6 @@ public class ExerciseService
         History history = new History();
 
 
-
         // Get next level and threshold
         PassThreshold passThreshold;
         if ("training".equals(difficulty) || "demo".equals(difficulty))
@@ -2024,10 +2023,11 @@ public class ExerciseService
             @Nullable Integer currentLevel
     )
     {
-        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(userId, exerciseId, sessionId)
+
+        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL)
                 .stream()
                 .filter(h -> epochMillisToEpochDay(h.getTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
-                //.sorted(Comparator.comparing(History::getTimestamp).reversed())  La query ordina gia in modo decrescente
+                .sorted(Comparator.comparing(History::getTimestamp).reversed())
                 .limit(2)
                 .collect(Collectors.toList())
                 ;
@@ -2074,7 +2074,7 @@ public class ExerciseService
         double thresholdDeltaPassed = config.getThresholdDeltaPassed();
         double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
 
-        Optional<History> history = historyController.findLastByUserAndExerciseAndSessid(userId, exerciseId, sessionId);
+        Optional<History> history = historyController.findLastSolvedByUserAndExerciseAndSessionAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL);
 
 
         int nextLevel = exercise.getLevel(difficulty);
@@ -2087,8 +2087,8 @@ public class ExerciseService
         History lastHistory = history.get();
 
         // Non serve in quanto si prendono solo gli esercizi gia risolti
-        //if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
-        //    return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
+        if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
+            return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
 
 
         // Here we know last history was solved so it has performance, threshold, etc.
@@ -3876,6 +3876,7 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
+                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignment.getId()
                 ;
         return new ModelAndView("redirect:" + url);

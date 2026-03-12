@@ -118,7 +118,8 @@ public class PddlZooMapService {
             level = 1;
         }
         else {
-            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            // TODO: Attualmente restituisce solo l'agente reattivo
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
             if (historyList.isEmpty()) {
                 if (difficulty.equals("easy")) {
                     level = EASY_MIN;

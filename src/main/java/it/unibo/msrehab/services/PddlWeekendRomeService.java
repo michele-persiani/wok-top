@@ -108,7 +108,7 @@ public class PddlWeekendRomeService {
         if (difficulty.equals("training") || difficulty.equals("demo")) {
             level = 1;
         } else {
-            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
             if (historyList.isEmpty()) {
                 if ("easy".equals(difficulty)) {
                     level = 1;
@@ -160,7 +160,8 @@ public class PddlWeekendRomeService {
             level = 1;
         }
         else {
-            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            // TODO: Attualmente restituisce solo l'agente reattivo
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
             if (historyList.isEmpty()) {
                 if (difficulty.equals("easy")) {
                     level = EASY_MIN;
@@ -320,9 +321,10 @@ public class PddlWeekendRomeService {
         int pMissed = 0;
         int pWrong = nWrong;
 
-      
 
-        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+
+        // TODO: Attualmente restituisce solo l'agente reattivo
+        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
         int newLevel = ExerciseService.findChangedLevel(changeDiffController, lastHistory);
         History history = new History();
         history.setExid(exerciseid);
@@ -432,7 +434,8 @@ public class PddlWeekendRomeService {
 
             HttpSession httpSess = request.getSession();
             int newLevel=level;
-            List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            // TODO: Attualmente restituisce solo l'agente reattivo
+            List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
             if(lastHistory==null&&level==1)
                  newLevel=level;
             else

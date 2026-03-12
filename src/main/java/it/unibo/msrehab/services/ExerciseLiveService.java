@@ -211,7 +211,8 @@ public class ExerciseLiveService {
         {
             JSONObject o = js.getJSONObject(i);
             if (!o.getBoolean("done")) {
-                List<History> lhe = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, o.getInt("id"), session.getId());
+                // TODO: Attualmente restituisce solo l'agente reattivo
+                List<History> lhe = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, o.getInt("id"), session.getId(), null);
                 if (!lhe.isEmpty()) {
                     List<ChangeDifficulty> cdlist = changeDiffController.findFromHistory(lhe.get(0).getId());//FIXME PLEASE
 

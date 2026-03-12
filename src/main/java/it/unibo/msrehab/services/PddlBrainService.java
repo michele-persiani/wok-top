@@ -115,7 +115,7 @@ public class PddlBrainService {
             level = 1;
         }
         else {
-            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
+            List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
             if (historyList.isEmpty()) {
                 if(difficulty.equals("easy")){
                     level=EASY_MIN;

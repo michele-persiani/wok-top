@@ -467,8 +467,8 @@
                                             '<br><b>Suoni mancati</b>: ' + Math.max(0, soundCounter - rightSoundCounter) +
                                             //'<br><b>Suoni totali</b>: ' + soundCounter +
                                             '<br>' +
-                                            '<br><b>Performance</b>: ' + perf + '%' +
-                                            '<br><b>Soglia Superamento</b>: ' + thr + '%' +
+                                            '<br><b>Performance</b>: ' + Math.floor(perf * 100) + '%' +
+                                            '<br><b>Soglia Superamento</b>: ' + Math.floor(thr * 100) + '%' +
                                             '<br>' +
                                             '<br>' + passedMessage + '</h4>',
                                         callback:function() {

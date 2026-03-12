@@ -350,9 +350,9 @@
                     },
                     function(data, status) {
                         var js=JSON.parse(data);
-                        let perf = Math.round(js.perf * 100);
+                        let perf = js.perf;
                         passed = js.passed;
-                        let thr = Math.round(js.thr * 100);
+                        let thr = js.thr;
                         var passedMessage='';
                         <c:if test="${difficulty!='training'}">
                         if(passed) {

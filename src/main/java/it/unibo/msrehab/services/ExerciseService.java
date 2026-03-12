@@ -2074,7 +2074,7 @@ public class ExerciseService
         double thresholdDeltaPassed = config.getThresholdDeltaPassed();
         double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
 
-        Optional<History> history = historyController.findLastSolvedByUserAndExerciseAndSessionAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL);
+        Optional<History> history = historyController.findLastSolvedByUserAndExerciseAndSessionAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.ADAPTIVE);
 
 
         int nextLevel = exercise.getLevel(difficulty);
@@ -3895,7 +3895,6 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("attention4()");
 
         model.addAttribute("difficulty", difficulty);

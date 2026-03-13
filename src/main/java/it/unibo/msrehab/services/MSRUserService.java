@@ -77,7 +77,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * entry
  */
 @Controller
-public class MSRUserService {
+public class MSRUserService
+{
 
     private static final Logger logger = LoggerFactory
             .getLogger(MSRUserService.class);
@@ -613,7 +614,9 @@ public class MSRUserService {
                         0, exerciseCategoryValue.toString()));
             }
 
-            for (int i = 0; i < jArr.length(); i++) {
+
+            for (int i = 0; i < jArr.length(); i++)
+            {
                 json = jArr.getJSONObject(i);
                 cat = json.getString("cat");
                        id = json.getInt("id");
@@ -624,8 +627,8 @@ public class MSRUserService {
                 exerciseCategory.getExercises().add(exercise);
             }
 
+
             // HashMap ( Gruppo : Categoria)
-            
             Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
             // Inserisco le keys nell'ordine voluto
             groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
@@ -656,12 +659,10 @@ public class MSRUserService {
     @RequestMapping(value = "/patientdemo", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView patientdemo(HttpServletRequest request, Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request)
-                || WebPagesUtilities.redirectIfNotPatient(request)) {
+        if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotPatient(request)) {
             return new ModelAndView("login");
         } else {
-            JSONArray jArr
-                    = new JSONArray(
+            JSONArray jArr = new JSONArray(
                             "[{\"cat\":\"ATT_SEL_STD\",\"id\":1,\"done\":false},"
                             + "{\"cat\":\"ATT_SEL_FLW\",\"id\":8,\"done\":false},"
                             + "{\"cat\":\"MEM_VIS_1\",\"id\":25,\"done\":false},"
@@ -680,7 +681,8 @@ public class MSRUserService {
             // HashMap (Categoria: Esercizi)
             Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
 
-            for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values()) {
+            for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
+            {
                 ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
                 ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
                 ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
@@ -692,20 +694,21 @@ public class MSRUserService {
                         0, exerciseCategoryValue.toString()));
             }
 
-            for (int i = 0; i < jArr.length(); i++) {
+
+            for (int i = 0; i < jArr.length(); i++)
+            {
                 json = jArr.getJSONObject(i);
                 cat = json.getString("cat");
-             
                 id = json.getInt("id");
                 done = json.getBoolean("done");
-                Exercise exercise = exerciseController.findEntity(id).get();
+                Exercise exercise = exerciseController.getEntityOrThrow(id);
                 // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
                 ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
                 exerciseCategory.getExercises().add(exercise);
             }
 
+
             // HashMap ( Gruppo : Categoria)
-            
             Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
             // Inserisco le keys nell'ordine voluto
             groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
@@ -718,7 +721,8 @@ public class MSRUserService {
                     groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
                 }
             });
-            
+
+
             model.addAttribute("groupMap", groupMap);
             model.addAttribute("patientid", -1);
             model.addAttribute("difficulty", "demo");
@@ -731,11 +735,14 @@ public class MSRUserService {
     
     @RequestMapping(value = "/patienthome", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView patienthome(HttpServletRequest request, Model model) {
+    public ModelAndView patienthome(HttpServletRequest request, Model model)
+    {
         if (WebPagesUtilities.redirectIfNotLogged(request)
                 || WebPagesUtilities.redirectIfNotPatient(request)) {
             return new ModelAndView("login");
-        } else {
+        }
+        else
+        {
             model.addAttribute("name", CookiesManager.geLoggedUserName(request));
             
             model.addAttribute("id", CookiesManager.geLoggedUserId(request));
@@ -747,19 +754,22 @@ public class MSRUserService {
     @RequestMapping(value = "/patientrehabilitation", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView patientrehabilitaion(HttpServletRequest request, Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request)
-                || WebPagesUtilities.redirectIfNotPatient(request)) {
+        if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotPatient(request)) {
             return new ModelAndView("login");
-        } else {
-            List<MSRSession> sessionList
-                    = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request));
+        }
+        else
+        {
+            List<MSRSession> sessionList = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request));
 
-            if (sessionList.isEmpty()) {
+            if (sessionList.isEmpty())
+            {
                 model.addAttribute("back", "patienthome");
                 model.addAttribute("home", "patienthome");
                 model.addAttribute("message", "Non hai esercizi assegnati");
                 return new ModelAndView("error");
-            } else {
+            }
+            else
+            {
                 MSRSession session = sessionList.get(0);
                 JSONArray jArr = new JSONArray(session.getExercises());
 
@@ -772,7 +782,8 @@ public class MSRUserService {
                 // HashMap (Categoria: Esercizi)
                 Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
 
-                for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values()) {
+                for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
+                {
                     ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
                     ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
                     ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
@@ -784,13 +795,15 @@ public class MSRUserService {
                             0, exerciseCategoryValue.toString()));
                 }
 
-                for (int i = 0; i < jArr.length(); i++) {
+
+                for (int i = 0; i < jArr.length(); i++)
+                {
                     json = jArr.getJSONObject(i);
                     cat = json.getString("cat");
                
                     id = json.getInt("id");
                     done = json.getBoolean("done");
-                    Exercise exercise = exerciseController.findEntity(id).get();
+                    Exercise exercise = exerciseController.getEntityOrThrow(id);
                     exercise.setStatus(historyController.isExerciseInHistory(id, session.getId()), done);
                     // se l'esercizio è da iniziare, controllo se il paziente lo aveva già iniziato durante la sessione in ospedale
                     if (exercise.getStatus().equals("todo") && session.getFromSessionId() != null) {
@@ -808,19 +821,25 @@ public class MSRUserService {
                         exerciseCategory.getCompletedExercises().add(exercise);
                     }
                 }
-                if (!interruptedExercisesList.isEmpty()) {
+
+
+                if (!interruptedExercisesList.isEmpty())
+                {
                     List<Integer> interruptedExsIds = new ArrayList<>();
-                    for (Exercise ex : interruptedExercisesList) {
+                    for (Exercise ex : interruptedExercisesList)
                         interruptedExsIds.add(ex.getId());
-                    }
+
                     lastInterruptedExerciseId = historyController.getLastInterruptedExercise(interruptedExsIds, session.getId(), session.getFromSessionId());
                 }
+
+
                 String lastInterruptedExerciseCategory = null;
-                for (Exercise ex : interruptedExercisesList) {
-                    if (ex.getId() == lastInterruptedExerciseId) {
+
+                for (Exercise ex : interruptedExercisesList)
+                    if (ex.getId() == lastInterruptedExerciseId)
                         lastInterruptedExerciseCategory = ex.getCategory().toString();
-                    }
-                }
+
+
                 for (ExerciseCategory exerciseCategory : categoryExerciseMap.values()) {
                     Exercise lastInterruptedEx = getExerciseWithId(lastInterruptedExerciseId, exerciseCategory.getInterruptedExercises());
                     if (lastInterruptedEx != null) {
@@ -843,6 +862,8 @@ public class MSRUserService {
                 groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
                 groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
                 groupMap.put("ATTENTION_RFLXS", new CategoryGroup("ATTENTION_RFLXS"));
+
+
                 categoryExerciseMap.forEach((key, exerciseCategory) -> {
                     if (!exerciseCategory.getExercises().isEmpty())
                     {
@@ -854,6 +875,7 @@ public class MSRUserService {
                         groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
                     }
                 });
+
 
                 model.addAttribute("groupMap", groupMap);
                 model.addAttribute("lastInterruptedExerciseCategory", lastInterruptedExerciseCategory);
@@ -872,7 +894,8 @@ public class MSRUserService {
     
 
 
-private Exercise getExerciseWithId(Integer id, List<Exercise> list) {
+private Exercise getExerciseWithId(Integer id, List<Exercise> list)
+{
         for (Exercise ex : list) {
             if (ex.getId() == id) {
                 return ex;
@@ -881,7 +904,8 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list) {
         return null;
     }
 
-    private String getGroupForCategory(String key) {
+    private String getGroupForCategory(String key)
+    {
         if (key.matches("ATT_SEL_STD|ATT_SEL_FLW|ATT_ALT|ATT_DIV")) {
             return "ATTENTION_FIG";
         } else if (key.matches("ATT_SEL_STD_FAC|ATT_SEL_FLW_FAC|ATT_ALT_FAC|ATT_DIV_FAC")) {

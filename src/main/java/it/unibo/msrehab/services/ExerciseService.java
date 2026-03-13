@@ -69,7 +69,6 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class ExerciseService
 {
-
     private final int NUM_FEAT_ATT_1 = 6; //dimensione array cambio diff
     private final int NUM_FEAT_ATT_2 = 5;
     private final int NUM_FEAT_ATT_3 = 5;
@@ -94,7 +93,6 @@ public class ExerciseService
     private final ExerciseController exerciseController;
 
     private final MSRUserController userController;
-
 
     private final IModel model = JPAController.getInstance();
 
@@ -1956,7 +1954,6 @@ public class ExerciseService
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
         MSRUser user = userController.getEntityOrThrow(userId);
 
-
         History history = new History();
 
 
@@ -1983,7 +1980,6 @@ public class ExerciseService
             passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
-
 
 
         // Store history for assigned exercise
@@ -2014,6 +2010,7 @@ public class ExerciseService
     }
 
 
+
     private PassThreshold getNextLevelIncrementally(
             Integer exerciseId,
             Integer userId,
@@ -2023,7 +2020,6 @@ public class ExerciseService
             @Nullable Integer currentLevel
     )
     {
-
         List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL)
                 .stream()
                 .filter(h -> epochMillisToEpochDay(h.getTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
@@ -2066,8 +2062,8 @@ public class ExerciseService
     private PassThreshold getNextThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
     {
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
-
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
+
 
         double lowerThreshold = config.getLowerThreshold();
         double startThreshold = config.getStartThreshold();//da modificare con una differenza dal massimo
@@ -2075,7 +2071,6 @@ public class ExerciseService
         double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
 
         Optional<History> history = historyController.findLastSolvedByUserAndExerciseAndSessionAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.ADAPTIVE);
-
 
         int nextLevel = exercise.getLevel(difficulty);
         double nextThreshold = startThreshold;
@@ -2096,6 +2091,7 @@ public class ExerciseService
 
         // Il campo is passed ha gia considerato l'esito dell'esercizio (performance >= threshold)
         //double performance = lastHistory.getAbsperformance();
+
 
         nextLevel = lastHistory.getLevel();
         nextThreshold = lastHistory.getPassThreshold();
@@ -2145,8 +2141,8 @@ public class ExerciseService
 
 
 
-    // RL Exercise
 
+    // RL Exercise
     @RequestMapping(value = "/createattention1", method = RequestMethod.GET)
     public ModelAndView createattention1(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2458,12 +2454,13 @@ public class ExerciseService
 
 
         // Forward user to the next exercise
-//siamo sicuri che la vecchia history sia sul db salvata e committata
+        //siamo sicuri che la vecchia history sia sul db salvata e committata
 
         History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
+
 
 
         HttpSession httpSess = request.getSession();
@@ -2527,10 +2524,10 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
             Model model)
     {
-
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
         String argument = "";
@@ -2547,7 +2544,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_2];
 
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
@@ -2583,7 +2580,8 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&assignmentid=" + assignment.getId();
+                + "&rlagent=" + rlagent
+                + "&assignmentid=" + assignment.getId()
                 ;
         return new ModelAndView("redirect:" + url);
     }
@@ -2602,7 +2600,6 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("attention2()");
 
         model.addAttribute("difficulty", difficulty);
@@ -2633,10 +2630,10 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
-
         logger.debug("attention2phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
@@ -2659,6 +2656,7 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("assignmentid", assignmentid);
+        model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention2a");
     }
 
@@ -2681,10 +2679,10 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
-
         logger.debug("attention2phase2()");
 
         List<ExElement> l = buildExElementListFromIds(exElementIds);
@@ -2706,6 +2704,7 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
+        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
         return new ModelAndView("attention2b");
     }
@@ -2733,362 +2732,116 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) throws ServletException, IOException
     {
-
         if (patientid == -1)
-        {
             if (difficulty.equals("training"))
-            {
                 return new ModelAndView("redirect: patienttraining");
-            } else
-            {  //difficulty.equals("demo"))
+            else
                 return new ModelAndView("redirect: patientdemo");
-            }
-        } else
+
+
+        if (difficulty.equals("training") || difficulty.equals("demo"))
+            return new ModelAndView("redirect: patientrehabilitation");
+
+
+        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        History history = historyController.getEntityOrThrow(assignmentid);
+        history.setExid(exerciseid);
+        history.setPassed(passed);
+        history.setUserid(patientid);
+        history.setpTime(pTime);
+        history.setpCorrect(pCorrect);
+        history.setpMissed(pMissed);
+        history.setpWrong(pWrong);
+        history.setMaxtime((double) time * nelements);
+        history.setDifficulty(difficulty);
+
+        // Calculate performance
+        double ft;
+        ft = fitnessController.calculateFitness(false, history);
+
+        history.setAbsperformance(ft);
+
+        ft = fitnessController.calculateFitness(true, history);
+        history.setRelperformance(ft);
+
+        if (!historyController.putEntity(history))
         {
-            if (difficulty.equals("training") || difficulty.equals("demo"))
-            {
-                return new ModelAndView("redirect: patientrehabilitation");
-            } else
-            {
-                int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
-
-                History history = historyController.getEntityOrThrow(assignmentid);
-                history.setExid(exerciseid);
-                history.setPassed(passed);
-                history.setUserid(patientid);
-                history.setpTime(pTime);
-                history.setpCorrect(pCorrect);
-                history.setpMissed(pMissed);
-                history.setpWrong(pWrong);
-                history.setMaxtime((double) time * nelements);
-                history.setDifficulty(difficulty);
-
-                // Calculate performance
-                double ft = fitnessController.calculateFitness(false, history);
-                history.setAbsperformance(ft);
-                ft = fitnessController.calculateFitness(true, history);
-                history.setRelperformance(ft);
-
-                history.setPassed(passed);
-
-                history.setLevel(level);
-                history.setSessid(sessid);
-
-                Long t = LocalDateTime.now().toDateTime().getMillis();
-                history.setTimestamp(t);
-
-                String url;
-                HttpSession httpSess = request.getSession();
-
-                Integer[] diffVar = null;
-                if (ATT_SEL_FLW.toString().equals(type))
-                {
-                    diffVar = (Integer[]) (httpSess.getAttribute("diffVar2"));
-                } else if (ATT_SEL_FLW_FAC.toString().equals(type))
-                {
-                    diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Fac"));
-                } else if (ATT_SEL_FLW_ORI.toString().equals(type))
-                {
-                    diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Ori"));
-                }
-
-                // Check if the difficulty has been
-                // increased / decreased by the operator
-                if ((lastexercisepassed && passed) || (newLevel != -1))
-                {
-                    // increase difficulty
-                    if (newLevel != -1)
-                    {
-                        level = newLevel;
-                    } else
-                    {
-                        level++;
-                    }
-
-                    if (level >= 1 && level <= 3)
-                    {
-                        difficulty = "easy";
-                    } else if (level >= 4 && level <= 7)
-                    {
-                        difficulty = "medium";
-                    } else if (level >= 8)
-                    {
-                        difficulty = "difficult";
-                    }
-
-
-                    //  if (allMaxFeatures) {
-                    if (level > 12)
-                    {
-                        MSRSession sess = sessionController.findEntity(sessid).orElse(null);
-                        JSONArray jsonArr = new JSONArray(sess.getExercises());
-                        JSONObject json;
-                        boolean sessionEnded = true;
-                        for (int i = 0; i < jsonArr.length(); i++)
-                        {
-                            json = jsonArr.getJSONObject(i);
-                            if (json.getInt("id") == exerciseid)
-                            {
-                                json.put("done", true);
-                                jsonArr.put(i, json);
-                            }
-                            sessionEnded = sessionEnded && json.getBoolean("done");
-                        }
-                        sess.setExercises(jsonArr.toString());
-                        sess.setActive(!sessionEnded);
-                        if (!sessionController.updateEntity(sess))
-                        {
-                            logger.error("Error updating MSRSession to DB");
-                            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                            model.addAttribute("back", "patienthome");
-                            model.addAttribute("home", "patienthome");
-                            return new ModelAndView("error");
-                        }
-                        url = "patienthome";
-                    } else
-                    {
-                        switch (level)
-                        {
-
-                            case 1: // easy min
-                                ntargets = 2;
-                                diffVar[0] = 1;
-                                nelements = 30;
-                                diffVar[1] = 1;
-                                //nelements = 5; diffVar[1] = 1;
-                                distractor = "no";
-                                diffVar[2] = 1;
-                                //time = 4;
-                                time = 2.5;
-                                diffVar[3] = 1;
-                                color = "color";
-                                diffVar[4] = 1;
-                                break;
-                            case 2:
-                                ntargets = 3;
-                                diffVar[0] = 2;
-                                nelements = 30;
-                                diffVar[1] = 1;
-                                //nelements = 5; diffVar[1] = 1;
-                                distractor = "no";
-                                diffVar[2] = 1;
-                                //time = 4;
-                                time = 2.5;
-                                diffVar[3] = 1;
-                                color = "color";
-                                diffVar[4] = 1;
-                                break;
-                            case 3:
-                                ntargets = 3;
-                                diffVar[0] = 2;
-                                nelements = 48;
-                                diffVar[1] = 2;
-                                //nelements = 10; diffVar[1] = 2;
-                                distractor = "no";
-                                diffVar[2] = 1;
-                                //time = 4;
-                                time = 2.5;
-                                diffVar[3] = 1;
-                                color = "color";
-                                diffVar[4] = 1;
-                                break;
-                            case 4: // medium min
-                                ntargets = 3;
-                                diffVar[0] = 2;
-                                nelements = 48;
-                                diffVar[1] = 2;
-                                //nelements = 10; diffVar[1] = 2;
-                                distractor = "no";
-                                diffVar[2] = 2;
-                                //time = 4;
-                                time = 2.0;
-                                diffVar[3] = 1;
-                                color = "color";
-                                diffVar[4] = 1;
-                                break;
-                            case 5:
-                                ntargets = 3;
-                                diffVar[0] = 2;
-                                nelements = 48;
-                                diffVar[1] = 2;
-                                //nelements = 10; diffVar[1] = 2;
-                                distractor = "no";
-                                diffVar[2] = 2;
-                                //time = 3;
-                                time = 2.0;
-                                diffVar[3] = 2;
-                                color = "omo";
-                                diffVar[4] = 1;
-                                break;
-                            case 6:
-                                ntargets = 3;
-                                diffVar[0] = 2;
-                                nelements = 66;
-                                diffVar[1] = 2;
-                                //nelements = 10; diffVar[1] = 2;
-                                distractor = "no";
-                                diffVar[2] = 2;
-                                //time = 3;
-                                time = 2.0;
-                                diffVar[3] = 2;
-                                color = "omo";
-                                diffVar[4] = 2;
-                                break;
-                            case 7:
-                                ntargets = 3;
-                                diffVar[0] = 3;
-                                nelements = 80;
-                                diffVar[1] = 2;
-                                //nelements = 10; diffVar[1] = 2;
-                                distractor = "no";
-                                diffVar[2] = 2;
-                                //time = 3;
-                                time = 2.0;
-                                diffVar[3] = 2;
-                                color = "omo";
-                                diffVar[4] = 2;
-                                break;
-                            case 8: // difficult min
-                                ntargets = 4;
-                                diffVar[0] = 3;
-                                nelements = 66;
-                                diffVar[1] = 3;
-                                //nelements = 15; diffVar[1] = 3;
-                                distractor = "no";
-                                diffVar[2] = 2;
-                                //time = 3;
-                                time = 2.0;
-                                diffVar[3] = 2;
-                                color = "omo";
-                                diffVar[4] = 2;
-                                break;
-                            case 9:
-                                ntargets = 4;
-                                diffVar[0] = 3;
-                                nelements = 66;
-                                diffVar[1] = 3;
-                                //nelements = 15; diffVar[1] = 3;
-                                distractor = "no";
-                                diffVar[2] = 3;
-                                //time = 3;
-                                time = 1.5;
-                                diffVar[3] = 2;
-                                color = "omo";
-                                diffVar[4] = 2;
-                                break;
-                            case 10:
-                                ntargets = 4;
-                                diffVar[0] = 3;
-                                nelements = 80;
-                                diffVar[1] = 3;
-                                //nelements = 15; diffVar[1] = 3;
-                                distractor = "no";
-                                diffVar[2] = 3;
-                                //time = 2;
-                                time = 1.5;
-                                diffVar[3] = 3;
-                                color = "omo";
-                                diffVar[4] = 2;
-                                break;
-                            case 11:
-                                ntargets = 5;
-                                diffVar[0] = 3;
-                                nelements = 66;
-                                diffVar[1] = 3;
-                                //nelements = 15; diffVar[1] = 3;
-                                distractor = "no";
-                                diffVar[2] = 3;
-                                //time = 2;
-                                time = 1.5;
-                                diffVar[3] = 3;
-                                color = "omo";
-                                diffVar[4] = 3;
-                                break;
-                            case 12:
-                                ntargets = 5;
-                                diffVar[0] = 3;
-                                nelements = 80;
-                                diffVar[1] = 3;
-                                //nelements = 15; diffVar[1] = 3;
-                                distractor = "no";
-                                diffVar[2] = 3;
-                                //time = 2;
-                                time = 1.5;
-                                diffVar[3] = 3;
-                                color = "omo";
-                                diffVar[4] = 3;
-                                break;
-                        }
-
-
-                        History nextAssignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, -1, level);
-
-                        url = "/attention2phase1"
-                                + "?difficulty=" + difficulty
-                                + "&level=" + level
-                                + "&patientid=" + patientid
-                                + "&exerciseid=" + exerciseid
-                                + "&category=" + category
-                                + "&lastexercisepassed=" + false
-                                + "&ntargets=" + ntargets
-                                + "&nelements=" + nelements
-                                + "&color=" + color
-                                + "&distractor=" + distractor
-                                + "&time=" + time
-                                + "&sessid=" + sessid
-                                + "&type=" + type
-                                + "&exname=" + exname
-                                + "&assignmentid=" + nextAssignment.getId();
-                        ;
-                    }
-                } else
-                {
-                    // same difficulty different exercise
-                    url = "/attention2phase1"
-                            + "?difficulty=" + difficulty
-                            + "&level=" + level
-                            + "&patientid=" + patientid
-                            + "&exerciseid=" + exerciseid
-                            + "&category=" + category
-                            + "&lastexercisepassed=" + passed
-                            + "&ntargets=" + ntargets
-                            + "&nelements=" + nelements
-                            + "&color=" + color
-                            + "&distractor=" + distractor
-                            + "&time=" + time
-                            + "&sessid=" + sessid
-                            + "&type=" + type
-                            + "&exname=" + exname;
-                }
-
-                if (!historyController.putEntity(history))
-                {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");
-                }
-
-                if (ATT_SEL_FLW.toString().equals(type))
-                {
-                    httpSess.setAttribute("diffVar2", diffVar);
-                } else if (ATT_SEL_FLW_FAC.toString().equals(type))
-                {
-                    httpSess.setAttribute("diffVar2Fac", diffVar);
-                } else if (ATT_SEL_FLW_ORI.toString().equals(type))
-                {
-                    httpSess.setAttribute("diffVar2Ori", diffVar);
-                }
-
-                return new ModelAndView("redirect:" + url);
-            }
+            logger.error("Error adding History to DB");
+            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
+            model.addAttribute("back", "patienthome");
+            model.addAttribute("home", "patienthome");
+            return new ModelAndView("error");
         }
+
+        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        {
+            if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
+            {
+                logger.error("Error updating MSRSession to DB");
+                model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
+                model.addAttribute("back", "patienthome");
+                model.addAttribute("home", "patienthome");
+                return new ModelAndView("error");
+            }
+            return new ModelAndView("redirect:patienthome");
+        }
+
+
+        // Forward user to the next exercise
+        //siamo sicuri che la vecchia history sia sul db salvata e committata
+
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        level = assignment.getLevel();
+
+        difficulty = exercise.getDifficulty(level);
+
+
+        String url;
+        HttpSession httpSess = request.getSession();
+
+
+
+        Integer[] diffVar = null;
+        if (ATT_SEL_FLW.toString().equals(type))
+            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2"));
+        else if (ATT_SEL_FLW_FAC.toString().equals(type))
+            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Fac"));
+        else if (ATT_SEL_FLW_ORI.toString().equals(type))
+            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Ori"));
+
+
+        url = "/attention2phase1"
+                + "?difficulty=" + difficulty
+                + "&level=" + level
+                + "&patientid=" + patientid
+                + "&exerciseid=" + exerciseid
+                + "&category=" + category
+                + "&lastexercisepassed=" + passed
+                + "&ntargets=" + ntargets
+                + "&nelements=" + nelements
+                + "&color=" + color
+                + "&distractor=" + distractor
+                + "&time=" + time
+                + "&sessid=" + sessid
+                + "&type=" + type
+                + "&exname=" + exname
+                + "&rlagent=" + rlagent
+                + "&assignmentid=" + assignment.getId();
+
+        if (ATT_SEL_FLW.toString().equals(type))
+            httpSess.setAttribute("diffVar2", diffVar);
+        else if (ATT_SEL_FLW_FAC.toString().equals(type))
+            httpSess.setAttribute("diffVar2Fac", diffVar);
+        else if (ATT_SEL_FLW_ORI.toString().equals(type))
+            httpSess.setAttribute("diffVar2Ori", diffVar);
+
+        return new ModelAndView("redirect:" + url);
     }
 
     @RequestMapping(value = "/createattention3", method = RequestMethod.GET)
@@ -3103,28 +2856,24 @@ public class ExerciseService
             HttpServletRequest request,
             Model model)
     {
-
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
         String argument = "";
         if (ATT_SEL_STD.toString().equals(type))
-        {
             argument = "diffVar3";
-        } else if (ATT_SEL_STD_FAC.toString().equals(type))
-        {
+        else if (ATT_SEL_STD_FAC.toString().equals(type))
             argument = "diffVar3Fac";
-        } else if (ATT_SEL_STD_ORI.toString().equals(type))
-        {
+        else if (ATT_SEL_STD_ORI.toString().equals(type))
             argument = "diffVar3Ori";
-        }
+
+
         diffVar = (Integer[]) (httpSess.getAttribute(argument));
         if (diffVar == null)
-        {
             diffVar = new Integer[NUM_FEAT_ATT_3];
-        }
 
         History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
         int level = assignment.getLevel();
+
 
         Map<String, Object> parameters = createParametersAttention3(level, diffVar);
         if (ATT_ALT.toString().equals(type))
@@ -3172,9 +2921,7 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("attention3()");
-
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("patientid", patientid);
         model.addAttribute("exerciseid", exerciseid);
@@ -3205,11 +2952,9 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             Model model)
     {
-
         logger.debug("attention3phase1()");
 
         CategoryValue categoryValue = CategoryValue.valueOf(category);
-
 
         ExElement targetelement1 = exElementController.getRandomRecordsByCategory(categoryValue, 1).get(0);
 
@@ -3222,8 +2967,8 @@ public class ExerciseService
                     .filter(el -> !Objects.equals(el.getEldescr(), targetelement1.getEldescr()))
                     .findFirst()
                     .orElse(targetelement1);
-
-        } else
+        }
+        else
         {
             targetelement2 = exElementController.getAllRecordsByCategory(categoryValue)
                     .stream()
@@ -3232,6 +2977,7 @@ public class ExerciseService
                     .findFirst()
                     .orElse(targetelement1);
         }
+
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
@@ -3285,11 +3031,11 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             Model model)
     {
-
         logger.debug("attention3phase2()");
         ExElement t0;
         Integer targetId = Integer.parseInt(targetelement1);
         ExElement target = exElementController.findEntity(targetId).orElse(null);
+
 
         Integer noTargetId = Integer.parseInt(targetelement2);
         ExElement noTarget = exElementController.findEntity(noTargetId).orElse(null);
@@ -3301,8 +3047,7 @@ public class ExerciseService
 
         for (int i = 0; i < iterations; i++)
         {
-            List<ExElement> exElementList2
-                    = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelementspertarget);
+            List<ExElement> exElementList2 = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelementspertarget);
 
             int nElementiTarget = (int) Math.round(nelementspertarget * frequenza);
 
@@ -3340,7 +3085,8 @@ public class ExerciseService
                     }
                 }
 
-            } else if (cntSubstitutionsTarget < 0)
+            }
+            else if (cntSubstitutionsTarget < 0)
             {
 
                 for (int ii = 0; ii < exElementList2.size() - 1 && cntSubstitutionsTarget < 0; ii++)
@@ -3378,15 +3124,17 @@ public class ExerciseService
         model.addAttribute("leftiterations", --leftiterations);
         model.addAttribute("targetelement1", targetelement1);
         model.addAttribute("targetelement2", targetelement2);
+
         if (ATT_ALT_CMP.toString().equals(exname))
         {
-            model.addAttribute("targetelement1img", exElementController.findEntity(Integer.parseInt(targetelement1)).orElse(null).getEldescr());
-            model.addAttribute("targetelement2img", exElementController.findEntity(Integer.parseInt(targetelement2)).orElse(null).getEldescr());
+            model.addAttribute("targetelement1img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement1)).getEldescr());
+            model.addAttribute("targetelement2img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement2)).getEldescr());
         } else
         {
-            model.addAttribute("targetelement1img", exElementController.findEntity(Integer.parseInt(targetelement1)).orElse(null).getUrl());
-            model.addAttribute("targetelement2img", exElementController.findEntity(Integer.parseInt(targetelement2)).orElse(null).getUrl());
+            model.addAttribute("targetelement1img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement1)).getUrl());
+            model.addAttribute("targetelement2img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement2)).getUrl());
         }
+
         model.addAttribute("firsttarget", !firsttarget);
 
         model.addAttribute("exElementList", exElementList);

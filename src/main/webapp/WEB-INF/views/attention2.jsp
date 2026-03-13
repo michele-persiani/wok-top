@@ -95,43 +95,82 @@
             </div>
             
             <!--div class="navbar" style="background-color:white"-->
-                <div class="well well-sm">
-                    <h3 align="center">Beccali al volo! (${exdescr})</h3>
-                    <hr></hr>                    
-                    <div class="row">
-                        <div class="col-sm-8">
-                            <button id="tryexercise" class="btn btn-lg btn-warning pull-right"
-                                        onclick="
-                                            post('createattention2', {
-                                                difficulty: 'training',
-                                                patientid: '${patientid}',
-                                                exerciseid: '${exerciseid}',
-                                                category: '${category}',
-                                                sessid: '${sessid}',
-                                                type: '${type}',
-                                                exname: '${exname}'
-                                            }, 'get');">
-                                    Prova esercizio
-                                </button>                        
-                        </div>
-                        <div class="col-sm-8"> </div>
-                        <div class="col-sm-8">
-                            <button class="btn btn-lg btn-success pull-left"
-                                    onclick="                                        
+
+
+            <div class="well well-sm">
+                <h3 align="center">Su 2 fronti (${exdescr})</h3>
+                <hr></hr>
+                <div class="row">
+                    <div class="col-sm-8">
+                        <button id="tryexercise" class="btn btn-lg btn-warning pull-right"
+                                onclick="
                                         post('createattention2', {
-                                            difficulty: '${difficulty}',
-                                                patientid: '${patientid}',
-                                                exerciseid: '${exerciseid}',
-                                                category: '${category}',
-                                                sessid: '${sessid}',
-                                                type: '${type}',
-                                                exname: '${exname}'
+                                        difficulty: 'training',
+                                        patientid: '${patientid}',
+                                        exerciseid: '${exerciseid}',
+                                        category: '${category}',
+                                        sessid: '${sessid}',
+                                        type: '${type}',
+                                        exname: '${exname}'
                                         }, 'get');">
-                                Inizia esercizio
+                            Prova esercizio
+                        </button>
+                    </div>
+                    <div class="col-sm-8"> </div>
+                    <div class="col-sm-8">
+                        <button class="btn btn-lg btn-success pull-left"
+                                onclick="
+                                        post('createattention2', {
+                                        difficulty: '${difficulty}',
+                                        patientid: '${patientid}',
+                                        exerciseid: '${exerciseid}',
+                                        category: '${category}',
+                                        sessid: '${sessid}',
+                                        type: '${type}',
+                                        exname: '${exname}',
+                                        rlagent: -1
+                                        }, 'get');">
+                            Inizia esercizio
+                        </button>
+                        <c:if test="${rl == true}">
+                            <!--
+                            <button class="btn btn-lg btn-success pull-left"
+                            onclick="
+                            post('createattention4', {
+                            difficulty: '${difficulty}',
+                            patientid: '${patientid}',
+                            exerciseid: '${exerciseid}',
+                            category: '${category}',
+                            sessid: '${sessid}',
+                            type: '${type}',
+                            exname: '${exname}',
+                            rlagent: 0
+                            }, 'get');">
+                            Inizia esercizio (agente livelli)
                             </button>
-                        </div>
+                            -->
+                            <button class="btn btn-lg btn-success pull-left"
+                                    onclick="
+                                            post('createattention2', {
+                                            difficulty: '${difficulty}',
+                                            patientid: '${patientid}',
+                                            exerciseid: '${exerciseid}',
+                                            category: '${category}',
+                                            sessid: '${sessid}',
+                                            type: '${type}',
+                                            exname: '${exname}',
+                                            rlagent: 1
+                                            }, 'get');">
+                                Inizia esercizio (agente adattivo)
+                            </button>
+                        </c:if>
                     </div>
                 </div>
+            </div>
+
+
+
+
             </div>
 
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->

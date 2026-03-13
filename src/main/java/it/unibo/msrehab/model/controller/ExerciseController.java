@@ -54,7 +54,16 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .max()
                 .orElse(0);
     }
-    
+
+    @Override
+    public Exercise getEntityOrThrow(Object id)
+    {
+        return getTransactionManager()
+                .executeSingleResultNamedQuery("Exercise.findById", Exercise.class, q -> {
+                    q.setParameter("exerciseid", id);
+                }).orElseThrow(() -> new IllegalArgumentException(""));
+    }
+
     public List<String> getAllExerciseTypes()
     {
         return getAllEntities()

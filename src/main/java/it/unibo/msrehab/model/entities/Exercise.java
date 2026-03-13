@@ -84,6 +84,13 @@ public class Exercise extends BaseEntity
         // att alt
         ATT_ALT_ANM, ATT_ALT_ARR, ATT_ALT_CHS, ATT_ALT_CMP,
         ATT_ALT_FAC, ATT_ALT_FRT, ATT_ALT_VEG,
+
+        ATT_SEL_FLW_VEG_RL,
+        ATT_SEL_FLW_ANM_RL,
+                ATT_SEL_FLW_CHS_RL,
+        ATT_SEL_FLW_ARR_RL,
+                ATT_SEL_FLW_FAC_RL,
+
         // att div
         ATT_DIV_ANM, ATT_DIV_ARR, ATT_DIV_CHS, ATT_DIV_CMP,
         ATT_DIV_FAC, ATT_DIV_FRT, ATT_DIV_VEG,

@@ -207,6 +207,7 @@
                                             type: '${type}',
                                             exname: '${exname}',
                                             assignmentid: '${assignmentid}',
+                                            rlagent: '${rlagent}',
                                         },'get');">
                             Inizia esercizio
                         </button>

@@ -67,6 +67,7 @@ public class ThresholdAgentConfig extends BaseEntity
         this.thresholdDeltaNotPassed = negativeThresholdDelta;
     }
 
+
     public static ThresholdAgentConfig getSingletonEntity(IModel model)
     {
         return model.getEntityController(ThresholdAgentConfig.class)

@@ -45,6 +45,7 @@ public class RLService
         return new ModelAndView("rlconfig")
                 .addObject("levelAgentConfig", levelAgentConfig)
                 .addObject("thresholdAgentConfig", thresholdAgentConfig)
+                .addObject("deltaInferiorLevel", thresholdAgentConfig.getStartThreshold() - thresholdAgentConfig.getLowerThreshold())
                 .addObject("maxLevel", 10)
                 ;
     }

@@ -471,7 +471,8 @@
                                 sessid: '${sessid}',
                                 type: '${type}',
                                 exname: '${exname}',
-                                assignmentid : '${assignmentid}'
+                                assignmentid : '${assignmentid}',
+                                rlagent: '${rlagent}',
                             },'get');
                                 }
                     });

@@ -299,6 +299,7 @@
                      </div>
                 </form>
             </div>
+
             <div class="well" style="text-align: center">
                 <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio" onclick="checkSpace()">Spazio</button>
                 <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono" onclick="checkSound()">Suono</button>

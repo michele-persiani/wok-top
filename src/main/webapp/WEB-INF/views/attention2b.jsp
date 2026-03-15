@@ -297,7 +297,9 @@
             </div>
 
         <div class="well" style="text-align: center">
-            <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio" onclick="spacePressed()">Spazio</button>
+            <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio" onclick="spacePressed()" style="width:100px; height:60px; font-size:20px;">
+                Spazio
+            </button>
         </div>
         </div>
         <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
@@ -424,7 +426,8 @@
                     "maxtime": ${time}*${nelements},
                     "sessid": ${sessid},
                     "difficulty": '${difficulty}',
-                    "level": ${level}
+                    "level": ${level},
+                    "assignmentid" : ${assignmentid}
                 },
                 function(data, status) {
                     var js=JSON.parse(data);
@@ -451,7 +454,8 @@
                                 '<br>' +
                                 '<br>' + passedMessage + '</h4>',
                         callback:function() {
-                            post('attention2phase3', {
+                            post('attention2phase3',
+                                {
                                 difficulty: '${difficulty}',
                                 level: '${level}',
                                 patientid: '${patientid}',

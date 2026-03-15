@@ -1964,6 +1964,7 @@ public class ExerciseService
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
         MSRUser user = userController.getEntityOrThrow(userId);
 
+
         History history = new History();
 
 
@@ -2575,6 +2576,7 @@ public class ExerciseService
         //Integer time = (Integer) (parameters.get("time"));
         Double time = (Double) (parameters.get("time"));
 
+
         String url = "/attention2phase1"
                 + "?difficulty=" + difficulty
                 + "&level=" + level
@@ -2790,6 +2792,7 @@ public class ExerciseService
             return new ModelAndView("error");
         }
 
+
         if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
@@ -2802,6 +2805,7 @@ public class ExerciseService
             }
             return new ModelAndView("redirect:patienthome");
         }
+
 
 
         // Forward user to the next exercise
@@ -6466,7 +6470,6 @@ public class ExerciseService
                         .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
                 ;
 
-
                 history.setExid(exerciseid);
                 history.setPassed(passed);
                 history.setUserid(patientid);
@@ -6489,13 +6492,15 @@ public class ExerciseService
                 history.setLevel(level);
                 history.setSessid(sessid);
 
-           /*     if (historyController.addRecord(history)==-1) {
+                /*
+                if (historyController.addRecord(history)==-1) {
                     logger.error("Error adding History to DB");
                     model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
                     model.addAttribute("back", "patienthome");
                     model.addAttribute("home", "patienthome");
                     return new ModelAndView("error");                    
-                }*/
+                }
+                */
 
                 String url;
                 HttpSession httpSess = request.getSession();
@@ -6544,10 +6549,12 @@ public class ExerciseService
                         if (level >= 1 && level <= 7)
                         {
                             difficulty = "easy";
-                        } else if (level >= 8 && level <= 14)
+                        }
+                        else if (level >= 8 && level <= 14)
                         {
                             difficulty = "medium";
-                        } else if (level >= 15 && level <= 21)
+                        }
+                        else if (level >= 15 && level <= 21)
                         {
                             difficulty = "difficult";
                         }
@@ -6570,7 +6577,9 @@ public class ExerciseService
                                 + "&time=" + newtime
                                 + "&color=" + newcolor
                                 + "&nelements=" + newnelements
-                                + "&sessid=" + sessid;
+                                + "&sessid=" + sessid
+                        ;
+
                         //lastExerciseFunEx1Passed = false;
                     }
                 } else
@@ -6587,7 +6596,8 @@ public class ExerciseService
                             + "&time=" + time
                             + "&color=" + color
                             + "&nelements=" + nelements
-                            + "&sessid=" + sessid;
+                            + "&sessid=" + sessid
+                    ;
 
                     //lastExerciseFunEx1Passed = passed;
                 }
@@ -6604,6 +6614,7 @@ public class ExerciseService
             }
         }
     }
+
 
     @RequestMapping(value = "/createexecfunct2", method = RequestMethod.GET)
     public ModelAndView createexecfunct2(
@@ -6664,6 +6675,8 @@ public class ExerciseService
                 //difficulty = historyList.get(0).getDifficulty();
             }
         }
+
+
         Map<String, Object> parameters = createParametersExecfunct1(level, diffVar);
         httpSess.setAttribute("diffVar9", diffVar);
         String answer = (String) (parameters.get("answer"));
@@ -6681,7 +6694,9 @@ public class ExerciseService
                 + "&time=" + time
                 + "&color=" + color
                 + "&nelements=" + nelements
-                + "&sessid=" + sessid;
+                + "&sessid=" + sessid
+                ;
+
         return new ModelAndView("redirect:" + url);
     }
 
@@ -6712,6 +6727,7 @@ public class ExerciseService
         history.setSessid(sessid);
         history.setDifficulty(difficulty);
         history.setLevel(level);
+
 
         // Calculate performance
         double perf = fitnessController.calculateFitness(false, history);

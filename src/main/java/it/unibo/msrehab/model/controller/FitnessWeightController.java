@@ -75,7 +75,8 @@ public class FitnessWeightController extends BaseEntityController<FitnessWeight>
         if (precision == 0 && recall == 0)
         {
             ft = 0;
-        } else
+        }
+        else
         {
             ft = (1 + Math.pow(beta, 2.0)) * (precision * recall / (Math.pow(beta, 2.0) * precision + recall));
         }

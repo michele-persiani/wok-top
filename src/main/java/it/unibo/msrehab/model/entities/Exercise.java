@@ -84,17 +84,13 @@ public class Exercise extends BaseEntity
         // att alt
         ATT_ALT_ANM, ATT_ALT_ARR, ATT_ALT_CHS, ATT_ALT_CMP,
         ATT_ALT_FAC, ATT_ALT_FRT, ATT_ALT_VEG,
-
         ATT_SEL_FLW_VEG_RL,
-        ATT_SEL_FLW_ANM_RL,
-                ATT_SEL_FLW_CHS_RL,
-        ATT_SEL_FLW_ARR_RL,
-                ATT_SEL_FLW_FAC_RL,
-
+        ATT_SEL_FLW_ANM_RL, ATT_SEL_FLW_CHS_RL,
+        ATT_SEL_FLW_ARR_RL, ATT_SEL_FLW_FAC_RL,
         // att div
         ATT_DIV_ANM, ATT_DIV_ARR, ATT_DIV_CHS, ATT_DIV_CMP,
         ATT_DIV_FAC, ATT_DIV_FRT, ATT_DIV_VEG,
-        ATT_DIV_FRT_RL, ATT_DIV_CHS_RL, ATT_DIV_ANM_RL, ATT_DIV_VEG_RL,                     // Names for RL versions
+        ATT_DIV_FRT_RL, ATT_DIV_CHS_RL, ATT_DIV_ANM_RL, ATT_DIV_VEG_RL,  // Names for RL versions
         // mem vis 1
         MEM_VIS_1_ANM, MEM_VIS_1_ARR, MEM_VIS_1_CHS, MEM_VIS_1_CMP,
         MEM_VIS_1_FAC, MEM_VIS_1_FRT, MEM_VIS_1_VEG,

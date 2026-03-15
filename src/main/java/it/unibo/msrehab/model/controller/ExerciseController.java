@@ -55,6 +55,7 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .orElse(0);
     }
 
+
     @Override
     public Exercise getEntityOrThrow(Object id)
     {
@@ -64,6 +65,7 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 }).orElseThrow(() -> new IllegalArgumentException(""));
     }
 
+
     public List<String> getAllExerciseTypes()
     {
         return getAllEntities()
@@ -72,12 +74,14 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .distinct()
                 .collect(Collectors.toList());
     }
-    
+
+
     public List<Exercise> findAllExercisesByType(String exerciseType)
     {
         return getAllEntities(ex -> Objects.equals(ex.getType(), exerciseType));
     }
-    
+
+
     public String getExerciseFullName(Exercise.ExerciseCategoryValue category)
     {
         return findAllExercisesByCategory(category)
@@ -86,7 +90,8 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .map(Exercise::getFullName)
                 .orElse("");
     }
-    
+
+
     public String findGlobalCategory(Exercise.ExerciseCategoryValue category)
     {
         return findAllExercisesByCategory(category)
@@ -95,7 +100,8 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .map(Exercise::getGlobalCategory)
                 .orElse("");
     }
-    
+
+
     public String findExerciseTypeFromCategory(Exercise.ExerciseCategoryValue category)
     {
         return findAllExercisesByCategory(category)
@@ -103,6 +109,5 @@ public class ExerciseController extends BaseEntityController<Exercise>
                 .findFirst()
                 .map(Exercise::getType)
                 .orElse("");
-    } 
-
+    }
 }

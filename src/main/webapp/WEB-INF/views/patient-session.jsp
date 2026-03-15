@@ -158,6 +158,8 @@
                                 </div>
                             </spring:bind>
                         </div>
+
+
                         <div class="col-sm-6">
                             <spring:bind path="ATT_ALT">
                                 <div class="form-group">
@@ -171,6 +173,8 @@
                                 </div>
                             </spring:bind>
                         </div>
+
+
                         <div class="col-sm-6">
                             <spring:bind path="ATT_DIV">
                                 <div class="form-group">

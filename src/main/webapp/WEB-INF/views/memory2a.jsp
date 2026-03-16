@@ -159,6 +159,7 @@
                                     time: '${time}',
                                     sessid: '${sessid}',
                                     exname: '${exname}',
+                                    rlagent: '${rlagent}',
                                     assignmentid: ${assignmentid}
                                 }, 'get');">
                             Inizia esercizio

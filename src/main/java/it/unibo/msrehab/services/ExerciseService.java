@@ -68,6 +68,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 
+
+
 /**
  * Class that provides servlets for exercises.
  */
@@ -123,12 +125,11 @@ public class ExerciseService
 
     public static Map<String, Object> createParametersAttention1(Integer level, Integer[] diffVar, ExerciseNameValue exname)
     {
-
-
-        Map<String, Object> parameters = new LinkedHashMap<String, Object>();
+        Map<String, Object> parameters = new LinkedHashMap<>();
 
         int ntargets = 0, nelements = 0, time = 0, ncols = 0;
         String alignment = "", color = "", distractor = "";
+
         switch (level)
         {
             case -1: // training
@@ -358,6 +359,7 @@ public class ExerciseService
     {
 
         Map<String, Object> parameters = new LinkedHashMap<String, Object>();
+
 
         int ntargets = 0, nelements = 0; //time = 0;
         double time = 0.0;
@@ -1118,6 +1120,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 nelements = 3;
                 ntargets = 3;
                 diffVar[0] = 1;
@@ -1978,17 +1981,20 @@ public class ExerciseService
         {
             // Non usato al momento
             passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, user));
+            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.LEVEL);
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
         {
             passThreshold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
+            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else
         {
             //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
             passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
+            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
 
@@ -2001,13 +2007,15 @@ public class ExerciseService
         history.setLevel(passThreshold.getLevel());
         history.setPassThreshold(passThreshold.getThreshold());
         history.setTimestamp(System.currentTimeMillis());
-        if (!("training".equals(difficulty) || "demo".equals(difficulty)) ){
-        if (!historyController.insertEntity(history))
-        {
-            logger.error("Error inserting assignment");
-            throw new RuntimeException("Error inserting assignment");
-        }
 
+
+        if (!("training".equals(difficulty) || "demo".equals(difficulty)))
+        {
+            if (!historyController.insertEntity(history))
+            {
+                logger.error("Error inserting assignment");
+                throw new RuntimeException("Error inserting assignment");
+            }
         logger.info("Next level/threshold: " + history.getLevel() + "/" + history.getPassThreshold());
     }
 
@@ -4589,7 +4597,8 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            Model model
+    )
     {
         History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
 
@@ -4628,6 +4637,7 @@ public class ExerciseService
                 + "&time=" + time
                 + "&sessid=" + sessid
                 + "&exname=" + exname
+                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignment.getId()
                 ;
 
@@ -4645,8 +4655,8 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("memory2()");
+
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("patientid", patientid);
@@ -4678,7 +4688,6 @@ public class ExerciseService
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
-
         logger.debug("memory2phase1()");
 
         model.addAttribute("difficulty", difficulty);
@@ -4697,8 +4706,8 @@ public class ExerciseService
         model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
 
-        return new ModelAndView("memory2a");
 
+        return new ModelAndView("memory2a");
     }
 
 
@@ -4729,7 +4738,6 @@ public class ExerciseService
 
         for (int i = 0; i < ntargets; )
         {
-
             int index = (int) (Math.random() * nelements);
             ExElement tmp = exElementList.get(index);
             int contaUguali = 0;
@@ -4843,7 +4851,7 @@ public class ExerciseService
         }
 
 
-        if (level == exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
+        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -6319,7 +6327,6 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("execfunct()");
 
         model.addAttribute("difficulty", difficulty);
@@ -6347,19 +6354,22 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             Model model)
     {
-
         logger.debug("execfunct1phase1()");
 
         String[] cats = category.split("__");
 
         String[] cats1 = new String[2];
 
+
         List<ExElement> exElementList
                 = exElementController.getRandomRecordsByCategories(
                 nelements, CategoryValue.valueOf(cats[0]),
                 CategoryValue.valueOf(cats[1])
         );
+
+
         int idx = (int) (Math.random() * (exElementList.size()));
+
         String inhElement = exElementList.get(idx).getEldescr();
 
         model.addAttribute("difficulty", difficulty);
@@ -6380,6 +6390,8 @@ public class ExerciseService
         return new ModelAndView("execfunct1a");
     }
 
+
+
     @RequestMapping(value = "/execfunct1phase2", method = RequestMethod.GET)
     public ModelAndView execfunct1phase2(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -6399,11 +6411,9 @@ public class ExerciseService
             @RequestParam(value = "inhElement", required = true) String inhElement,
             Model model)
     {
-
         logger.debug("execfunct1phase2()");
 
         List<ExElement> l = buildExElementListFromIds(exElementIds);
-
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
         model.addAttribute("patientid", patientid);
@@ -6421,6 +6431,7 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         return new ModelAndView("execfunct1b");
     }
+
 
     @RequestMapping(value = "/execfunct1phase3", method = RequestMethod.GET)
     public ModelAndView execfunct1phase3(
@@ -6461,13 +6472,14 @@ public class ExerciseService
             if (difficulty.equals("training") || difficulty.equals("demo"))
             {
                 return new ModelAndView("redirect: patientrehabilitation");
-            } else
+            }
+            else
             {
                 int newLevel = changeDiffController.findChangedLevel(exerciseid, patientid, sessid, -1);
 
 
                 History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
-                        .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
+                        .orElseThrow(() -> new IllegalStateException("An assigned history must be present"))
                 ;
 
                 history.setExid(exerciseid);
@@ -6479,6 +6491,8 @@ public class ExerciseService
                 history.setpWrong(pWrong);
                 history.setMaxtime((double) time * nelements);
                 history.setDifficulty(difficulty);
+
+
 
                 // Calculate performance
                 double ft = Double.NaN;
@@ -6512,7 +6526,8 @@ public class ExerciseService
                     if (newLevel != -1)
                     {
                         level = newLevel;
-                    } else
+                    }
+                    else
                     {
                         level++;
                     }

@@ -357,10 +357,7 @@ public class ExerciseService
 
     public static Map<String, Object> createParametersAttention2(Integer level, Integer[] diffVar)
     {
-
         Map<String, Object> parameters = new LinkedHashMap<String, Object>();
-
-
         int ntargets = 0, nelements = 0; //time = 0;
         double time = 0.0;
 
@@ -1967,9 +1964,7 @@ public class ExerciseService
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
         MSRUser user = userController.getEntityOrThrow(userId);
 
-
         History history = new History();
-
 
         // Get next level and threshold
         PassThreshold passThreshold;
@@ -1981,30 +1976,26 @@ public class ExerciseService
         {
             // Non usato al momento
             passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, user));
-            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.LEVEL);
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
         {
             passThreshold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
-            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else
         {
             //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
             passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
-            passThreshold.setLevel(exercise.clampLevel(passThreshold.getLevel()));
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
-
 
         // Store history for assigned exercise
         history.setExid(exerciseId);
         history.setUserid(userId);
         history.setSessid(sessionId);
+        history.setLevel(exercise.clampLevel(passThreshold.getLevel()));
         history.setDifficulty(exercise.getDifficulty(passThreshold.getLevel()));
-        history.setLevel(passThreshold.getLevel());
         history.setPassThreshold(passThreshold.getThreshold());
         history.setTimestamp(System.currentTimeMillis());
 
@@ -2021,6 +2012,8 @@ public class ExerciseService
 
         return history;
     }
+
+
 
 
     private static long epochMillisToEpochDay(long epochMillis)
@@ -4585,6 +4578,7 @@ public class ExerciseService
     }
 
 
+
     // RL Exercise
 
     @RequestMapping(value = "/creatememory2", method = RequestMethod.GET)
@@ -4609,19 +4603,22 @@ public class ExerciseService
         HttpSession httpSess = request.getSession();
         Integer[] diffVar;
         diffVar = (Integer[]) (httpSess.getAttribute("diffVar6"));
+
+
         if (diffVar == null)
             diffVar = new Integer[NUM_FEAT_MEM_2];
 
-        Map<String, Object> parameters = createParametersMemory2(level, diffVar, exname);
 
+        Map<String, Object> parameters = createParametersMemory2(level, diffVar, exname);
         ParametersParser parser = new ParametersParser(parameters);
         Integer nelements = parser.getIntegerParameter("nelements", null);
         Integer ntargets = parser.getIntegerParameter("ntargets", null);
         Integer time = parser.getIntegerParameter("time", null);
         String distractor = parser.getStringParameter("distractor", null);
         String color = parser.getStringParameter("color", null);
-
         httpSess.setAttribute("diffVar6", diffVar);
+
+
 
         String url = "/memory2phase1"
                 + "?difficulty=" + difficulty
@@ -4641,8 +4638,10 @@ public class ExerciseService
                 + "&assignmentid=" + assignment.getId()
                 ;
 
+
         return new ModelAndView("redirect:" + url);
     }
+
 
     @RequestMapping(value = "/memory2", method = RequestMethod.GET)
     public ModelAndView memory2(
@@ -4668,6 +4667,8 @@ public class ExerciseService
         model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("memory2");
     }
+
+
 
     @RequestMapping(value = "/memory2phase1", method = RequestMethod.GET)
     public ModelAndView memory2phase1(

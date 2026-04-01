@@ -60,8 +60,8 @@ public class ExerciseLiveService {
 
     private final MSRUserController userController;
     private final MSRGroupController groupController;
-
-    public static final int MAX_DIFFICULTY_LEVEL = 10;
+//massimo livello dipende dal tipo di esercizio
+  //  public static final int MAX_DIFFICULTY_LEVEL = 10;
     public static final int MIN_DIFFICULTY_LEVEL = 1;
 
     public enum SessionValue {

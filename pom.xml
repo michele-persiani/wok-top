@@ -176,6 +176,11 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/flanagan.jar</systemPath>
         </dependency>
+        <dependency>
+    <groupId>com.sun.istack</groupId>
+    <artifactId>istack-commons-runtime</artifactId>
+    <version>3.0.12</version>
+</dependency>
 
     </dependencies>
 

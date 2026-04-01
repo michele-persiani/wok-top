@@ -1,6 +1,6 @@
 package it.unibo.msrehab.services;
 
-import com.sun.istack.internal.Nullable;
+import com.sun.istack.Nullable;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.controller.*;
@@ -19,6 +19,7 @@ import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_ARR_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_CHS_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_FAC_RL;
+import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_FRT_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_VEG_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_ANM_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_CHS_RL;
@@ -309,7 +310,7 @@ public class ExerciseService
                 diffVar[3] = 3;
                 time = 2;
                 diffVar[4] = 2;
-                color = "bw";
+                color = "omo";
                 diffVar[5] = 2;
                 break;
             case 12:
@@ -1913,6 +1914,7 @@ public class ExerciseService
                         ATT_DIV_CHS_RL,
                         ATT_DIV_VEG_RL,
                         ATT_SEL_FLW_VEG_RL,
+                        ATT_SEL_FLW_FRT_RL,
                         ATT_SEL_FLW_ANM_RL,
                         ATT_SEL_FLW_CHS_RL,
                         ATT_SEL_FLW_ARR_RL,
@@ -1979,12 +1981,12 @@ public class ExerciseService
             history.setLevelStrategy(History.LevelStrategy.LEVEL);
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
-        {
+        {//adattivo
             passThreshold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
-        else
-        {
+        else 
+        {//incrementale
             //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
             passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
@@ -2118,9 +2120,16 @@ public class ExerciseService
         {
             nextThreshold += thresholdDeltaNotPassed;
             if (nextThreshold <=  lowerThreshold)// startThreshold- diff)//)
-            {
-                nextThreshold = startThreshold;
+            {   if (nextLevel>1){
+                nextThreshold = startThreshold; //il livello poteva scendere a 0
+                
                 nextLevel -= 1;
+                }else//se zi raggiunge il livello minimo non si può decrementare il livello
+                {
+                nextThreshold =  lowerThreshold;
+                nextLevel = 1;
+                }
+
             }
         }
 
@@ -2190,7 +2199,8 @@ public class ExerciseService
         History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
 
         int level = assignment.getLevel();
-        int assignmentId = assignment.getId();
+        
+        int assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         difficulty = exercise.getDifficulty(level);
 
@@ -2286,7 +2296,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             Model model)
     {
@@ -2340,7 +2350,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.info("attention1phase2()");
@@ -2395,7 +2405,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model)
@@ -2497,7 +2507,8 @@ public class ExerciseService
         distractor = parser.getStringParameter("distractor", null);
         time = parser.getIntegerParameter("time", null);
         ncols = parser.getIntegerParameter("ncols", null);
-
+        
+        int assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/attention1phase1"
                 + "?difficulty=" + difficulty
@@ -2517,7 +2528,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
 
 
@@ -2560,6 +2571,9 @@ public class ExerciseService
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
+        
+
+
         if (ATT_SEL_FLW.toString().equals(type))
         {
             httpSess.setAttribute("diffVar2", diffVar);
@@ -2577,6 +2591,7 @@ public class ExerciseService
         //Integer time = (Integer) (parameters.get("time"));
         Double time = (Double) (parameters.get("time"));
 
+            Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/attention2phase1"
                 + "?difficulty=" + difficulty
@@ -2594,7 +2609,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
     }
@@ -2645,7 +2660,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.debug("attention2phase1()");
@@ -2694,7 +2709,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.debug("attention2phase2()");
@@ -2747,7 +2762,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) throws ServletException, IOException
@@ -2819,18 +2834,49 @@ public class ExerciseService
 
 
         String url;
+         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
+        String argument = "";
+
+        if (ATT_SEL_STD.toString().equals(type))
+            argument = "diffVar2";
+        else if (ATT_SEL_STD_FAC.toString().equals(type))
+            argument = "diffVar2Fac";
+        else if (ATT_SEL_STD_ORI.toString().equals(type))
+            argument = "diffVar2Ori";
+
+        diffVar = (Integer[]) (httpSess.getAttribute(argument));
+        if (diffVar == null)
+            diffVar = new Integer[NUM_FEAT_ATT_2];
+
+ 
+       
+
+        Map<String, Object> parameters = createParametersAttention2(level, diffVar);
+        
+ if (ATT_SEL_FLW.toString().equals(type))
+        {
+            httpSess.setAttribute("diffVar2", diffVar);
+        } else if (ATT_SEL_FLW_FAC.toString().equals(type))
+        {
+            httpSess.setAttribute("diffVar2Fac", diffVar);
+        } else if (ATT_SEL_FLW_ORI.toString().equals(type))
+        {
+            httpSess.setAttribute("diffVar2Ori", diffVar);
+        }
+
+      
+         ntargets = (Integer) (parameters.get("ntargets"));
+         nelements = (Integer) (parameters.get("nelements"));
+         color = (String) (parameters.get("color"));
+         distractor = (String) (parameters.get("distractor"));
+        //Integer time = (Integer) (parameters.get("time"));
+         time = (Double) (parameters.get("time"));
+
+     Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
-
-        Integer[] diffVar = null;
-        if (ATT_SEL_FLW.toString().equals(type))
-            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2"));
-        else if (ATT_SEL_FLW_FAC.toString().equals(type))
-            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Fac"));
-        else if (ATT_SEL_FLW_ORI.toString().equals(type))
-            diffVar = (Integer[]) (httpSess.getAttribute("diffVar2Ori"));
-
+        
 
         url = "/attention2phase1"
                 + "?difficulty=" + difficulty
@@ -2848,7 +2894,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
         ;
 
         if (ATT_SEL_FLW.toString().equals(type))
@@ -2911,6 +2957,7 @@ public class ExerciseService
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
 
         difficulty=exercise.getDifficulty(level);
+    Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/attention3phase1"
                 + "?difficulty=" + difficulty
@@ -2928,7 +2975,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
 
         return new ModelAndView("redirect:" + url);
@@ -2978,7 +3025,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = true) Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.debug("attention3phase1()");
@@ -3221,7 +3268,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -3360,6 +3407,7 @@ public class ExerciseService
                 Integer ntargets = (Integer) parameters.get("ntargets");
                 Integer nelements =  (Integer) parameters.get("nelements");
                 String distractor = parameters.get("distractor").toString();
+                    Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
                 url = "/attention4phase1"
@@ -3379,8 +3427,10 @@ public class ExerciseService
                         + "&type=" + type
                         + "&exname=" + exname
                         + "&rlagent=" + rlagent
-                        + "&assignmentid=" + assignment.getId()
+                        + "&assignmentid=" + assignmentId
                         ;
+
+
 
 
                 if (ATT_ALT.toString().equals(type))
@@ -3458,6 +3508,7 @@ public class ExerciseService
         String distractor = (String) (parameters.get("distractor"));
         Integer time = (Integer) (parameters.get("time"));
         String soundinterval = (String) (parameters.get("soundinterval"));
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
         String url = "/attention4phase1"
@@ -3477,7 +3528,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
     }
@@ -3527,7 +3578,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//modificato required=false prer far funzionare gli esercizi di prova
             Model model)
     {
 
@@ -3582,7 +3633,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//per esercizio training
             Model model)
     {
         logger.debug("attention4phase2()");
@@ -3641,7 +3692,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -3734,6 +3785,7 @@ public class ExerciseService
         distractor = parser.getStringParameter("distractor", null);
         color = parser.getStringParameter("color", null);
         soundinterval = parser.getStringParameter("soundinterval", null);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
         String url = "/attention4phase1"
@@ -3753,7 +3805,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
 
@@ -3835,7 +3887,7 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             Model model)
     {
@@ -3867,7 +3919,7 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             Model model)
     {
@@ -3911,7 +3963,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) throws ServletException, IOException
@@ -4617,6 +4669,7 @@ public class ExerciseService
         String distractor = parser.getStringParameter("distractor", null);
         String color = parser.getStringParameter("color", null);
         httpSess.setAttribute("diffVar6", diffVar);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
 
@@ -4635,7 +4688,7 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
 
 
@@ -4686,7 +4739,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.debug("memory2phase1()");
@@ -4798,7 +4851,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model,
             HttpServletRequest request,
             HttpServletResponse response
@@ -4888,6 +4941,7 @@ public class ExerciseService
         distractor = parser.getStringParameter("distractor", null);
         color = parser.getStringParameter("color", null);
 
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/memory2phase1"
                 + "?difficulty=" + difficulty
@@ -4904,7 +4958,7 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId();
+                + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
 
@@ -4965,6 +5019,7 @@ public class ExerciseService
         Integer time = parser.getIntegerParameter("time", null);
         String color = parser.getStringParameter("color", null);
         Integer nelements = parser.getIntegerParameter("nelements", null);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/nbackphase1"
                 + "?difficulty=" + difficulty
@@ -4981,7 +5036,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
     }
@@ -5030,7 +5085,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
 
@@ -5075,7 +5130,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model)
     {
         logger.debug("nbackphase2()");
@@ -5123,7 +5178,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
@@ -5214,6 +5269,7 @@ public class ExerciseService
             httpSess.setAttribute("diffVar7Fac", diffVar);
         else if (NBACK_ORI.toString().equals(type))
             httpSess.setAttribute("diffVar7Ori", diffVar);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
         String url = "/nbackphase1"
@@ -5231,7 +5287,7 @@ public class ExerciseService
                 + "&type=" + type
                 + "&exname=" + exname
                 + "&rlagent=" + rlagent
-                + "&assignmentid=" + assignment.getId()
+                + "&assignmentid=" + assignmentId
                 ;
 
 
@@ -5818,7 +5874,7 @@ public class ExerciseService
         Integer time = (Integer) (parameters.get("time"));
         Integer nRigheCol = (Integer) (parameters.get("nRigheCol"));
         String color = (String) (parameters.get("color"));
-
+        
 
         String url = "/memory5phase1"
                 + "?difficulty=" + difficulty
@@ -6729,7 +6785,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "difficulty", required = true) String difficulty,
             @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "assignmentid", required = false) Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request)
     {
         History history = new History();

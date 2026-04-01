@@ -4,8 +4,7 @@
  * and open the template in the editor.
  */
 package it.unibo.msrehab.model.controller;
-
-import com.sun.istack.internal.Nullable;
+import com.sun.istack.Nullable;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 

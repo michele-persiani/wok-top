@@ -10415,7 +10415,7 @@
 			rows.forEach((row) => {
 				data.push(row.getData());
 
-				if(hasDataTreeColumnCalcs && row.modules.dataTree?.open){
+				if(hasDataTreeColumnCalcs && row.modules.dataTree && row.modules.dataTree.open){
 					this.rowsToData(dataTree.getFilteredTreeChildren(row)).forEach(dataRow =>{
 						data.push(row);
 					});

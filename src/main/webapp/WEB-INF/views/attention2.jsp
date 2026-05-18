@@ -98,7 +98,7 @@
 
 
             <div class="well well-sm">
-                <h3 align="center">Su 2 fronti (${exdescr})</h3>
+                <h3 align="center">Beccali al volo (${exdescr})</h3>
                 <hr></hr>
                 <div class="row">
                     <div class="col-sm-8">

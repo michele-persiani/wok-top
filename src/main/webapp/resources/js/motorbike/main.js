@@ -57,6 +57,8 @@ const road = new THREE.Mesh(new THREE.PlaneGeometry(10, 2000), roadMaterial);
 road.rotation.x = -Math.PI / 2;
 scene.add(road);
 
+
+
 // Road Lines
 const roadLineGeometry = new THREE.PlaneGeometry(0.2, 5);
 const roadLineMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
@@ -105,6 +107,8 @@ scene.add(rightHandlebar);
 
 setupPlayerMotorcycle();
 
+
+
 // Obstacles
 const obstacles = [];
 const OBSTACLE_TYPES = ["car", "motorbike", "pedestrian", "deer"];
@@ -134,11 +138,14 @@ const timer = setInterval(() => {
     updateStats();
 }, 1000);
 
+
+
 const obstacleSpawnInterval = setInterval(() => {
     const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
     createObstacle(type);
     updateStats();
 }, 2000);
+
 
 const gameLoop = () => {
     requestAnimationFrame(gameLoop);
@@ -217,9 +224,6 @@ document.addEventListener("keydown", (event) => {
         updateStats();
     }
 });
-
-
-
 
 
 

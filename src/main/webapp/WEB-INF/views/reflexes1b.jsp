@@ -7,10 +7,21 @@
     <title>Attention - Motorbike</title>
     <!--<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>-->
     <script type="text/javascript" src="resources/js/hello.js"></script>
-    <script type="text/javascript" src="resources/js/bootbox.min.js"></script>
     <script type="text/javascript" src="resources/assets/js/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="resources/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="resources/js/bootbox.min.js"></script>
     <!--<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/motorbike/motorbike.js"></script>-->
 
+
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/"
+          }
+        }
+    </script>
+    <script type="module" src="${pageContext.request.contextPath}/resources/js/motorbike/motorbike.js"></script>
 
 
     <style>
@@ -23,7 +34,7 @@
         }
         #stats {
             position: absolute;
-            top: 10px;
+            top: 80px;
             left: 10px;
             color: white;
             background: rgba(0, 0, 0, 0.5);
@@ -34,48 +45,49 @@
         }
     </style>
 
-    <script type="importmap">
-        {
-          "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/"
-          }
-        }
-    </script>
-
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="resources/jumbotron.css">
 </head>
 <body>
 
-<div id="stats">
-    Tempo: <span id="timeLeft">0</span>s<br>
-    Ostacoli: <span id="totalObstacles">0</span><br>
-    Evitati: <span id="avoidedObstacles">0</span><br>
-    Falsi positivi: <span id="falsePositives">0</span>
+    <div id="stats" class="row">
+        Tempo: <span id="timeLeft">0</span>s<br>
+        Ostacoli: <span id="totalObstacles">0</span><br>
+        Evitati: <span id="avoidedObstacles">0</span><br>
+        Non evitati: <span id="notAvoidedObstacles">0</span><br>
+        Falsi positivi: <span id="falsePositives">0</span>
+    </div>
+
+<div id="startButtonDiv" class="row" style="text-align: center">
+    <input type="button" id="startButton" value="Caricamento..." style="position: absolute; top: 50%; font-size: 50px; padding: 30px;"/>
 </div>
 
-<script type="module" src="${pageContext.request.contextPath}/resources/js/motorbike/motorbike.js"></script>
 <script type="module">
     import { Game } from '${pageContext.request.contextPath}/resources/js/motorbike/motorbike.js';
 
     const game = new Game(
         {
-            totalTime: 15,
+            totalTime: ${totalTime},
+            decoys: ${decoys},
+            obstaclesDelay: ${obstaclesSpawnDelay},
+            speed: ${speed},
+            changeOfLane: ${changeOfLane},
+            fog: ${fog},
+            rain: ${rain},
+            scale: ${scale},
         }
     );
 
 
 
-    game.startGameLoop();
-
-
-
-
     function calculateResult() {
+        let nObstacles = game.totalObstacles;
         let nCorrect = game.avoidedObstacles;
         let nWrong = game.totalObstacles - game.avoidedObstacles;
         let nMissed = game.falsePositives;
         let totalTime = game.config.totalTime;
         let elapsedTime = game.config.totalTime - game.timeLeft;
+
         $.get("getperformance",
             {
                 "exerciseid": ${exerciseid},
@@ -98,31 +110,84 @@
                 var thr = js.thr;
                 var passedMessage='Esercizio concluso. Performance=' + perf;
                 <c:if test="${difficulty!='training'}">
-                passedMessage = passed ? 'Ottimo! Esercizio superato! Performance=' + perf + "/" + thr : 'Mi spiace, esercizio non superato. Performance=' + perf + "/" + thr;
+                    passedMessage = passed ? 'Ottimo! Esercizio superato!\n' : 'Mi spiace, esercizio non superato.\n';
                 </c:if>
 
 
-                alert(passedMessage)
-
-                post('reflexes1phase3', {
-                    difficulty: '${difficulty}',
-                    level: '${level}',
-                    patientid: '${patientid}',
-                    exerciseid: '${exerciseid}',
-                    sessid: '${sessid}',
-                    lastexercisepassed: '${lastexercisepassed}',
-                    exname: '${exname}',
-                    type: '${type}',
-                    passed: passed,
-                    time: totalTime,
-                    pTime: elapsedTime,
-                    pCorrect: nCorrect,
-                    pMissed: nMissed,
-                    pWrong: nWrong,
-                    assignmentid: ${assignmentid}
-                }, 'get');
+                bootbox.alert({
+                    size:'small',
+                    message:'<h4><br><b>Numero ostacoli</b>: ' + nObstacles +
+                        '<br><b>Ostacoli evitati</b>: ' + nCorrect +
+                        '<br><b>Ostacoli non evitati</b>: ' + nWrong +
+                        '<br><b>Falsi positivi</b>: ' + nMissed +
+                        '<br>' +
+                        '<br><b>Performance</b>: ' + Math.floor(perf * 100) + '%' +
+                        '<br><b>Soglia Superamento</b>: ' + Math.floor(thr * 100) + '%' +
+                        '<br>' +
+                        '<br>' + passedMessage + '</h4>',
+                    callback:function() {
+                        post('reflexes1phase3', {
+                            difficulty: '${difficulty}',
+                            level: '${level}',
+                            patientid: '${patientid}',
+                            exerciseid: '${exerciseid}',
+                            sessid: '${sessid}',
+                            lastexercisepassed: '${lastexercisepassed}',
+                            exname: '${exname}',
+                            type: '${type}',
+                            passed: passed,
+                            time: totalTime,
+                            pTime: elapsedTime,
+                            pCorrect: nCorrect,
+                            pMissed: nMissed,
+                            pWrong: nWrong,
+                            rlagent: '${rlagent}',
+                            assignmentid: ${assignmentid}
+                        }, 'get');
+                    }
+                });
             });
     }
+
+    let clickCallback = () => game.performObstacleAvoidance();
+
+    game.onInitialized = () => {
+        // Loading button becomes start
+        document.getElementById("startButton").value = "Inizia";
+
+        // Setup the start game button
+        document.getElementById("startButton").onclick = function() {
+
+            document.getElementById("startButtonDiv").style.visibility = 'hidden';
+
+            // Enter full screen mode
+            if(isMobile())
+                document.body.requestFullscreen();
+
+            // Use a delay
+            setTimeout(() => {
+                // Add callback for space key
+                document.addEventListener("keydown", (event) => {
+                    if (event.code === "Space")
+                        game.performObstacleAvoidance();
+                });
+
+                // Add click callback to avoid obstacles
+                window.addEventListener('click', clickCallback);
+            }, 200)
+
+            // Start the game
+            game.startGameLoop();
+        }
+    };
+
+    game.onGameOver = () => {
+        // Exit full screen mode
+        if(isMobile())
+            document.exitFullscreen();
+        document.removeEventListener('click', clickCallback)
+        calculateResult();
+    };
 </script>
 
 </body>

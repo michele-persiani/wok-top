@@ -13,6 +13,10 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlRootElement;
 
+
+
+
+
 /**
  * Class modeling an exercise of the multiple sclerosis rehabilitation system
  */
@@ -42,6 +46,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "Exercise.delete", query = "DELETE FROM Exercise l WHERE l.id= :exerciseid")
     ,
     @NamedQuery(name = "Exercise.findById", query = "SELECT l FROM Exercise l WHERE l.id = :exerciseid")})
+
 
 @XmlRootElement
 public class Exercise extends BaseEntity
@@ -84,9 +89,8 @@ public class Exercise extends BaseEntity
         // att alt
         ATT_ALT_ANM, ATT_ALT_ARR, ATT_ALT_CHS, ATT_ALT_CMP,
         ATT_ALT_FAC, ATT_ALT_FRT, ATT_ALT_VEG,
-        ATT_SEL_FLW_VEG_RL,ATT_SEL_FLW_FRT_RL,
-        ATT_SEL_FLW_ANM_RL, ATT_SEL_FLW_CHS_RL,
-        ATT_SEL_FLW_ARR_RL, ATT_SEL_FLW_FAC_RL,
+        ATT_SEL_FLW_ANM_RL, ATT_SEL_FLW_CHS_RL, // Names for RL versions
+        ATT_SEL_FLW_VEG_RL, ATT_SEL_FLW_ARR_RL, ATT_SEL_FLW_FAC_RL, ATT_SEL_FLW_FRT_RL, // Names for RL versions
         // att div
         ATT_DIV_ANM, ATT_DIV_ARR, ATT_DIV_CHS, ATT_DIV_CMP,
         ATT_DIV_FAC, ATT_DIV_FRT, ATT_DIV_VEG,
@@ -109,6 +113,7 @@ public class Exercise extends BaseEntity
         //att reflxs
         ATT_RFLXS_MOTORBIKE;
     };
+
 
     @JSON(include = false)
     private static final long serialVersionUID = 1L;
@@ -199,6 +204,7 @@ public class Exercise extends BaseEntity
         return description;
     }
 
+
     public void setDescription(String description) {
         this.description = description;
     }
@@ -288,16 +294,13 @@ public class Exercise extends BaseEntity
             return "medium";
         if(level >= 1)
             return "easy";
-        
-        if (level<0)
         return "training";
-        return "error";
     }
 
 
     public int clampLevel(int level)
     {//modificato perché andava a 0 il livello
-        return Math.max(1, Math.min(level, getMaxLevel()));
+        return Math.max(-1, Math.min(level, getMaxLevel()));
     }
 
     public int getDifficultLevel()

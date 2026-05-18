@@ -1,15 +1,18 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package it.unibo.msrehab.model.controller;
+
+
 
 import it.unibo.msrehab.model.entities.Exercise;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+
+
+
+
+
 
 /**
  * Controller for Exercise entities
@@ -20,7 +23,6 @@ import java.util.stream.Collectors;
 
 public class ExerciseController extends BaseEntityController<Exercise>
 {
-
     public ExerciseController()
     {
         super(Exercise.class);

@@ -133,7 +133,7 @@
                             <h3 class="pull-left">Memorizzi questi volti</h3>
                         </c:if>
                         <c:if test="${type=='ATT_SEL_FLW_ORI'}">
-                            <c:if test="${exname=='ATT_SEL_FLW_ARR'}">
+                            <c:if test="${exname=='ATT_SEL_FLW_ARR' || exname == 'ATT_SEL_FLW_ARR_RL'}">
                                 <h3 class="pull-left">Memorizzi queste frecce </h3>
                             </c:if>
                             <c:if test="${exname=='ATT_SEL_FLW_CMP'}">
@@ -251,7 +251,6 @@
               if(${type=='ATT_SEL_FLW_FAC'})
              document.getElementById("im2").innerHTML="Clicchi su queste figure quando le vedr&agrave; scorrere.";
              if(${type=='ATT_SEL_FLW_ORI'} )
-             if (${exname=='ATT_SEL_FLW_ARR'})
                 document.getElementById("im2").innerHTML = "Clicchi su queste frecce quando le vedr&agrave; scorrere.";
              if(${exname=='ATT_SEL_FLW_CMP'})
                  document.getElementById("im2").innerHTML ="Clicchi sulle frecce che indicano queste direzioni quando le vedr&agrave; scorrere." ;
@@ -264,7 +263,6 @@
                  if(${type=='ATT_SEL_FLW_FAC'})
              document.getElementById("im2").innerHTML="Prema la barra spaziatrice quando vedr&agrave; scorrere queste figure.";
              if(${type=='ATT_SEL_FLW_ORI'} )
-             if (${exname=='ATT_SEL_FLW_ARR'})
                 document.getElementById("im2").innerHTML = "Prema la barra spaziatrice quando vedr&agrave; scorrere queste frecce.";
              if(${exname=='ATT_SEL_FLW_CMP'})
                  document.getElementById("im2").innerHTML ="Prema la barra spaziatrice quando vedr&agrave; scorrere le frecce che indicano queste direzioni." ;

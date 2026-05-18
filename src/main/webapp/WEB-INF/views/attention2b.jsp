@@ -284,8 +284,8 @@
                                     </c:if>
                                     <div class="inner-item">                                        
                                         <input type="checkbox" id="i${n}" value="${exelement.id}"/>
-                                        <label for="i${n}">                                                                                       
-                                            <img class="img-responsive img-thumbnail center-block" id="img-i${n}" src="${exelement.url}" alt="Image" onmousedown="checkanddisablecheck('i${n}')">                                                                                               
+                                        <label for="i${n}">
+                                            <img style="width: 180px; height: 180px" class="img-responsive img-thumbnail center-block" id="img-i${n}" src="${exelement.url}" alt="Image" onmousedown="checkanddisablecheck('i${n}')">
                                         </label>
                                     </div>
                                 </div>

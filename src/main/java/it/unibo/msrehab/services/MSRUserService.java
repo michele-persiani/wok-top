@@ -70,6 +70,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+
+
+
 /**
  * Class that provides servlets for system users. The services are the
  * following: newUser inserts a user entry in the database; updateUser: updates
@@ -79,7 +82,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class MSRUserService
 {
-
     private static final Logger logger = LoggerFactory
             .getLogger(MSRUserService.class);
     private final MSRUserController userController;
@@ -93,6 +95,8 @@ public class MSRUserService
     private final ExerciseController exerciseController;
     private final HistoryController historyController;
     private final Configuration config;
+
+
 
     public MSRUserService() {
         super();
@@ -113,6 +117,9 @@ public class MSRUserService
 
     }
 
+
+
+
     /**
      * Creates new user given email and password
      *
@@ -130,16 +137,19 @@ public class MSRUserService
             method = RequestMethod.POST,
             headers = "Accept=application/json")
     @ResponseBody
-    public ResponseEntity newUser(@RequestBody String json) {
-
+    public ResponseEntity newUser(@RequestBody String json)
+    {
         logger.info("Starting register a new user...");
 
-        try {  
+
+
+
+        try
+        {
             MSRUser user = new JSONDeserializer<MSRUser>()
                     .deserialize(json, MSRUser.class);
 
 
-            
             if (!MSRUser.isEmailValid(user.getEmail())) {
                 logger.warn("...given email is not valid");
                 return new ResponseEntity("-1", HttpStatus.NOT_ACCEPTABLE);
@@ -191,6 +201,7 @@ public class MSRUserService
         }
     }
 
+
     // show patient form
     @RequestMapping(value = "/patientform", method = RequestMethod.POST)
     public ModelAndView patientForm(
@@ -214,6 +225,7 @@ public class MSRUserService
         return new ModelAndView("patient-form");
     }
 
+
     /**
      * Updates a user entry
      *
@@ -228,8 +240,7 @@ public class MSRUserService
      */
     @RequestMapping(value = "/updateuser", method = RequestMethod.POST, headers = "Accept=application/json")
     @ResponseBody
-    public ResponseEntity<String> updateUser(
-            @RequestBody String json) {
+    public ResponseEntity<String> updateUser(@RequestBody String json) {
 
         try {
             MSRUser updatedUser
@@ -292,6 +303,7 @@ public class MSRUserService
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
         }
     }
+
 
     /**
      * Deletes a user give the user's id
@@ -399,6 +411,7 @@ public class MSRUserService
         }
     }
 
+
     /**
      * Retrieves user's info given user's email and password
      *
@@ -420,20 +433,22 @@ public class MSRUserService
             @RequestParam(value = "username", required = true) String username,
             @RequestParam(value = "password", required = true) String password,
             HttpServletResponse response,
-            Model model) {
-
+            Model model)
+   {
               logger.info("Look for the user username: "
                 + username  + " password: " + password);
-
 
      
      MSRUser user = userController.findRecordByUsername(username, password);
        
-      if (user == null) {
+      if (user == null)
+      {
             logger.info("...no user found in the database");
             return new ModelAndView("login", "message", "Credenziali non valide");
-        } else if (user.getMsrrole() == RoleValue.ADMIN) {
-     //aggiunto per useranme
+      }
+      else if (user.getMsrrole() == RoleValue.ADMIN)
+      {
+            //aggiunto per useranme
             Cookie ck = new Cookie("username", user.getUsername());
             Cookie ck1 = new Cookie("name", user.getName());
             Cookie ck2 = new Cookie("id", user.getId().toString());
@@ -464,14 +479,16 @@ public class MSRUserService
             return new ModelAndView("redirect: patienthome");
         }
     }
-    
+
+
    
     @RequestMapping(value = "/logout", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView logout(
             HttpServletRequest request,
             HttpServletResponse response,
-            HttpSession session) {
+            HttpSession session)
+    {
         if (WebPagesUtilities.redirectIfNotLogged(request)) {
             return new ModelAndView("login");
         } else {
@@ -481,6 +498,8 @@ public class MSRUserService
             return new ModelAndView("login");
         }
     }
+
+
 
     /**
      * Retrieves user's info given user's email and password
@@ -524,6 +543,8 @@ public class MSRUserService
         }
     }
 
+
+
     @RequestMapping(value = "/adminhome", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView adminhome(
@@ -556,6 +577,7 @@ public class MSRUserService
                     ;
         }
     }
+
 
     @RequestMapping(value = "/patienttraining", method = RequestMethod.GET)
     @ResponseBody
@@ -590,8 +612,10 @@ public class MSRUserService
                             + "{\"cat\":\"MEM_LONG_1\",\"id\":51,\"done\":false},"
                             + "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false},"
                             + "{\"cat\":\"PLAN_1\",\"id\":52,\"done\":false},"
-                            + "{\"cat\":\"PLAN_2\",\"id\":53,\"done\":false}],"
-                            + "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false}]"
+                            + "{\"cat\":\"PLAN_2\",\"id\":53,\"done\":false},"
+                            + "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false},"
+                            + "{\"cat\":\"ATT_RFLXS\",\"id\":65,\"done\":false}"
+                            + "]"
                     );
 
             JSONObject json;
@@ -621,7 +645,7 @@ public class MSRUserService
                 cat = json.getString("cat");
                        id = json.getInt("id");
                 done = json.getBoolean("done");
-                Exercise exercise = exerciseController.findEntity(id).get();
+                Exercise exercise = exerciseController.getEntityOrThrow(id);
                 // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
                 ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
                 exerciseCategory.getExercises().add(exercise);
@@ -638,6 +662,9 @@ public class MSRUserService
             groupMap.put("MEMORY_FAC", new CategoryGroup("MEMORY_FAC"));
             groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
             groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
+            groupMap.put("ATT_RFLXS", new CategoryGroup("ATT_RFLXS"));
+
+
             categoryExerciseMap.forEach((key, exerciseCategory) -> {
                 if (!exerciseCategory.getExercises().isEmpty()) {
                     exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
@@ -645,6 +672,8 @@ public class MSRUserService
                     groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
                 }
             });
+
+
             Integer userId = CookiesManager.geLoggedUserId(request);
             model.addAttribute("groupMap", groupMap);
             model.addAttribute("patientid", userId);
@@ -655,6 +684,7 @@ public class MSRUserService
             return new ModelAndView("patient-training");
         }
     }
+
 
     @RequestMapping(value = "/patientdemo", method = RequestMethod.GET)
     @ResponseBody
@@ -732,7 +762,8 @@ public class MSRUserService
             return new ModelAndView("patient-demo");
         }
     }
-    
+
+
     @RequestMapping(value = "/patienthome", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView patienthome(HttpServletRequest request, Model model)
@@ -751,9 +782,11 @@ public class MSRUserService
         }
     }
 
+
     @RequestMapping(value = "/patientrehabilitation", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView patientrehabilitaion(HttpServletRequest request, Model model) {
+    public ModelAndView patientrehabilitaion(HttpServletRequest request, Model model)
+    {
         if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotPatient(request)) {
             return new ModelAndView("login");
         }
@@ -893,16 +926,16 @@ public class MSRUserService
 
     
 
-
-private Exercise getExerciseWithId(Integer id, List<Exercise> list)
-{
-        for (Exercise ex : list) {
-            if (ex.getId() == id) {
-                return ex;
+    private Exercise getExerciseWithId(Integer id, List<Exercise> list)
+    {
+            for (Exercise ex : list) {
+                if (ex.getId() == id) {
+                    return ex;
+                }
             }
+            return null;
         }
-        return null;
-    }
+
 
     private String getGroupForCategory(String key)
     {
@@ -921,10 +954,12 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
         } else if (key.matches("RES_INH|PLAN_1|PLAN_2|PLAN_3")) {
             return "EX_FUNC";
         } else if (key.matches("ATT_RFLXS")) {
-            return "ATTENTION_RFLXS";
+            return "ATT_RFLXS";
         }
         return "OTHER";
     }
+
+
 
     // list page
     @RequestMapping(value = "/showpatientsold", method = RequestMethod.GET)
@@ -937,6 +972,7 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
             return new ModelAndView("patient-management", "patients", userController.findAllPatientsInCenter(cid));
         }
     }
+
 
     @RequestMapping(value = "/showpatients", method = RequestMethod.GET)
     public ModelAndView showPatients(
@@ -968,6 +1004,7 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
 
         }
     }
+
 
     // save or update patients
     @RequestMapping(value = "/saveorupdatepatient", method = RequestMethod.POST)
@@ -1091,6 +1128,8 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
         }
     }
 
+
+
     /**
      * Retrieves user's info given user's email and password
      *
@@ -1130,6 +1169,7 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
 
     }
 
+
     /**
      * Exports patients
      *
@@ -1156,7 +1196,9 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
         }
 
     }
-    
+
+
+
     /**
      * Exports patient history
      *
@@ -1183,7 +1225,8 @@ private Exercise getExerciseWithId(Integer id, List<Exercise> list)
         }
 
     }
-    
+
+
 
     /**
      * util function to get overall category progress

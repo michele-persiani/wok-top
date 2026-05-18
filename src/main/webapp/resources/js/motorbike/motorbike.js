@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 
 
 export class Game
 {
     static instance = null;
+
 
     /**
      * Inizializzazione del singleton.
@@ -17,13 +19,29 @@ export class Game
         }
         Game.instance = this;
 
+
+        this.totalObstacles = 0;
+        this.avoidedObstacles = 0;
+        this.notAvoidedObstacles = 0;
+        this.falsePositives = 0;
+
+
         // Configurazioni personalizzabili, con valori predefiniti
         this.config = {
-            totalTime: options.totalTime || 15,
+            totalTime: options.totalTime || 30,
             sceneColor: options.sceneColor || 0x87CEEB,
             cameraPosition: options.cameraPosition || { x: 3, y: 2, z: 5 },
+            speed: options.speed || 1,
+            obstaclesSpawnDelay: options.obstaclesSpawnDelay || 2000,
+            decoys: options.decoys || false,
+            decoysSpawnDelay: options.decoysSpawnDelay || 5000,
+            changeOfLane: options.changeOfLane || false,
+            fog: options.fog || true,
+            rain: options.rain || false,
+            scale: options.scale || 1,
             ...options,
         };
+
 
         this.OBSTACLE_TYPES = ["car", "motorbike", "pedestrian", "deer"];
         this.OBSTACLE_SIZES = {
@@ -34,50 +52,165 @@ export class Game
         };
 
 
+
+        this.COLLISION_ANIMATION = {
+            DURATION: 800,      // Durata totale dell'animazione in millisecondi
+            BOUNCE_HEIGHT: 1,    // Altezza massima del rimbalzo
+            ROTATION_ANGLE: Math.PI / 4,  // Rotazione massima (90 gradi)
+            FLASH_DURATION: 200  // Durata del flash della moto in millisecondi
+        };
+        this.AVOID_ANIMATION = {
+            DURATION: 300
+        }
+
+
         // Inizializza variabili di stato
         this.timeLeft = this.config.totalTime;
         this.totalObstacles = 0;
         this.avoidedObstacles = 0;
         this.falsePositives = 0;
+        this.initialized = false;
+
 
         // Collezioni di oggetti
         this.environmentObjects = [];
         this.obstacles = [];
         this.roadLines = [];
 
+
         // Three.js: Crea la scena, la camera, e il renderer
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.config.sceneColor);
 
+
         this.camera = new THREE.PerspectiveCamera(
             75, window.innerWidth / window.innerHeight, 0.1, 1000
         );
+
+
         this.camera.position.set(
             this.config.cameraPosition.x,
             this.config.cameraPosition.y,
             this.config.cameraPosition.z
         );
 
+
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
-        // Inizializzazione della scena
-        this.setupLights();
-        this.setupEnvironment();
-        this.setupCamera();
-        this.setupPlayerMotorcycle();
+        this.gameTimer = null;
+        this.obstacleSpawnInterval = null;
 
-        // Event listener per il controllo del giocatore
-        this.setupInput();
+        this.onInitialized = () => {};
+        this.onGameOver = () => {};
 
-
-        this.obstacleSpawnInterval = setInterval(() => {
-            const type = this.OBSTACLE_TYPES[Math.floor(Math.random() * this.OBSTACLE_TYPES.length)];
-            this.createObstacle(type);
-        }, 2000);
-
+        this.initialize();
     }
+
+
+
+    initialize()
+    {
+        // Carico le risorse
+        this.loadTextures()
+            .then(() =>
+            {
+                console.log("" + Object.keys(this.textures).length)
+                // Inizializzazione della scena
+                this.setupLights();
+                this.setupCamera();
+                this.setupEnvironment();
+                this.initialized = true;
+                this.onInitialized();
+            })
+        ;
+    }
+
+
+
+
+
+
+    /**
+     * Function to load gltf elements from resources/gltf
+     */
+    loadTextures()
+    {
+        const gltfLoader = new GLTFLoader();
+
+        const game = this;
+        game.textures = {};
+        let url = null;
+
+
+        // Obstacles
+        url = 'resources/gltf/pedestrian/pedestrian.gltf';
+        let pr0 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.pedestrian = gltf.scene;
+            });
+
+
+        url = 'resources/gltf/car/car.gltf';
+        let pr1 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.car = gltf.scene;
+            })
+        ;
+
+
+        url = 'resources/gltf/motorbike/motorbike.gltf';
+        let pr2 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.motorbike = gltf.scene;
+                game.playerBike = gltf.scene.clone();
+                game.playerBike.position.set(3, 1, 3.8);      // Corsia destra, sotto la camera
+                game.playerBike.rotation.set(0, Math.PI, 0);
+                game.scene.add(game.playerBike);
+            })
+        ;
+
+
+        url = 'resources/gltf/deer/deer.gltf';
+        let pr3 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.deer = gltf.scene;
+            })
+        ;
+
+
+
+        // Row elements
+        url = 'resources/gltf/house/house.gltf';
+        let pr4 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.house = gltf.scene;
+            })
+        ;
+
+
+        url = 'resources/gltf/tree/tree.gltf';
+        let pr5 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.tree = gltf.scene;
+            })
+        ;
+
+        return Promise.all([pr0, pr1, pr2, pr3, pr4, pr5]);
+    }
+
+
+    updateStats()
+    {
+        document.getElementById("timeLeft").textContent = this.timeLeft;
+        document.getElementById("totalObstacles").textContent = this.totalObstacles;
+        document.getElementById("avoidedObstacles").textContent = this.avoidedObstacles;
+        document.getElementById("notAvoidedObstacles").textContent = this.totalObstacles - this.avoidedObstacles;
+        document.getElementById("falsePositives").textContent = this.falsePositives;
+    };
+
+
 
     /**
      * Configura le luci della scena.
@@ -94,7 +227,8 @@ export class Game
     /**
      * Configura l'ambiente: strada, erba, linee stradali, oggetti di scena.
      */
-    setupEnvironment() {
+    setupEnvironment()
+    {
         // Materiali
         const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x343434 });
         const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x2E8B57 });
@@ -114,7 +248,7 @@ export class Game
         const roadLineGeometry = new THREE.PlaneGeometry(0.2, 5);
         const roadLineMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
 
-        for (let z = -1000; z < 1000; z += 10) {
+        for (let z = -5000; z < 0; z += 10) {
             const line = new THREE.Mesh(roadLineGeometry, roadLineMaterial);
             line.rotation.x = -Math.PI / 2;
             line.position.set(0, 0.01, z);
@@ -123,10 +257,21 @@ export class Game
         }
 
         // Oggetti ambientali
-        for (let z = -1000; z < 0; z += 40) {
+        for (let z = -5000; z < 0; z += 40) {
             this.createEnvironmentRow(z);
         }
+
+        if(this.config.fog)
+            this.addFog()
+
+
+        if(this.config.rain)
+            this.addRain()
     }
+
+
+
+
 
     /**
      * Configura la telecamera.
@@ -135,220 +280,393 @@ export class Game
         this.camera.lookAt(3, 0, -10);
     }
 
+
     /**
      * Crea una riga di oggetti nell'ambiente.
      * @param {number} zPosition - Posizione lungo l'asse Z.
      */
-    createEnvironmentRow(zPosition) {
-        const houseGeometry = new THREE.BoxGeometry(4, 4, 4);
-        const houseMaterial = new THREE.MeshStandardMaterial({ color: 0x8B0000 });
-        const treeGeometry = new THREE.CylinderGeometry(0.5, 1, 3);
-        const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-
+    createEnvironmentRow(zPosition)
+    {
+        var spawnProba = 0.85;
         // Sinistra
-        const leftHouse = new THREE.Mesh(houseGeometry, houseMaterial);
-        leftHouse.position.set(-15, 2, zPosition);
-        this.scene.add(leftHouse);
+        if(Math.random() > spawnProba)
+        {
+            const leftHouse = this.textures.house.clone();
+            leftHouse.position.set(-15, 0, zPosition);
+            this.scene.add(leftHouse);
+            this.environmentObjects.push({ object: leftHouse, type: 'house' });
+        }
 
-        const leftTree = new THREE.Mesh(treeGeometry, treeMaterial);
-        leftTree.position.set(-20, 1.5, zPosition);
-        this.scene.add(leftTree);
+
+        if(Math.random() > spawnProba)
+        {
+            const leftTree = this.textures.tree.clone();
+            leftTree.position.set(-20, 0, zPosition);
+            leftTree.scale.set(0.5, 0.5, 0.5);
+            this.scene.add(leftTree);
+            this.environmentObjects.push({ object: leftTree, type: 'tree' });
+        }
+
 
         // Destra
-        const rightHouse = new THREE.Mesh(houseGeometry, houseMaterial);
-        rightHouse.position.set(15, 2, zPosition + 10);
-        this.scene.add(rightHouse);
+        if(Math.random() > spawnProba)
+        {
+            // Destra
+            const rightHouse = this.textures.house.clone();
+            rightHouse.position.set(15, 0, zPosition + 10);
+            this.scene.add(rightHouse);
+            this.environmentObjects.push({ object: rightHouse, type: 'house' });
+        }
 
-        const rightTree = new THREE.Mesh(treeGeometry, treeMaterial);
-        rightTree.position.set(20, 1.5, zPosition + 10);
-        this.scene.add(rightTree);
+        if(Math.random() > spawnProba)
+        {
+            const rightTree = this.textures.tree.clone();
+            rightTree.position.set(20, 0, zPosition + 10);
+            rightTree.scale.set(0.5, 0.5, 0.5);
+            this.scene.add(rightTree);
+            this.environmentObjects.push({ object: rightTree, type: 'tree' });
+        }
 
-        this.environmentObjects.push(
-            { object: leftHouse, type: 'house' },
-            { object: leftTree, type: 'tree' },
-            { object: rightHouse, type: 'house' },
-            { object: rightTree, type: 'tree' }
-        );
-    }
-
-    createSimpleMotorbike()
-    {
-        const motoGroup = new THREE.Group();
-
-        // Colori
-        const bodyColor = 0x2233ff;      // Blu per la carrozzeria
-        const tiresColor = 0x222222;     // Nero per le ruote
-        const metalColor = 0x888888;     // Grigio per parti metalliche
-
-        // Corpo principale (sella e carrozzeria)
-        const bodyGeometry = new THREE.BoxGeometry(2, 0.8, 4);
-        const bodyMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 1;
-        motoGroup.add(body);
-
-        // Sella
-        const seatGeometry = new THREE.BoxGeometry(1, 0.3, 1.5);
-        const seatMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
-        const seat = new THREE.Mesh(seatGeometry, seatMaterial);
-        seat.position.set(0, 1.4, 0);
-        motoGroup.add(seat);
-
-        // Ruote
-        const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 32);
-        const wheelMaterial = new THREE.MeshPhongMaterial({ color: tiresColor });
-
-        // Ruota anteriore
-        const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-        frontWheel.rotation.z = Math.PI / 2;
-        frontWheel.position.set(0, 0.5, -1.5);
-        motoGroup.add(frontWheel);
-
-        // Ruota posteriore
-        const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-        backWheel.rotation.z = Math.PI / 2;
-        backWheel.position.set(0, 0.5, 1.5);
-        motoGroup.add(backWheel);
-
-        // Manubrio più alto e più vicino al giocatore
-        const handlebarGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 16);
-        const handlebarMaterial = new THREE.MeshPhongMaterial({ color: metalColor });
-        const handlebar = new THREE.Mesh(handlebarGeometry, handlebarMaterial);
-        handlebar.position.set(0, 2.0, -1.2);  // Alzato e avvicinato
-        handlebar.rotation.z = Math.PI / 2;
-        motoGroup.add(handlebar);
-
-        // Forcelle anteriori
-        const forkGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.2, 16);
-        const forkMaterial = new THREE.MeshPhongMaterial({ color: metalColor });
-
-        const leftFork = new THREE.Mesh(forkGeometry, forkMaterial);
-        leftFork.position.set(0.2, 1.2, -1.5);
-        motoGroup.add(leftFork);
-
-        const rightFork = new THREE.Mesh(forkGeometry, forkMaterial);
-        rightFork.position.set(-0.2, 1.2, -1.5);
-        motoGroup.add(rightFork);
-
-        // Serbatoio più vicino al giocatore
-        const tankGeometry = new THREE.BoxGeometry(1.2, 0.8, 1.2);
-        const tankMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
-        const tank = new THREE.Mesh(tankGeometry, tankMaterial);
-        tank.position.set(0, 1.4, -0.6);  // Spostato più vicino
-        motoGroup.add(tank);
-
-        // Motore
-        const engineGeometry = new THREE.BoxGeometry(0.8, 0.8, 1);
-        const engineMaterial = new THREE.MeshPhongMaterial({ color: metalColor });
-        const engine = new THREE.Mesh(engineGeometry, engineMaterial);
-        engine.position.set(0, 0.8, 0.2);
-        motoGroup.add(engine);
-
-        // Scarico
-        const exhaustGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 16);
-        const exhaustMaterial = new THREE.MeshPhongMaterial({ color: metalColor });
-        const exhaust = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
-        exhaust.position.set(0.3, 0.5, 1);
-        exhaust.rotation.z = Math.PI / 2;
-        motoGroup.add(exhaust);
-
-        // Posizionamento finale del gruppo moto
-        motoGroup.position.set(3, -1, 4.5);      // Corsia destra, sotto la camera
-        //motoGroup.rotation.y = Math.PI / 2;    // Orientata in avanti
-
-        return motoGroup;
     }
 
 
-
-    createObstacle(type)
+    createObstacle(type, decoy)
     {
-        const size = OBSTACLE_SIZES[type];
-        const geometry = new THREE.BoxGeometry(size.width, size.height, size.width);
-        const material = new THREE.MeshStandardMaterial({ color: size.color });
-        let obstacle = new THREE.Mesh(geometry, material);
+        let obstacle = null;
+        if(type === "pedestrian")
+        {
+            obstacle = this.textures.pedestrian.clone();
+        }
+        else if (type === "car")
+        {
+            obstacle = this.textures.car.clone();
+        }
+        else if(type === "motorbike")
+        {
+            obstacle = this.textures.motorbike.clone();
+            obstacle.position.y = 1;
+        }
+        else if(type === "deer")
+        {
+            obstacle = this.textures.deer.clone();
+            obstacle.position.y = 1;
+        }
+        else
+        {
+            const size = this.OBSTACLE_SIZES[type];
+            const geometry = new THREE.BoxGeometry(size.width, size.height, size.width);
+            const material = new THREE.MeshStandardMaterial({color: size.color});
+            obstacle = new THREE.Mesh(geometry, material);
+        }
+
+        let scale = this.config.scale;
+        obstacle.scale.set(scale, scale, scale);
 
 
         // Posiziona gli ostacoli solo nella corsia destra
-        obstacle.position.set(
-            3, // Posizione fissa nella corsia destra
-            size.height / 2,
-            -300
-        );
+
+        obstacle.position.x = 3;
+        if(decoy)
+            obstacle.position.x -= 6;
+        obstacle.position.z = -300;
+
 
         obstacle.type = type;
         obstacle.inDangerZone = false;
-        obstacle.avoided = false;
+        obstacle.avoided = true;
+        obstacle.laneChanged = false;
 
-        //const loader = new THREE.GLTFLoader();
-        //obstacle = loader.load("/resources/gltf/zombie.gltf")
-
-        scene.add(obstacle);
-        obstacles.push(obstacle);
+        obstacle.isDecoy = decoy;
+        this.scene.add(obstacle);
+        this.obstacles.push(obstacle);
     }
 
 
-
-    /**
-     * Crea una semplice motocicletta e la aggiunge alla scena.
-     */
-    setupPlayerMotorcycle()
+    performObstacleAvoidance()
     {
-        const motoGroup = this.createSimpleMotorbike();
+        if(this.playerBike.isAnimating)
+            return;
 
-        // Implementazione del modello della moto
-        motoGroup.position.set(3, -1, 4.5); // Posizione iniziale
-        this.scene.add(motoGroup);
-        this.playerBike = motoGroup; // Referenzia la moto del giocatore
-    }
-
-
-
-    /**
-     * Configura l'input del giocatore.
-     */
-    setupInput()
-    {
-        document.addEventListener("keydown", (event) => {
-            if (event.code === "Space") {
-                // Logica per gestire il tasto spazio
-                console.log("Player pressed Space");
-            }
-        });
-    }
-
-
-// Funzione per controllare le collisioni e attivare l'animazione
-    checkCollisionAndAnimate(motorcycle, obstacle)
-    {
-    // Crea bounding box per la moto e l'ostacolo
-    const motoBBox = new THREE.Box3().setFromObject(motorcycle);
-    const obstacleBBox = new THREE.Box3().setFromObject(obstacle);
-
-    // Controlla la collisione
-    if (motoBBox.intersectsBox(obstacleBBox)) {
-        // Previeni multiple animazioni contemporanee
-        if (!motorcycle.isAnimating)
+        let pos = structuredClone(this.playerBike.position);
+        let trg = structuredClone(this.playerBike.position);
+        trg.x -= 2;
+        let game = this;
+        if(!this.playerBike.isAnimating)
         {
-            motorcycle.isAnimating = true;
+            let animationDuration = game.AVOID_ANIMATION.DURATION;
+            game.playerBike.isAnimating = true;
+            this.animateObjectMovement(game.playerBike, game.playerBike.position, trg, 75, () => {
+                setTimeout(() => {
+                    this.animateObjectMovement(game.playerBike, trg, pos, 75, () => {
+                        game.playerBike.isAnimating = false;
+                    });
+                }, animationDuration)
 
-            this.animateCollision(motorcycle);
+            })
+        }
 
-            // Ripristina il flag dopo l'animazione
-            setTimeout(() => {
-                motorcycle.isAnimating = false;
-            }, COLLISION_ANIMATION.DURATION);
+        let dangerDetected = false;
+        for (const obstacle of this.obstacles)
+            if (obstacle.inDangerZone)
+                dangerDetected = true;
+
+
+        if (!dangerDetected)
+            this.falsePositives += 1;
+    }
+
+
+
+
+
+    // Funzione per controllare le collisioni e attivare l'animazione
+    checkCollisionAndAnimate(obstacle)
+    {
+        // Crea bounding box per la moto e l'ostacolo
+        const motoBBox = new THREE.Box3().setFromObject(this.playerBike);
+        const obstacleBBox = new THREE.Box3().setFromObject(obstacle);
+
+        motoBBox.min.y = -100;
+        motoBBox.max.y = 100;
+
+        // Controlla la collisione
+        if (motoBBox.intersectsBox(obstacleBBox) && obstacle.avoided)
+        {
+            obstacle.avoided = false;
+            this.notAvoidedObstacles += 1;
+            console.log("Collisione rilevata");
+            // Previeni multiple animazioni contemporanee
+            this.animateCollision();
         }
     }
+
+
+
+
+    /**
+     * Avvia il rendering del gioco.
+     */
+    startGameLoop()
+    {
+        let scene = this.scene;
+        let environmentObjects = this.environmentObjects;
+        let obstacles = this.obstacles;
+        let renderer = this.renderer;
+        let camera = this.camera;
+        let roadLines = this.roadLines;
+
+
+        const gameLoop = () => {
+            requestAnimationFrame(gameLoop);
+
+            if(!this.initialized)
+                return;
+
+            let zMovement = this.config.speed;
+
+            // Move environment objects
+            for (let i = environmentObjects.length - 1; i >= 0; i--) {
+                const envObj = environmentObjects[i];
+                envObj.object.position.z += zMovement;
+
+                // If object passes the player, remove it and create new one at the back
+                if (envObj.object.position.z > 10) {
+                    scene.remove(envObj.object);
+                    environmentObjects.splice(i, 1);
+
+                    // When last object of a row is removed, create new row at the back
+                    if (i === 0 || i % 4 === 0) {
+                        const lastZ = Math.min(...environmentObjects.map(obj => obj.object.position.z));
+                        this.createEnvironmentRow(lastZ - 40);
+                    }
+                }
+            }
+
+
+            // Move obstacles
+            for (const obstacle of obstacles)
+            {
+                obstacle.position.z += zMovement;
+
+                // Change of lane
+                if(obstacle.position.z > -100 && !obstacle.laneChanged && this.config.changeOfLane)
+                {
+                    obstacle.laneChanged = true;
+                    if(Math.random() > 0.9)
+                    {
+                        obstacle.laneChanged = true;
+                        var trg = structuredClone(obstacle.position);
+                        if(obstacle.position.x > 0)
+                        {
+                            trg.x -= 6;
+                            this.animateObjectMovement(obstacle, obstacle.position, trg, 500)
+                        }
+                        else
+                        {
+                            trg.x += 6;
+                            this.animateObjectMovement(obstacle, obstacle.position, trg, 500)
+                        }
+                    }
+                }
+
+
+
+                // Set danger zone
+                // Se ostacolo e' sufficientemente vicino e nella corsia di destra
+                if (obstacle.position.z > -20 && obstacle.position.x > 0)
+                {
+                    if(!obstacle.inDangerZone)
+                        this.totalObstacles += 1;
+                    obstacle.inDangerZone = true;
+                }
+                else
+                    obstacle.inDangerZone = false;
+
+                // Remove obstacle if out of scene
+                if (obstacle.position.z > 5)
+                {
+                    if(obstacle.avoided && obstacle.position.x > 0)
+                        this.avoidedObstacles += 1;
+
+                    console.log("avoided: " + obstacle.avoided)
+
+                    scene.remove(obstacle);
+                    // Animazione incidente va qui
+                    obstacles.splice(obstacles.indexOf(obstacle), 1);
+                }
+            }
+
+
+
+            // Move road lines
+            for (const line of roadLines)
+            {
+                line.position.z += zMovement;
+                if (line.position.z > 10)
+                    line.position.z = -100;
+            }
+
+
+            this.obstacles.forEach(obstacle => {
+                this.checkCollisionAndAnimate(obstacle);
+            });
+
+            renderer.render(scene, camera);
+            this.updateRain();
+        };
+
+
+        gameLoop();
+
+
+        this.gameTimer = setInterval(() => {
+            this.timeLeft -= 1;
+            if (this.timeLeft <= 0)
+            {
+                if(this.gameTimer != null)
+                    clearInterval(this.gameTimer);
+
+                if(this.obstacleSpawnInterval != null)
+                    clearInterval(this.obstacleSpawnInterval);
+
+                this.onGameOver();
+            }
+            this.updateStats();
+        }, 1000);
+
+
+        this.obstacleSpawnInterval = setInterval(() => {
+            const type = this.OBSTACLE_TYPES[Math.floor(Math.random() * this.OBSTACLE_TYPES.length)];
+            let isDecoy = this.config.decoys ? Math.random() > 0.5 : false;
+            this.createObstacle(type, isDecoy);
+        }, this.config.obstaclesSpawnDelay);
+
     }
 
 
-    animateCollision(motorcycle)
+
+
+    // EFFETTI AMBIENTALI
+
+    /**
+     * Applica la nebbia alla scena.
+     * @param {number} color - Colore della nebbia, rappresentato come un intero esadecimale (ad esempio 0x87CEEB).
+     * @param {number} near - Distanza minima a cui iniziare a rendere visibile la nebbia.
+     * @param {number} far - Distanza massima oltre la quale gli oggetti sono completamente avvolti dalla nebbia.
+     */
+    addFog(color = 0xD3D3D3, near = -500, far = 600) {
+        this.scene.fog = new THREE.Fog(color, near, far);
+    }
+
+
+    addRain()
     {
-        const startPosition = this.motorcycle.position.clone();
+        const rainGeometry = new THREE.BufferGeometry();
+        const rainCount = 5000; // Numero di particelle per la pioggia
+        const positions = [];
+
+        // Genera le posizioni iniziali delle particelle
+        for (let i = 0; i < rainCount; i++) {
+            const x = (Math.random() - 0.5) * 100; // Area della pioggia
+            const y = Math.random() * 50 + 20;     // Altezza minima e massima della pioggia
+            const z = (Math.random() - 0.5) * 100; // Profondità dell'area della pioggia
+            positions.push(x, y, z);
+        }
+
+        rainGeometry.setAttribute(
+            'position',
+            new THREE.Float32BufferAttribute(positions, 3)
+        );
+
+        const rainMaterial = new THREE.PointsMaterial({
+            color: 0xaaaaaa, // Colore della pioggia
+            size: 0.2,       // Dimensione delle particelle
+            transparent: true,
+        });
+
+        // Crea il sistema di particelle
+        this.rain = new THREE.Points(rainGeometry, rainMaterial);
+        this.scene.add(this.rain);
+    }
+
+    /**
+     * Aggiorna il movimento della pioggia nel ciclo del gioco.
+     */
+    updateRain()
+    {
+        if (this.rain) {
+            const positions = this.rain.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i + 1] -= 0.5; // Movimento verso il basso (asse Y)
+
+                // Reinizializza le particelle che escono dalla scena
+                if (positions[i + 1] < 0) {
+                    positions[i + 1] = Math.random() * 50 + 20;  // Nuova altezza
+                    positions[i] = (Math.random() - 0.5) * 100;  // Nuova posizione in X
+                    positions[i + 2] = (Math.random() - 0.5) * 100; // Nuova posizione in Z
+                }
+            }
+
+            // Indica a Three.js che la geometria è stata aggiornata
+            this.rain.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+
+
+
+
+    // ANIMAZIONI
+
+
+    animateCollision()
+    {
+        let motorcycle = this.playerBike;
+        const startPosition = motorcycle.position.clone();
         const startRotation = motorcycle.rotation.clone();
         let startTime = null;
         let originalMaterials = [];
+        const collisionAnimation = this.COLLISION_ANIMATION;
+
 
         // Salva i materiali originali
         motorcycle.traverse((child) => {
@@ -367,7 +685,8 @@ export class Game
             emissiveIntensity: 0.5
         });
 
-        function flash() {
+        function flash()
+        {
             motorcycle.traverse((child) => {
                 if (child.isMesh) {
                     child.material = flashMaterial;
@@ -379,15 +698,27 @@ export class Game
                 originalMaterials.forEach(({ mesh, material }) => {
                     mesh.material = material;
                 });
-            }, COLLISION_ANIMATION.FLASH_DURATION);
+            }, collisionAnimation.DURATION);
         }
+
 
         let direction = Math.random() > 0.5 ? 1 : -1;
 
-        function animate(currentTime) {
+
+        const game = this;
+
+        function animate(currentTime)
+        {
+            if(game.playerBike ==  null)
+                return;
+
+
             if (!startTime) startTime = currentTime;
             const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / COLLISION_ANIMATION.DURATION, 1);
+            const progress = Math.min(elapsed / collisionAnimation.DURATION, 1);
+
+
+
 
             // Funzione di easing per un movimento più naturale
             const easeOutBounce = (x) => {
@@ -405,23 +736,26 @@ export class Game
                 }
             };
 
+
+
+
             // Calcola il rimbalzo
-            const bounceHeight = COLLISION_ANIMATION.BOUNCE_HEIGHT *
+            const bounceHeight = collisionAnimation.BOUNCE_HEIGHT *
                 Math.sin(progress * Math.PI) * (1 - progress);
 
             // Applica il movimento
-            motorcycle.position.y = startPosition.y + bounceHeight;
+            game.playerBike.position.y = startPosition.y + bounceHeight;
+
 
             // Applica la rotazione
-            const rotation = COLLISION_ANIMATION.ROTATION_ANGLE *
+            const rotation = collisionAnimation.ROTATION_ANGLE *
                 Math.sin(progress * Math.PI) * (1 - easeOutBounce(progress)) *
                 direction;
-            motorcycle.rotation.z = startRotation.z + rotation;
+            game.playerBike.rotation.z = startRotation.z + rotation;
 
             // Vibrazione casuale durante la collisione
             if (progress < 0.5) {
-                motorcycle.position.x = startPosition.x +
-                    (Math.random() - 0.5) * 0.2;
+                game.playerBike.position.x = startPosition.x + (Math.random() - 0.5) * 0.2;
             }
 
             // Continua l'animazione se non è finita
@@ -429,14 +763,23 @@ export class Game
                 requestAnimationFrame(animate);
             } else {
                 // Ripristina la posizione e rotazione originale
-                motorcycle.position.copy(startPosition);
-                motorcycle.rotation.copy(startRotation);
+                game.playerBike.position.copy(startPosition);
+                game.playerBike.rotation.copy(startRotation);
+
             }
         }
+
 
         // Avvia il flash
         flash();
 
+        if(this.playerBike.isAnimating)
+            return;
+
+        this.playerBike.isAnimating = true;
+        setTimeout(() => {
+            game.playerBike.isAnimating = false;
+        }, collisionAnimation.DURATION);
         // Avvia l'animazione
         requestAnimationFrame(animate);
     }
@@ -444,75 +787,49 @@ export class Game
 
 
     /**
-     * Avvia il rendering del gioco.
+     * Crea un'animazione per spostare un oggetto tra due punti.
+     * @param {THREE.Object3D} object - Oggetto da animare.
+     * @param {THREE.Vector3} startPoint - Punto di partenza.
+     * @param {THREE.Vector3} endPoint - Punto di arrivo.
+     * @param {number} duration - Durata dell'animazione in millisecondi.
+     * @param {function} onComplete - Callback da eseguire al completamento dell'animazione (opzionale).
      */
-    startGameLoop()
-    {
-        let scene = this.scene;
-        let environmentObjects = this.environmentObjects;
-        let obstacles = this.obstacles;
-        let renderer = this.renderer;
-        let camera = this.camera;
-        let roadLines = this.roadLines;
+    animateObjectMovement(object, startPoint, endPoint, duration, onComplete = null) {
+        if (!object) {
+            console.error("Oggetto non valido per l'animazione");
+            return;
+        }
 
-        const gameLoop = () => {
-                requestAnimationFrame(gameLoop);
+        const startTime = performance.now();
 
-                // Move environment objects
-                for (let i = environmentObjects.length - 1; i >= 0; i--) {
-                    const envObj = environmentObjects[i];
-                    envObj.object.position.z += 1;
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1); // Calcola la frazione completata (0 a 1)
+            const easedProgress = this.easeInOutQuad(progress); // Applica easing
 
-                    // If object passes the player, remove it and create new one at the back
-                    if (envObj.object.position.z > 50) {
-                        scene.remove(envObj.object);
-                        environmentObjects.splice(i, 1);
+            // Aggiorna la posizione dell'oggetto
+            object.position.lerpVectors(startPoint, endPoint, easedProgress);
 
-                        // When last object of a row is removed, create new row at the back
-                        if (i === 0 || i % 4 === 0) {
-                            const lastZ = Math.min(...environmentObjects.map(obj => obj.object.position.z));
-                            this.createEnvironmentRow(lastZ - 40);
-                        }
-                    }
-                }
+            // Continua l'animazione fino al completamento
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else if (onComplete) {
+                onComplete(); // Esegui la funzione di completamento (se presente)
+            }
+        };
 
-                // Move obstacles
-                for (const obstacle of obstacles)
-                {
-                    obstacle.position.z += 1;
-
-                    if (obstacle.position.z > -5 && obstacle.position.z < 5 && !obstacle.avoided) {
-                        if(!obstacle.inDangerZone)
-                            this.totalObstacles += 1;
-                        obstacle.inDangerZone = true;
-                    } else
-                        obstacle.inDangerZone = false;
-
-
-                    if (obstacle.position.z > 9)
-                    {
-                        scene.remove(obstacle);
-                        // Animazione incidente va qui
-                        obstacles.splice(obstacles.indexOf(obstacle), 1);
-                    }
-                }
-
-                // Move road lines
-                for (const line of roadLines) {
-                    line.position.z += 1;
-                    if (line.position.z > 10) {
-                        line.position.z = -100;
-                    }
-                }
-
-
-                this.obstacles.forEach(obstacle => {
-                    this.checkCollisionAndAnimate(this.playerBike, obstacle);
-                });
-
-                renderer.render(scene, camera);
-            };
-
-        gameLoop();
+        // Avvia l'animazione
+        requestAnimationFrame(animate);
     }
+
+    /**
+     * Funzione di easing (ease-in-out).
+     * Rallenta l'inizio e la fine dell'animazione per un movimento più naturale.
+     * @param {number} t - Il valore di progresso (da 0 a 1).
+     * @returns {number} - Valore interpolato.
+     */
+    easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
 }

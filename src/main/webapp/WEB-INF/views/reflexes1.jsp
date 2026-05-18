@@ -21,7 +21,7 @@
         <meta name="author" content="Floriano Zini">
         <link rel="icon" href="resources/favicon.ico">
 
-        <title>Memoria di lavoro</title>
+        <title>Riflessi</title>
 
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="resources/css/bootstrap.min.css">

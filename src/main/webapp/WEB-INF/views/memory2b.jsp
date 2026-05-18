@@ -163,10 +163,13 @@
             <div id="target-img" class="hidden">
                 <div class="well well-sm">
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-3" style="width: 20%">
                             <c:set var="l" value="0"></c:set>
                              <c:forEach var="t" items="${target}">
-                            <img class="img-responsive hidden" id="${l}"  src="${t.url}" alt="${t.url}" value="${t.id}">
+                            <img
+                                    class="img-responsive hidden" id="${l}"  src="${t.url}" alt="${t.url}" value="${t.id}"
+                                    style="width:200px;height:200px;margin:auto;"
+                            >
                              <c:set var="l" value="${l+1}"></c:set>                                    
                         </c:forEach>
                         </div>

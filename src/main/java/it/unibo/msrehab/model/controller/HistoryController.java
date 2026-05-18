@@ -183,6 +183,7 @@ public class HistoryController extends BaseEntityController<History>
                 }).get();
     }
 
+
     @Override
     public History getEntityOrThrow(Object id)
     {

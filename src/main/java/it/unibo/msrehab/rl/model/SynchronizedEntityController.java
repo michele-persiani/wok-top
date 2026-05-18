@@ -45,7 +45,8 @@ public class SynchronizedEntityController<T> extends EntityController<T>
         } catch (Exception e)
         {
             result = defaultValue;
-        } finally
+        }
+        finally
         {
             lock.unlock();
         }

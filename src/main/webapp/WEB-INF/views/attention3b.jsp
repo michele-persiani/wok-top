@@ -290,11 +290,11 @@ p<%--
                         
                         }
                      sTime = new Date().getTime();
+
                      var p=${nelementspertarget}*(contaScambiaTarget+1)-1;
                     
-                     if(exElement.id=="i"+p&&nIteration!=0){
-                    
-                        
+                     if(exElement.id=="i"+p&&nIteration!=0)
+                     {
                         audio07.play();
                         if(contaScambiaTarget%2==0){
                          //   targetattivo=${targetelement2img};
@@ -302,7 +302,7 @@ p<%--
                             targetDesc='${noTarget.eldescr}';
                             console.log("dentro if nItaration contaScambiaTarget"+contaScambiaTarget);
                             
-                             console.log("dentro if nItaration  NONONOtarget"+${noTarget});
+                            console.log("dentro if nItaration  NONONOtarget"+${noTarget});
                             contaScambiaTarget++;
                             
                         }

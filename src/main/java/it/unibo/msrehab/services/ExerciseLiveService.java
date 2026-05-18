@@ -47,8 +47,8 @@ import org.springframework.web.servlet.ModelAndView;
  * @author danger
  */
 @Controller
-public class ExerciseLiveService {
-
+public class ExerciseLiveService
+{
     private static final Logger logger = LoggerFactory
             .getLogger(ExerciseService.class);
     private final HistoryController historyController;
@@ -214,7 +214,7 @@ public class ExerciseLiveService {
                 // TODO: Attualmente restituisce solo l'agente reattivo
                 List<History> lhe = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, o.getInt("id"), session.getId(), null);
                 if (!lhe.isEmpty()) {
-                    List<ChangeDifficulty> cdlist = changeDiffController.findFromHistory(lhe.get(0).getId());//FIXME PLEASE
+                    List<ChangeDifficulty> cdlist = changeDiffController.findFromHistory(lhe.get(0).getId()); //FIXME PLEASE
 
                     lh.add(lhe.get(0));
                     JSONObject ob = new JSONObject();
@@ -338,7 +338,7 @@ public class ExerciseLiveService {
         List<Exercise> es;
         es = exerciseController.getAllEntities();
 
-        List<History> lh = new ArrayList<History>(); //historyController.findAllByUser(patientid);
+        List<History> lh = new ArrayList<>(); //historyController.findAllByUser(patientid);
         JSONArray jhistory = new JSONArray();
 
         List<MSRUser> lu = userController.findAllPatientsInGroup(groupid);
@@ -387,7 +387,8 @@ public class ExerciseLiveService {
             @RequestParam(value = "level", required = true) Integer level,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model) throws ServletException, IOException {
+            Model model) throws ServletException, IOException
+    {
         HttpHeaders headers = new HttpHeaders();
 
         if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
@@ -398,6 +399,7 @@ public class ExerciseLiveService {
         Integer exid = historyController.findEntity(historyid)
                 .map(History::getExid)
                 .orElse(null);
+
         Integer maxdiff = exerciseController.findEntity(exid)
                 .map(Exercise::getMaxLevel)
                 .orElse(null);
@@ -405,14 +407,16 @@ public class ExerciseLiveService {
         if(exid == null || maxdiff == null)
             return new ResponseEntity<>(headers,HttpStatus.BAD_REQUEST);
 
-        if (level < MIN_DIFFICULTY_LEVEL) {
+        if (level < MIN_DIFFICULTY_LEVEL)
+        {
             level = MIN_DIFFICULTY_LEVEL;
         } else if (level > maxdiff)
                 level = maxdiff;
 
 
         List<ChangeDifficulty> cdl = changeDiffController.findFromHistory(historyid);
-        if ((cdl != null) && (!cdl.isEmpty())) {
+        if ((cdl != null) && (!cdl.isEmpty()))
+        {
             ChangeDifficulty cd = cdl.get(0);
             cd.setLevel(level);
             if (!changeDiffController.updateEntity(cd)) {
@@ -420,13 +424,13 @@ public class ExerciseLiveService {
                 return new ResponseEntity<>(headers,HttpStatus.SERVICE_UNAVAILABLE);
             }
         }
-        else {
+        else
+        {
             ChangeDifficulty cd = new ChangeDifficulty();
             cd.setHistoryid(historyid);
             cd.setLevel(level);
             if (!changeDiffController.insertEntity(cd))
                 return new ResponseEntity<>(headers,HttpStatus.SERVICE_UNAVAILABLE);
-
         }
 
         return new ResponseEntity<>(level + "/" + maxdiff, headers, HttpStatus.OK);

@@ -5,6 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
+
+
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 
 import java.util.Comparator;
@@ -12,6 +14,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+
+
 
 /**
  * Controller for ChangeDifficulty entities
@@ -26,6 +31,7 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
     {
         super(ChangeDifficulty.class);
     }
+
 
 
     /**
@@ -44,6 +50,7 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
     }
 
 
+
     /**
      * Gets the last ChangeDifficulty associated with the given historyid.
      *
@@ -58,6 +65,8 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
     }
 
 
+
+
     /**
      * Gets the last ChangeDifficulty associated with the given exerciseId, userId, sessionId.
      * exerciseId, userId, sessionId are first used to find the last history associated with the given exerciseId, userId, sessionId
@@ -68,12 +77,13 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
      * @param sessionId
      * @return
      */
-    public Optional<ChangeDifficulty> findLastFromExerciseUserSession(int exerciseId, int userId, int sessionId)
+    public Optional<ChangeDifficulty> findLastFromExerciseUserSession(int userId, int exerciseId, int sessionId)
     {
-        return historyController.findLastByUserAndExerciseAndSessid(exerciseId, userId, sessionId)
+        return historyController.findLastByUserAndExerciseAndSessid(userId, exerciseId, sessionId)
                 .flatMap(h -> findLastFromHistory(h.getId()))
                 ;
     }
+
 
 
     /**
@@ -86,9 +96,9 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
      * @param defaultReturnedLevel
      * @return
      */
-    public int findChangedLevel(int exerciseId, int userId, int sessionId, int defaultReturnedLevel)
+    public int findChangedLevel(int userId, int exerciseId, int sessionId, int defaultReturnedLevel)
     {
-        return findLastFromExerciseUserSession(exerciseId, userId, sessionId)
+        return findLastFromExerciseUserSession(userId, exerciseId, sessionId)
                 .map(ChangeDifficulty::getLevel)
                 .orElse(defaultReturnedLevel);
     }

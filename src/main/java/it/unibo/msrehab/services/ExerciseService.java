@@ -1,5 +1,10 @@
 package it.unibo.msrehab.services;
 
+
+
+
+
+
 import com.sun.istack.Nullable;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
@@ -86,8 +91,9 @@ public class ExerciseService
     private final int NUM_FEAT_NBACK = 4;
     private final int NUM_FEAT_MEM_LONG_1 = 4;
     private final int NUM_FEAT_RES_INH = 4;
-
     private final int NUM_FEAT_MEM_5 = 4;
+
+
 
     //private final int NUM_FEAT_MEM_NOT_INCL = 5;
     private static final Logger logger = LoggerFactory.getLogger(ExerciseService.class);
@@ -97,11 +103,8 @@ public class ExerciseService
     private final Configuration config;
     private final FitnessWeightController fitnessController;
     private final ChangeDifficultyController changeDiffController;
-
     private final ExerciseController exerciseController;
-
     private final MSRUserController userController;
-
     private final IModel model = JPAController.getInstance();
 
 
@@ -122,6 +125,7 @@ public class ExerciseService
                 "META-INF/spring/applicationContext.xml");
         this.config = l.getApplicationContext().getBean(Configuration.class);
     }
+
 
 
     public static Map<String, Object> createParametersAttention1(Integer level, Integer[] diffVar, ExerciseNameValue exname)
@@ -1206,7 +1210,7 @@ public class ExerciseService
                 color = "omo";
                 diffVar[3] = 2;
                 break;
-            case 8://alta
+            case 8: //alta
                 nelements = 6;//era 5
                 ntargets = 6;
                 diffVar[0] = 3;
@@ -1229,7 +1233,7 @@ public class ExerciseService
                 diffVar[3] = 2;
                 break;
             case 10:
-                nelements = 7;//non c'era
+                nelements = 7; //non c'era
                 ntargets = 7;
                 diffVar[0] = 3;
                 distractor = "no";
@@ -1247,9 +1251,7 @@ public class ExerciseService
         parameters.put("time", time);
         parameters.put("color", color);
 
-
         return parameters;
-
     }
 
     public static Map<String, Object> createParametersMemory4(Integer level, Integer[] diffVar)
@@ -1895,6 +1897,157 @@ public class ExerciseService
 
     }
 
+    public static Map<String, Object> createParametersReflexes1(Integer level)
+    {
+        double speed = 1;
+        int obstaclesSpawnDelay = 2000;
+        boolean decoys = true;
+        boolean changeOfLane = false;
+        double scale = 1;
+
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        parameters.put("totalTime", Double.valueOf(60));
+        parameters.put("speed", speed);
+        parameters.put("obstaclesSpawnDelay", obstaclesSpawnDelay);
+        parameters.put("decoys", decoys);
+        parameters.put("changeOfLane", changeOfLane);
+        parameters.put("fog", false);
+        parameters.put("rain", false);
+        parameters.put("scale", scale);
+
+
+        // Ostacoli piccoli e grandi che vengono incontro GIA FATTO
+        // Presenza di macchine nella corsia opposta che vengono incontro ? FATTO CON TUTTI I TIPI DI OSTACOLI
+        // Spostare la moto quando l'ostacolo viene evitato FATTO
+        // Aggiungere condizione metereologica alla pioggia FATTO
+        // Presentare tabella delle difficolta' XL con un parametro aggiuntivo la presenza di macchine.
+        // I parametri sono: speed=velocita' della moto
+        // Spawn: intervallo di tempo tra due ostacoli,
+        // Decoy: presenza di oggetti nell'altra corsia
+        // Change of lane: cambio di lane all'improvviso
+        // Condizioni metereologiche: Normali, Nebbia, Pioggia
+        // PresenceOfCars: presenza di macchine
+
+
+
+        switch (level)
+        {
+            case -1:
+            case 0:
+                parameters.put("speed", 0.8);
+                parameters.put("obstaclesSpawnDelay", 1400);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.4);
+                break;
+            case 1:
+                parameters.put("speed", 1);
+                parameters.put("obstaclesSpawnDelay", 1300);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.3);
+                break;
+            case 2:
+                parameters.put("speed", 1);
+                parameters.put("obstaclesSpawnDelay", 1300);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.3);
+                break;
+            case 3:
+                parameters.put("speed", 1.1);
+                parameters.put("obstaclesSpawnDelay", 1100);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.3);
+                break;
+            case 4:
+                parameters.put("speed", 1.1);
+                parameters.put("obstaclesSpawnDelay", 1100);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.2);
+                break;
+            case 5:
+                parameters.put("speed", 1.2);
+                parameters.put("obstaclesSpawnDelay", 900);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.2);
+                break;
+            case 6:
+                parameters.put("speed", 1.2);
+                parameters.put("obstaclesSpawnDelay", 900);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.2);
+                break;
+            case 7:
+                parameters.put("speed", 1.3);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.2);
+                break;
+            case 8:
+                parameters.put("speed", 1.3);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", true);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.2);
+                break;
+            case 9:
+                parameters.put("speed", 1.4);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", true);
+                parameters.put("rain", false);
+                parameters.put("scale", 1.1);
+                break;
+            case 10:
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                parameters.put("scale", 1);
+                break;
+            default:
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesSpawnDelay", 1200);
+                parameters.put("decoys", false);
+                parameters.put("changeOfLane", false);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                parameters.put("scale", 1);
+                break;
+        }
+
+        return parameters;
+    }
+
     public static boolean isRLDriven(ExerciseNameValue exName)
     {
         return Lists.of(
@@ -1982,7 +2135,7 @@ public class ExerciseService
         }
         else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
         {//adattivo
-            passThreshold = getNextThreshold(exerciseId, userId, sessionId, difficulty);
+            passThreshold = getNextAdaptiveThreshold(exerciseId, userId, sessionId, difficulty);
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else 
@@ -1991,6 +2144,9 @@ public class ExerciseService
             passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
+
+        passThreshold.setLevel(changeDiffController.findChangedLevel(userId, exerciseId, sessionId, passThreshold.getLevel()));
+
 
         // Store history for assigned exercise
         history.setExid(exerciseId);
@@ -2014,8 +2170,6 @@ public class ExerciseService
 
         return history;
     }
-
-
 
 
     private static long epochMillisToEpochDay(long epochMillis)
@@ -2073,7 +2227,7 @@ public class ExerciseService
     }
 
 
-    private PassThreshold getNextThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
+    private PassThreshold getNextAdaptiveThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
     {
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
@@ -2119,12 +2273,12 @@ public class ExerciseService
         else
         {
             nextThreshold += thresholdDeltaNotPassed;
-            if (nextThreshold <=  lowerThreshold)// startThreshold- diff)//)
+            if (nextThreshold < lowerThreshold)
             {   if (nextLevel>1){
                 nextThreshold = startThreshold; //il livello poteva scendere a 0
                 
                 nextLevel -= 1;
-                }else//se zi raggiunge il livello minimo non si può decrementare il livello
+                }else //se si raggiunge il livello minimo non si può decrementare il livello
                 {
                 nextThreshold =  lowerThreshold;
                 nextLevel = 1;
@@ -2159,7 +2313,6 @@ public class ExerciseService
 
         return PassThreshold.create(-1, level, threshold);
     }
-
 
 
 
@@ -2251,6 +2404,8 @@ public class ExerciseService
         return new ModelAndView("redirect:" + url);
     }
 
+
+
     @RequestMapping(value = "/attention1", method = RequestMethod.GET)
     public ModelAndView attention1(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2277,6 +2432,8 @@ public class ExerciseService
         model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("attention1");
     }
+
+
 
     @RequestMapping(value = "/attention1phase1", method = RequestMethod.GET)
     public ModelAndView attention1phase1(
@@ -2327,6 +2484,7 @@ public class ExerciseService
         model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention1a");
     }
+
 
 
     @RequestMapping(value = "/attention1phase2", method = RequestMethod.GET)
@@ -2381,6 +2539,7 @@ public class ExerciseService
         return new ModelAndView("attention1b");
     }
 
+
     @RequestMapping(value = "/attention1phase3", method = RequestMethod.GET)
     public ModelAndView attention1phase3(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2405,7 +2564,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = false) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model)
@@ -2420,9 +2579,10 @@ public class ExerciseService
         }
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+
         History history = historyController.getEntityOrThrow(assignmentid);
 
         history.setExid(exerciseid);
@@ -2642,6 +2802,7 @@ public class ExerciseService
         return new ModelAndView("attention2");
     }
 
+
     @RequestMapping(value = "/attention2phase1", method = RequestMethod.GET)
     public ModelAndView attention2phase1(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2688,6 +2849,7 @@ public class ExerciseService
         model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention2a");
     }
+
 
     @RequestMapping(value = "/attention2phase2", method = RequestMethod.GET)
     public ModelAndView attention2phase2(
@@ -2739,6 +2901,7 @@ public class ExerciseService
     }
 
 
+
     @RequestMapping(value = "/attention2phase3", method = RequestMethod.GET)
     public ModelAndView attention2phase3(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2775,7 +2938,7 @@ public class ExerciseService
 
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
@@ -2907,6 +3070,8 @@ public class ExerciseService
         return new ModelAndView("redirect:" + url);
     }
 
+
+
     @RequestMapping(value = "/createattention3", method = RequestMethod.GET)
     public ModelAndView createattention3(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -2981,6 +3146,8 @@ public class ExerciseService
         return new ModelAndView("redirect:" + url);
     }
 
+
+
     @RequestMapping(value = "/attention3", method = RequestMethod.GET)
     public ModelAndView attention3(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -3006,6 +3173,7 @@ public class ExerciseService
         model.addAttribute("rl", true);
         return new ModelAndView("attention3");
     }
+
 
     @RequestMapping(value = "/attention3phase1", method = RequestMethod.GET)
     public ModelAndView attention3phase1(
@@ -3111,7 +3279,6 @@ public class ExerciseService
         ExElement t0;
         Integer targetId = Integer.parseInt(targetelement1);
         ExElement target = exElementController.findEntity(targetId).orElse(null);
-
 
         Integer noTargetId = Integer.parseInt(targetelement2);
         ExElement noTarget = exElementController.findEntity(noTargetId).orElse(null);
@@ -3461,7 +3628,6 @@ public class ExerciseService
             HttpServletRequest request,
             Model model)
     {
-
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
         String argument = "";
@@ -3534,6 +3700,7 @@ public class ExerciseService
     }
 
 
+
     @RequestMapping(value = "/attention4", method = RequestMethod.GET)
     public ModelAndView attention4(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -3560,6 +3727,8 @@ public class ExerciseService
         return new ModelAndView("attention4");
     }
 
+
+
     @RequestMapping(value = "/attention4phase1", method = RequestMethod.GET)
     public ModelAndView attention4phase1(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -3585,7 +3754,9 @@ public class ExerciseService
         logger.debug("attention4phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
+
         List<ExElement> targetElementList = exElementController.sampleElements(ntargets, exElementList);
+
 
         exElementController.increaseFrequencyOfElements(exElementList, targetElementList, 0.2);
 
@@ -3612,6 +3783,8 @@ public class ExerciseService
 
         return new ModelAndView("attention4a");
     }
+
+
 
     @RequestMapping(value = "/attention4phase2", method = RequestMethod.GET)
     public ModelAndView attention4phase2(
@@ -3696,7 +3869,6 @@ public class ExerciseService
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-
         if (patientid == -1)
             if (difficulty.equals("training"))
                 return new ModelAndView("redirect: patienttraining");
@@ -3704,7 +3876,7 @@ public class ExerciseService
                 return new ModelAndView("redirect: patientdemo");
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
         History history = historyController.getEntityOrThrow(assignmentid);
@@ -3813,6 +3985,8 @@ public class ExerciseService
     }
 
 
+
+
     // RL Exercise
 
     @RequestMapping(value = "/createreflexes1", method = RequestMethod.GET)
@@ -3830,11 +4004,13 @@ public class ExerciseService
             Model model)
     {
         History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
 
+        level = assignment.getLevel();
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("level", level);
-        parameters.put("difficulty", difficulty);
+        parameters.put("difficulty", exercise.getDifficulty(level));
         parameters.put("exname", exname);
         parameters.put("patientid", patientid);
         parameters.put("exerciseid", exerciseid);
@@ -3847,6 +4023,8 @@ public class ExerciseService
         return new ModelAndView("reflexes1a")
                 .addAllObjects(parameters);
     }
+
+
 
     @RequestMapping(value = "/reflexes1", method = RequestMethod.GET)
     public ModelAndView reflexes1(
@@ -3874,6 +4052,7 @@ public class ExerciseService
         model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("reflexes1");
     }
+
 
 
     @RequestMapping(value = "/reflexes1phase1", method = RequestMethod.GET)
@@ -3925,9 +4104,9 @@ public class ExerciseService
     {
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
-
         if (difficulty == null)
             difficulty = helper.getDifficultyString(level);
+
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("level", level);
@@ -3940,11 +4119,13 @@ public class ExerciseService
         parameters.put("lastexercisepassed", lastexercisepassed);
         parameters.put("rlagent", rlagent);
         parameters.put("assignmentid", assignmentid);
+        parameters.putAll(createParametersReflexes1(level));
 
 
         return new ModelAndView("reflexes1b")
                 .addAllObjects(parameters);
     }
+
 
     @RequestMapping(value = "/reflexes1phase3", method = RequestMethod.GET)
     public ModelAndView reflexes1phase3(
@@ -3968,7 +4149,6 @@ public class ExerciseService
             HttpServletResponse response,
             Model model) throws ServletException, IOException
     {
-
         logger.info("reflexes1phase3()");
         if (patientid == -1)
             if (difficulty.equals("training"))
@@ -3978,7 +4158,7 @@ public class ExerciseService
 
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
 
         History history = historyController.getEntityOrThrow(assignmentid);
@@ -4004,8 +4184,10 @@ public class ExerciseService
         ft = fitnessController.calculateFitness(true, history);
         history.setRelperformance(ft);
 
+
         Long t = LocalDateTime.now().toDateTime().getMillis();
         history.setTimestamp(t);
+
 
         if (!historyController.putEntity(history))
         {
@@ -4019,6 +4201,8 @@ public class ExerciseService
 
         ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
+
+
         if (level == helper.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
@@ -4031,6 +4215,7 @@ public class ExerciseService
             }
             return new ModelAndView("redirect:patienthome");
         }
+
 
         // Forward user to next exercise
 
@@ -4050,7 +4235,9 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent;
+                + "&rlagent=" + rlagent
+                + "&assignmentid=" + assignment.getId()
+                ;
 
 
         return new ModelAndView("redirect:" + url);
@@ -4865,7 +5052,7 @@ public class ExerciseService
 
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
 
@@ -5189,7 +5376,7 @@ public class ExerciseService
                 return new ModelAndView("redirect: patientdemo");
 
         if (difficulty.equals("training") || difficulty.equals("demo"))
-            return new ModelAndView("redirect: patientrehabilitation");
+            return new ModelAndView("redirect: patienttraining");
 
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
         History history = historyController.getEntityOrThrow(assignmentid);
@@ -6806,7 +6993,7 @@ public class ExerciseService
 
         double thr = fitnessController.getFitnessWeightOrThrow(exerciseid).getThr();
 
-        if(assignmentid != null)
+        if(assignmentid != null && assignmentid != -1)
             thr = historyController.getEntityOrThrow(assignmentid).getPassThreshold();
 
         boolean passed = perf >= thr;

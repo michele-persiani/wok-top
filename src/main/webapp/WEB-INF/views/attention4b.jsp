@@ -348,7 +348,7 @@
 
                 var nCorrect=0, nWrong=0; nMissed=0;
 
-                var soundCounter=0, rightSoundCounter=0;
+                var soundCounter=0, rightSoundCounter=0, soundFalsePositive=0;
                 //var wrongSoundCounter=0;
 
                 var dTime = 0;
@@ -406,7 +406,7 @@
                             "patientid": ${patientid},
                             "ptime": dTime,
                             "pcorrect": rightSoundCounter,
-                            "pwrong": 0,
+                            "pwrong": soundFalsePositive,
                             "pmissed": soundCounter-rightSoundCounter,
                             "maxtime": Math.round(2000*nelements),
                             "sessid": ${sessid},
@@ -429,7 +429,6 @@
                                     "ptime": dTime,
                                     "pcorrect": nCorrect,
                                     "pwrong": nWrong,
-                                    //"pmissed": totMissed-soundCounter,
                                     "pmissed": nMissed,
                                     "maxtime": Math.round(time*nelements),
                                     "sessid": ${sessid},
@@ -466,6 +465,7 @@
                                             '<br>' +
                                             '<br><b>Suoni catturati</b>: ' + rightSoundCounter +
                                             '<br><b>Suoni mancati</b>: ' + Math.max(0, soundCounter - rightSoundCounter) +
+                                            '<br><b>Suoni sbagliati (falsi positivi)</b>: ' + soundFalsePositive +
                                             //'<br><b>Suoni totali</b>: ' + soundCounter +
                                             '<br>' +
                                             '<br><b>Performance</b>: ' + Math.floor(perf * 100) + '%' +
@@ -527,15 +527,11 @@
                     {
                         nCorrect++;
                         addBackground('img-' + id, 'green');
-                        //document.getElementById('img-' + id).style.backgroundColor = "green";
-                        //document.getElementById('img-' + id).style.filter= "grayscale(0%)";
                     }
                     else
                     {
                         nWrong++;
                         addBackground('img-' + id, 'red');
-                        //document.getElementById('img-' + id).style.backgroundColor = "red";
-                        //document.getElementById('img-' + id).style.filter= "grayscale(0%)";
                     }
                 }
 
@@ -550,8 +546,6 @@
                     {
                         nMissed++;
                         addBackground('img-' + id, 'yellow');
-                        //document.getElementById('img-' + id).style.backgroundColor = "yellow";
-                        //document.getElementById('img-' + id).style.filter= "grayscale(0%)";
                     }
 
                     sTime = new Date().getTime();
@@ -578,14 +572,16 @@
                     if(deltaTime <= 2000)
                     {
                         rightSoundCounter++;
-                        console.log("suono registrato")
+                        console.log("suoni catturati: " + rightSoundCounter)
                         cont=1;
                         soundEnabled = false;
                         document.getElementById("sndbtn").disabled = true;
                         setTimeout(function() { enableSubmit("#sndbtn") }, 1000);
                     }
-                    else
-                        console.log("suono mancato")
+                     else{
+                        soundFalsePositive++;
+                        console.log("suono mancati: " + soundFalsePositive);
+                    }
                 }
 
                 function checkSpace()
@@ -599,13 +595,12 @@
                 {
                     if(event.keyCode === 32)
                     {
-                        console.log('Premo barra spaziatrice');
+                        console.log('Premo barra spaziatrice (figura)');
                         checkSpace();
                     }
                     else if(event.keyCode === 13)
                     {
-                        console.log('Premo Enter');
-                        now = new Date().getTime();
+                        console.log('Premo Enter (suono)');
                         checkSound();
                     }
 

@@ -10,6 +10,7 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
+
 <html lang="it">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -173,6 +174,7 @@
 													<c:param name="exname" value="${exercise.name}" />
 												</c:url>
 											</c:when>
+
 											<c:when
 												test="${category.id == 'MEM_VIS_2' || category.id == 'MEM_VIS_2_FAC'}">
 												<c:url var="exerciseURL" value="creatememory2">
@@ -180,18 +182,21 @@
 													<c:param name="patientid" value="${patientid}" />
 													<c:param name="exerciseid" value="${exercise.id}" />
 													<c:param name="category" value="${exercise.exelementcat}" />
+													<c:param name="exname" value="${exercise.name}" />
 													<c:param name="sessid" value="${sessid}" />
 												</c:url>
 											</c:when>
-                                                                                   <c:when test = "${category.id == 'MEM_VIS_5' || category.id == 'MEM_VIS_5_FAC'}">
-                                                                                                        <c:url var="exerciseURL" value="creatememory5">
-                                                                                                        <c:param name="difficulty" value="${difficulty}"/>
-                                                                                                        <c:param name="patientid" value="${patientid}"/>
-                                                                                                        <c:param name="exerciseid" value="${exercise.id}"/>
-                                                                                                        <c:param name="category" value="${exercise.exelementcat}"/>
-                                                                                                         <c:param name="sessid" value="${sessid}"/>
-                                                                                                        </c:url>  
-                                                                                                </c:when>
+
+                                            <c:when test = "${category.id == 'MEM_VIS_5' || category.id == 'MEM_VIS_5_FAC'}">
+												<c:url var="exerciseURL" value="creatememory5">
+												<c:param name="difficulty" value="${difficulty}"/>
+												<c:param name="patientid" value="${patientid}"/>
+												<c:param name="exerciseid" value="${exercise.id}"/>
+												<c:param name="category" value="${exercise.exelementcat}"/>
+												<c:param name="sessid" value="${sessid}"/>
+												</c:url>
+                                            </c:when>
+
 											<c:when
 												test="${category.id == 'NBACK' || category.id == 'NBACK_FAC' || category.id == 'NBACK_ORI'}">
 												<c:url var="exerciseURL" value="createnback">
@@ -241,7 +246,7 @@
 													</c:url>
 												</c:if>
 											</c:when>
-                                                                                         <c:when test="${category.id == 'PLAN_3'}">
+                                                <c:when test="${category.id == 'PLAN_3'}">
 												<c:if test="${exercise.name == 'PLAN_3'}">
 													<c:url var="exerciseURL" value="pianificazione3phase1">
 														<c:param name="difficulty" value="${difficulty}" />

@@ -97,8 +97,7 @@
             <div class="jumbotron">
                 <div><h2>Configura sessione esercizi individuale</h2></div>
 
-			<form:form id="sessForm" class="form-inline" method="post" modelAttribute="sessionForm"
-                           action="buildpatientsession">
+			<form:form id="sessForm" class="form-inline" method="post" modelAttribute="sessionForm" action="buildpatientsession">
                     
                     <div class="row">
                         <div class="col-sm-8">

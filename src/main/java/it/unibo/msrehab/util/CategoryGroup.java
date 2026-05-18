@@ -28,11 +28,11 @@ public class CategoryGroup implements Serializable {
 			case "ATTENTION_FIG": return "Attenzione: figure";
 			case "ATTENTION_FAC": return "Attenzione: volti";
 			case "ATTENTION_ORI": return "Attenzione: orientamento";
-			case "ATTENTION_RFLXS": return "Attenzione: riflessi";
 			case "MEMORY_FIG": return "Memoria: figure";
 			case "MEMORY_FAC": return "Memoria: volti";
 			case "MEMORY_ORI": return "Memoria: orientamento";
 			case "EX_FUNC": return "Funzioni esecutive";
+			case "ATT_RFLXS": return "Attenzione: riflessi";
 			default: return "Senza nome";
 		}
 	}

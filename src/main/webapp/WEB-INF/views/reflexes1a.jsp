@@ -21,7 +21,7 @@
         <meta name="author" content="Floriano Zini">
         <link rel="icon" href="resources/favicon.ico">
 
-        <title>Attenzione Divisa</title>
+        <title>Riflessi1\</title>
 
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="resources/css/bootstrap.min.css">
@@ -61,7 +61,8 @@
         </c:if>
 
     </head>    
-    
+
+
     <body>
         <div class="container">
             <div class="header clearfix">
@@ -89,11 +90,14 @@
                                 </a>
                             </c:if>                            
                         </li>
+
+
                         <li>
                             <a href="patienthome">
                                 <span class="glyphicon glyphicon-home fa-2x" data-toggle="tooltip" data-placement="bottom" title="Home"></span>
                             </a>
-                        </li>                        
+                        </li>
+
                         <li>
                             <a href="logout">
                                 <span class="glyphicon glyphicon-log-out fa-2x" data-toggle="tooltip" data-placement="bottom" title="Logout"></span>
@@ -139,6 +143,7 @@
                                             sessid: '${sessid}',
                                             type: '${type}',
                                             exname: '${exname}',
+                                            rlagent: '${rlagent}',
                                             assignmentid: '${assignmentid}',
                                         }, 'get');">
                                 Inizia esercizio
@@ -161,15 +166,6 @@
             });
         </script>
 
-        <script>
-            var audio07 = new Audio('resources/audio/audio-07.mp3');
-            
-            function trySound() {
-                document.getElementById("trysound").blur();
-                audio07.load();
-                audio07.play();
-            }
-        </script>
         
         <script>
             $(document).ready(function(){

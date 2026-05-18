@@ -324,23 +324,23 @@ public class MSRSessionService {
             @RequestParam(value = "forpatient", required = true) Boolean forpatient,
             Model model) {
 
-        MSRSession session = sessionController.findEntity(sessionid).get(),
-                hospitalSession;
+        MSRSession session = sessionController.getEntityOrThrow(sessionid),
+                lastHospitalSession;
         List<MSRUser> patients = new ArrayList<>();
         
-        if (forpatient) {
-            patients.add(userController.findEntity(session.getUsrgrpid()).get());
-        }
-        else {
+        if (forpatient)
+            patients.add(userController.getEntityOrThrow(session.getUsrgrpid()));
+        else
+        {
             Integer grpid = session.getUsrgrpid();
             patients = userController.findAllPatientsInGroup(grpid);
         }
 
         for (MSRUser patient : patients) {
-            hospitalSession
+            lastHospitalSession
                     = sessionController.findAllHospitalByUserOrGroup(patient.getId()).get(0);
             
-            String hospitalExercises = hospitalSession.getExercises();
+            String hospitalExercises = lastHospitalSession.getExercises();
 
             JSONArray hospitalExs = new JSONArray(hospitalExercises),
                     homeExs = new JSONArray();
@@ -352,6 +352,8 @@ public class MSRSessionService {
             for (int i = 0; i < hospitalExs.length(); i++) {
                 hospitalExJson = hospitalExs.getJSONObject(i);
                 homeExs.put(hospitalExJson);
+                /*
+                * Aggiunta di tutti gli esercizi della stessa categoria
                 exCat = hospitalExJson.getString("cat");
                 exList = exerciseController.findAllExercisesByCategory(Exercise.ExerciseCategoryValue.valueOf(exCat));
                 for (Exercise exEl : exList) {
@@ -365,23 +367,24 @@ public class MSRSessionService {
                         homeExs.put(homeExJson);
                     }
                 }
+                */
             }
 
             MSRSession homePatientSession = new MSRSession();
             homePatientSession.setExercises(homeExs.toString());
             homePatientSession.setActive(Boolean.TRUE);
             homePatientSession.setHospital(Boolean.FALSE);
-            homePatientSession.setDifficulty(hospitalSession.getDifficulty());
+            homePatientSession.setDifficulty(lastHospitalSession.getDifficulty());
             homePatientSession.setForgroup(Boolean.FALSE);
-            homePatientSession.setGrpid(hospitalSession.getGrpid());
-            homePatientSession.setUsrgrpid(hospitalSession.getUsrgrpid());
-            homePatientSession.setFromSessionId(hospitalSession.getId());
+            homePatientSession.setGrpid(lastHospitalSession.getGrpid());
+            homePatientSession.setUsrgrpid(lastHospitalSession.getUsrgrpid());
+            homePatientSession.setFromSessionId(lastHospitalSession.getId());
             // TODO: manage failure of addRecord
             sessionController.insertEntity(homePatientSession);
-            hospitalSession.setActive(Boolean.FALSE);
-            hospitalSession.setHospital(Boolean.FALSE);
+            lastHospitalSession.setActive(Boolean.FALSE);
+            lastHospitalSession.setHospital(Boolean.FALSE);
             // TODO: manage failure of updateRecord
-            sessionController.updateEntity(hospitalSession);
+            sessionController.updateEntity(lastHospitalSession);
         }
 
         session.setActive(Boolean.FALSE);

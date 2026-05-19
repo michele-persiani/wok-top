@@ -1,10 +1,5 @@
 package it.unibo.msrehab.services;
 
-
-
-
-
-
 import com.sun.istack.Nullable;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
@@ -2145,7 +2140,10 @@ public class ExerciseService
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
 
-        passThreshold.setLevel(changeDiffController.findChangedLevel(userId, exerciseId, sessionId, passThreshold.getLevel()));
+
+        // Se il livello e' impostato da admin usare quello
+        // Se la vogliamo fare bisogna ragionare che conseguenze ci sono sulla soglia
+        //passThreshold.setLevel(changeDiffController.findChangedLevel(userId, exerciseId, sessionId, passThreshold.getLevel()));
 
 
         // Store history for assigned exercise
@@ -2274,14 +2272,15 @@ public class ExerciseService
         {
             nextThreshold += thresholdDeltaNotPassed;
             if (nextThreshold < lowerThreshold)
-            {   if (nextLevel>1){
-                nextThreshold = startThreshold; //il livello poteva scendere a 0
-                
-                nextLevel -= 1;
+            {
+                if (nextLevel>1)
+                {
+                    nextThreshold = startThreshold; //il livello poteva scendere a 0
+                    nextLevel -= 1;
                 }else //se si raggiunge il livello minimo non si può decrementare il livello
                 {
-                nextThreshold =  lowerThreshold;
-                nextLevel = 1;
+                    nextThreshold =  lowerThreshold;
+                    nextLevel = 1;
                 }
 
             }
@@ -2915,7 +2914,7 @@ public class ExerciseService
             @RequestParam(value = "nelements", required = true) Integer nelements,
             @RequestParam(value = "color", required = true) String color,
             @RequestParam(value = "distractor", required = true) String distractor,
-            //@RequestParam(value = "time", required = true) Integer time,
+            //@RequestParam(value = "time", required = true) Integer time,  // Cambiato da versine di Sara
             @RequestParam(value = "time", required = true) Double time,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "pTime", required = true) Double pTime,
@@ -2928,7 +2927,7 @@ public class ExerciseService
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model) throws ServletException, IOException
+            Model model)
     {
         if (patientid == -1)
             if (difficulty.equals("training"))
@@ -2952,6 +2951,8 @@ public class ExerciseService
         history.setpWrong(pWrong);
         history.setMaxtime((double) time * nelements);
         history.setDifficulty(difficulty);
+        Long t = LocalDateTime.now().toDateTime().getMillis();
+        history.setTimestamp(t);
 
         // Calculate performance
         double ft;
@@ -2996,8 +2997,8 @@ public class ExerciseService
         difficulty = exercise.getDifficulty(level);
 
 
-        String url;
-         Integer[] diffVar;
+
+        Integer[] diffVar;
         HttpSession httpSess = request.getSession();
         String argument = "";
 
@@ -3017,7 +3018,7 @@ public class ExerciseService
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
         
- if (ATT_SEL_FLW.toString().equals(type))
+        if (ATT_SEL_FLW.toString().equals(type))
         {
             httpSess.setAttribute("diffVar2", diffVar);
         } else if (ATT_SEL_FLW_FAC.toString().equals(type))
@@ -3041,7 +3042,7 @@ public class ExerciseService
 
         
 
-        url = "/attention2phase1"
+        String url = "/attention2phase1"
                 + "?difficulty=" + difficulty
                 + "&level=" + level
                 + "&patientid=" + patientid

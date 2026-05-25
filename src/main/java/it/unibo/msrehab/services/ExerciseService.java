@@ -3444,18 +3444,14 @@ public class ExerciseService
         if (patientid == -1)
         {
             if (difficulty.equals("training"))
-            {
                 return new ModelAndView("redirect: patienttraining");
-            } else
-            {  //difficulty.equals("demo"))
+            else
                 return new ModelAndView("redirect: patientdemo");
-            }
         } else
         {
             if (difficulty.equals("training") || difficulty.equals("demo"))
-            {
                 return new ModelAndView("redirect: patientrehabilitation");
-            } else
+            else
             {
 
                 Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);

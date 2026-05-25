@@ -58,8 +58,8 @@
         Falsi positivi: <span id="falsePositives">0</span>
     </div>
 
-<div id="startButtonDiv" class="row" style="text-align: center">
-    <input type="button" id="startButton" value="Caricamento..." style="position: absolute; top: 50%; font-size: 50px; padding: 30px;"/>
+<div id="startButtonDiv" class="row" style="text-align: center; position: absolute; top: 45%; left:45%">
+    <input type="button" id="startButton" value="Caricamento..." style="font-size: 50px; padding: 30px;"/>
 </div>
 
 <script type="module">

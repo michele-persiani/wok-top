@@ -241,7 +241,8 @@
                                             pWrong: 0,
                                             sessid: '${sessid}',
                                             type: '${type}',
-                                            exname: '${exname}'
+                                            exname: '${exname}',
+                                            assignmentid: '${assignmentid}'
                                         }, 'get');">
                                 Inizia esercizio
                             </button>

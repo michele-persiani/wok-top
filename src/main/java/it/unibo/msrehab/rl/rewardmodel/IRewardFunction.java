@@ -8,7 +8,7 @@ package it.unibo.msrehab.rl.rewardmodel;
  * @param <S>
  * @param <A>
  */
-public interface TransitionFeatureFunction<S, A>
+public interface IRewardFunction<S, A>
 {
-    double getFeatureValue(S fromState, A action, S toState);
+    double getReward(S fromState, A action, S toState);
 }

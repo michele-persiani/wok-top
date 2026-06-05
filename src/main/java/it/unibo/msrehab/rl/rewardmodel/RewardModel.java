@@ -141,7 +141,7 @@ public abstract class RewardModel<S, A>
     // Factory methods
 
 
-    public static <S, A> RewardModel<S, A> createLambdaRewardModel(TransitionFeatureFunction<S, A> defaultRewardModel)
+    public static <S, A> RewardModel<S, A> createLambdaRewardModel(IRewardFunction<S, A> defaultRewardModel)
     {
         return new LambdaRewardModel<>(defaultRewardModel);
     }
@@ -261,7 +261,7 @@ public abstract class RewardModel<S, A>
      * @return
      */
     public static <S, A> RewardModel<S, A> createRegressionRewardModel(
-            TransitionFeatureFunction<S, A> featureFunction,
+            IRewardFunction<S, A> featureFunction,
             IRegressor regressor
     )
     {
@@ -272,7 +272,7 @@ public abstract class RewardModel<S, A>
             public double getReward(S fromState, A action, S toState)
             {
                 return regressor.predict(
-                        featureFunction.getFeatureValue(fromState, action, toState)
+                        featureFunction.getReward(fromState, action, toState)
                 );
             }
             @Override
@@ -285,7 +285,7 @@ public abstract class RewardModel<S, A>
             public void fit(List<StateTransition<S, A>> stateTransitions)
             {
                 double[] x = stateTransitions.stream()
-                        .mapToDouble(st -> featureFunction.getFeatureValue(st.getFromState(), st.getAction(), st.getToState()))
+                        .mapToDouble(st -> featureFunction.getReward(st.getFromState(), st.getAction(), st.getToState()))
                         .toArray();
                 double[] y = stateTransitions.stream()
                         .mapToDouble(StateTransition::getReward)

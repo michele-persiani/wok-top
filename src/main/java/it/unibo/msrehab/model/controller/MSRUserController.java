@@ -16,7 +16,6 @@ import java.util.Objects;
 
 public class MSRUserController extends BaseEntityController<MSRUser>
 {
-
     public MSRUserController()
     {
         super(MSRUser.class);
@@ -33,7 +32,7 @@ public class MSRUserController extends BaseEntityController<MSRUser>
      * @return the user if the email is found in the database and the password
      * is valid, null otherwise
      */
-    public MSRUser findRecord(String email, String password)
+    public MSRUser findRecordByEmail(String email, String password)
     {
         return findEntity(usr -> Objects.equals(usr.getEmail(), email) && Objects.equals(usr.getPassword(), password))
                 .orElse(null);

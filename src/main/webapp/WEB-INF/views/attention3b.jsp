@@ -11,6 +11,10 @@ p<%--
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
+
+
+
+
 <html lang="it">
     <head>        
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -23,28 +27,37 @@ p<%--
 
         <title>Attenzione Alternata</title>
 
+
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="resources/css/bootstrap.min.css">
 
+
         <!-- font-awesome -->
         <link rel="stylesheet" href="resources/css/font-awesome.min.css">
-        
+
+
         <!-- disableselect -->
         <link rel="stylesheet" href="resources/css/disableselect.css">        
+
 
         <!-- jQuery library -->
         <script type="text/javascript" src="resources/assets/js/vendor/jquery.min.js"></script>
 
+
         <!-- Latest compiled JavaScript -->
         <script type="text/javascript" src="resources/js/bootstrap.min.js"></script>
+
 
         <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
         <link rel="stylesheet" href="resources/assets/css/ie10-viewport-bug-workaround.css">
 
+
         <!-- Custom styles for this template -->
         <link rel="stylesheet" href="resources/jumbotron.css">
 
+
         <!--link rel="stylesheet" href="resources/signin.css"-->
+
 
         <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
         <!--[if lt IE 9]>
@@ -432,7 +445,8 @@ p<%--
                                         pWrong: nWrong,
                                         sessid: '${sessid}',
                                         type: '${type}',
-                                        exname: '${exname}'
+                                        exname: '${exname}',
+                                        assignmentid: '${assignmentid}',
                                     }, 'get');
                                 }
                             });

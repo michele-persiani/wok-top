@@ -2512,7 +2512,7 @@ public class ExerciseService
     {
         logger.info("attention1phase2()");
 
-        List<ExElement> l = buildExElementListFromIds(exElementIds);
+        List<ExElement> l  = buildExElementListFromIds(exElementIds);
         List<ExElement> l1 = buildExElementListFromIds(targetElementIds);
 
         model.addAttribute("difficulty", difficulty);
@@ -2568,7 +2568,7 @@ public class ExerciseService
             HttpServletResponse response,
             Model model)
     {
-        logger.info("attention1phase2()");
+        logger.info("attention1phase3()");
         if (patientid == -1)
         {
             if (difficulty.equals("training"))
@@ -3123,7 +3123,7 @@ public class ExerciseService
         Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
 
         difficulty=exercise.getDifficulty(level);
-    Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/attention3phase1"
                 + "?difficulty=" + difficulty
@@ -3243,6 +3243,7 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
+        model.addAttribute("assignmentid", assignmentid);
 
         return new ModelAndView("attention3a");
     }
@@ -3274,6 +3275,7 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = false, defaultValue = "0") Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model)
     {
         logger.debug("attention3phase2()");
@@ -3392,6 +3394,7 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
+        model.addAttribute("assignmentid", assignmentid);
 
         if (pCorrect != null)
         {
@@ -3399,7 +3402,8 @@ public class ExerciseService
             model.addAttribute("pMissed", pMissed);
             model.addAttribute("pWrong", pWrong);
             model.addAttribute("pTime", pTime);
-        } else
+        }
+        else
         {
             model.addAttribute("pCorrect", 0);
             model.addAttribute("pMissed", 0);
@@ -3436,7 +3440,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
+            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -3554,6 +3558,8 @@ public class ExerciseService
                     diffVar = (Integer[]) (httpSess.getAttribute("diffVar4Fac"));
                 else if (ATT_DIV_ORI.toString().equals(type))
                     diffVar = (Integer[]) (httpSess.getAttribute("diffVar4Ori"));
+                else if (ATT_ALT.toString().equals(type))
+                    diffVar = (Integer[]) (httpSess.getAttribute("diffVar3"));
 
 
                 Map<String, Object> parameters = createParametersAttention3(level, diffVar);
@@ -3561,39 +3567,33 @@ public class ExerciseService
                 // Non presente in attention1, non e' chiaro il perche
                 httpSess.setAttribute("diffVar6", diffVar);
 
-                ParametersParser parser = new ParametersParser(parameters);
+
                 iterations = (Integer) (parameters.get("iterations"));
                 nelementspertarget = (Integer) (parameters.get("nelementspertarget"));
                 color = (String) (parameters.get("color"));
                 frequenza = (Double) (parameters.get("frequenza"));
                 time = (Double) (parameters.get("time"));
-                Double soundinterval = (Double) parameters.get("soundInterval");
-                Integer ntargets = (Integer) parameters.get("ntargets");
-                Integer nelements =  (Integer) parameters.get("nelements");
-                String distractor = parameters.get("distractor").toString();
-                    Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
+                Integer assignmentId = assignment.getId();
 
 
-                url = "/attention4phase1"
+                url = "/attention3phase1"
                         + "?difficulty=" + difficulty
                         + "&level=" + level
                         + "&patientid=" + patientid
                         + "&exerciseid=" + exerciseid
                         + "&category=" + category
-                        + "&lastexercisepassed=" + true
-                        + "&ntargets=" + ntargets
-                        + "&nelements=" + nelements
+                        + "&lastexercisepassed=" + false
+                        + "&iterations=" + iterations
+                        + "&nelementspertarget=" + nelementspertarget
                         + "&color=" + color
-                        + "&distractor=" + distractor
+                        + "&frequenza=" + frequenza
                         + "&time=" + time
-                        + "&soundinterval=" + soundinterval
                         + "&sessid=" + sessid
                         + "&type=" + type
                         + "&exname=" + exname
                         + "&rlagent=" + rlagent
                         + "&assignmentid=" + assignmentId
                         ;
-
 
 
 

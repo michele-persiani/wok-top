@@ -4,12 +4,32 @@ import it.unibo.msrehab.rl.common.StateTransition;
 
 import java.util.List;
 
+
+/*
+
+attention1 no
+attention2 no
+attention3 no
+attention4 no
+reflexes1 si
+memory1 no
+memory2 no
+nback no
+memory4 no
+memory5 no
+
+
+
+
+
+ */
+
+
 public class LambdaRewardModel<S, A> extends RewardModel<S, A>
 {
+    private final IRewardFunction<S, A> rewardFunction;
 
-    private final TransitionFeatureFunction<S, A> rewardFunction;
-
-    public LambdaRewardModel(TransitionFeatureFunction<S, A> rewardModel)
+    public LambdaRewardModel(IRewardFunction<S, A> rewardModel)
     {
         this.rewardFunction = rewardModel;
     }
@@ -17,7 +37,7 @@ public class LambdaRewardModel<S, A> extends RewardModel<S, A>
     @Override
     public double getReward(S fromState, A action, S toState)
     {
-        return rewardFunction.getFeatureValue(fromState, action, toState);
+        return rewardFunction.getReward(fromState, action, toState);
     }
 
     @Override

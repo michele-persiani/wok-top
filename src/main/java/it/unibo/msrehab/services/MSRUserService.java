@@ -177,7 +177,7 @@ public class MSRUserService
                 logger.warn("...given phone is not valid");
                 return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
             }
-            if (userController.findRecord(user.getEmail(), user.getPassword()) == null)
+            if (userController.findRecordByEmail(user.getEmail(), user.getPassword()) == null)
             {
                 boolean success = userController.insertEntity(user);
                 
@@ -1158,7 +1158,7 @@ public class MSRUserService
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        MSRUser user = userController.findRecord(email, password);
+        MSRUser user = userController.findRecordByEmail(email, password);
         if (user == null) {
             logger.info("...no user found in the database");
             return new ResponseEntity<String>("-1", HttpStatus.NO_CONTENT);

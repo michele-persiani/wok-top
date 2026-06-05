@@ -14,6 +14,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
+/**
+ * Controller for {@code BaseEntity} entities
+ * @param <T>
+ */
 public class BaseEntityController<T extends BaseEntity> extends ProxyEntityController<T>
 {
     public static final IModel model = JPAController.getInstance();
@@ -32,6 +36,7 @@ public class BaseEntityController<T extends BaseEntity> extends ProxyEntityContr
         );
     }
 
+
     // Sometimes findEntity(id) returns null, so we use this method instead.
     @Override
     public Optional<T> findEntity(Object id)
@@ -42,10 +47,19 @@ public class BaseEntityController<T extends BaseEntity> extends ProxyEntityContr
                 .findFirst();
     }
 
+
+    /**
+     * Sample n elements from the collection of items, possibly without duplicates (if n < len(items)).
+     *
+     * @param n            number of elements to sample
+     * @param items        collection to sample from
+     * @return a collection of {@code n} elements, possibly without duplicates, sampled from the collection of items.
+     */
     public List<T> sampleElements(int n, Collection<T> items)
     {
         return sampleElements(n, items, item -> item);
     }
+
 
     /**
      * Sample n elements from the collection of items, possibly without duplicates (if n < len(items)).
@@ -75,7 +89,6 @@ public class BaseEntityController<T extends BaseEntity> extends ProxyEntityContr
         while(sampled.size() < n)
             sampled.add(uniqueElements.get(random.nextInt(uniqueElements.size())));
         return sampled;
-
     }
 
 

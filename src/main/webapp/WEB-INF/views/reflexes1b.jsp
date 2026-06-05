@@ -163,7 +163,6 @@
             // Enter full screen mode
             if(isMobile())
                 document.body.requestFullscreen();
-
             // Use a delay
             setTimeout(() => {
                 // Add callback for space key
@@ -171,7 +170,6 @@
                     if (event.code === "Space")
                         game.performObstacleAvoidance();
                 });
-
                 // Add click callback to avoid obstacles
                 window.addEventListener('click', clickCallback);
             }, 200)

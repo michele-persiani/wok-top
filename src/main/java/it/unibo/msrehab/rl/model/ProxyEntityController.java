@@ -3,6 +3,11 @@ package it.unibo.msrehab.rl.model;
 import java.util.Collection;
 import java.util.Optional;
 
+
+/**
+ * Controller that uses another controller as a proxy
+ * @param <T>
+ */
 public class ProxyEntityController<T> extends EntityController<T>
 {
     private final IEntityController<T> controller;

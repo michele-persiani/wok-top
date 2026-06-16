@@ -71,6 +71,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 
 
+
+
 /**
  * Class that provides servlets for exercises.
  */
@@ -2875,7 +2877,7 @@ public class ExerciseService
     {
         logger.debug("attention2phase2()");
 
-        List<ExElement> l = buildExElementListFromIds(exElementIds);
+        List<ExElement> l  = buildExElementListFromIds(exElementIds);
         List<ExElement> l1 = buildExElementListFromIds(targetElementIds);
 
         model.addAttribute("difficulty", difficulty);
@@ -3021,15 +3023,17 @@ public class ExerciseService
         if (ATT_SEL_FLW.toString().equals(type))
         {
             httpSess.setAttribute("diffVar2", diffVar);
-        } else if (ATT_SEL_FLW_FAC.toString().equals(type))
+        }
+        else if (ATT_SEL_FLW_FAC.toString().equals(type))
         {
             httpSess.setAttribute("diffVar2Fac", diffVar);
-        } else if (ATT_SEL_FLW_ORI.toString().equals(type))
+        }
+        else if (ATT_SEL_FLW_ORI.toString().equals(type))
         {
             httpSess.setAttribute("diffVar2Ori", diffVar);
         }
 
-      
+
          ntargets = (Integer) (parameters.get("ntargets"));
          nelements = (Integer) (parameters.get("nelements"));
          color = (String) (parameters.get("color"));
@@ -3037,7 +3041,7 @@ public class ExerciseService
         //Integer time = (Integer) (parameters.get("time"));
          time = (Double) (parameters.get("time"));
 
-     Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
 
         
@@ -3415,6 +3419,7 @@ public class ExerciseService
     }
 
 
+
     //fine modifica
 
     @RequestMapping(value = "/attention3phase3", method = RequestMethod.GET)
@@ -3444,7 +3449,6 @@ public class ExerciseService
             Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-
         if (patientid == -1)
         {
             if (difficulty.equals("training"))
@@ -3457,10 +3461,8 @@ public class ExerciseService
                 return new ModelAndView("redirect: patientrehabilitation");
             else
             {
-
                 Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
                 History history = historyController.getEntityOrThrow(assignmentid);
-
 
 
                 history.setExid(exerciseid);
@@ -3526,7 +3528,6 @@ public class ExerciseService
                     model.addAttribute("home", "patienthome");
                     return new ModelAndView("error");
                 }
-
 
 
                 if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
@@ -3631,14 +3632,18 @@ public class ExerciseService
         if (ATT_SEL_STD.toString().equals(type))
         {
             argument = "diffVar4";
-        } else if (ATT_SEL_STD_FAC.toString().equals(type))
+        }
+        else if (ATT_SEL_STD_FAC.toString().equals(type))
         {
             argument = "diffVar4Fac";
-        } else if (ATT_SEL_STD_ORI.toString().equals(type))
+        }
+        else if (ATT_SEL_STD_ORI.toString().equals(type))
         {
             argument = "diffVar4Ori";
         }
+
         diffVar = (Integer[]) (httpSess.getAttribute(argument));
+
         if (diffVar == null)
         {
             diffVar = new Integer[NUM_FEAT_ATT_4];
@@ -3747,11 +3752,9 @@ public class ExerciseService
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//modificato required=false prer far funzionare gli esercizi di prova
             Model model)
     {
-
         logger.debug("attention4phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
-
         List<ExElement> targetElementList = exElementController.sampleElements(ntargets, exElementList);
 
 
@@ -3976,9 +3979,9 @@ public class ExerciseService
                 + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
+
+
         return new ModelAndView("redirect:" + url);
-
-
     }
 
 
@@ -4035,7 +4038,6 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.debug("reflexes1()");
 
         model.addAttribute("difficulty", difficulty);
@@ -4144,7 +4146,7 @@ public class ExerciseService
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model) throws ServletException, IOException
+            Model model)
     {
         logger.info("reflexes1phase3()");
         if (patientid == -1)
@@ -4343,6 +4345,8 @@ public class ExerciseService
         return new ModelAndView("memory1");
     }
 
+
+
     @RequestMapping(value = "/memory1phase1", method = RequestMethod.GET)
     public ModelAndView memory1phase1(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -4361,7 +4365,6 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             Model model)
     {
-
         logger.debug("memory1phase1()");
 
         model.addAttribute("difficulty", difficulty);
@@ -4383,6 +4386,8 @@ public class ExerciseService
 
     }
 
+
+
     @RequestMapping(value = "/memory1phase2", method = RequestMethod.GET)
     public ModelAndView memory1phase2(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -4401,7 +4406,6 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             Model model)
     {
-
         logger.debug("memory1phase2()");
 
         List<ExElement> targetElementList;
@@ -4434,6 +4438,8 @@ public class ExerciseService
 
     }
 
+
+
     @RequestMapping(value = "/memory1phase3", method = RequestMethod.GET)
     public ModelAndView memory1phase3(
             @RequestParam(value = "difficulty", required = true) String difficulty,
@@ -4454,8 +4460,7 @@ public class ExerciseService
             @RequestParam(value = "exname", required = true) String exname,
             Model model)
     {
-
-        List<ExElement> l = buildExElementListFromIds(exElementIds);
+        List<ExElement> l  = buildExElementListFromIds(exElementIds);
         List<ExElement> l1 = buildExElementListFromIds(targetElementIds);
 
         model.addAttribute("difficulty", difficulty);
@@ -4477,6 +4482,7 @@ public class ExerciseService
 
         return new ModelAndView("memory1c");
     }
+
 
     @RequestMapping(value = "/memory1phase4", method = RequestMethod.GET)
     public ModelAndView memory1phase4(
@@ -4521,7 +4527,8 @@ public class ExerciseService
 
 
             History history = historyController.findLastUnsolvedByUserAndExerciseAndSession(patientid, exerciseid, sessid)
-                    .orElseThrow(() -> new IllegalStateException("An assigned history must be present"));
+                    .orElseThrow(() -> new IllegalStateException("An assigned history must be present"))
+                    ;
 
             history.setExid(exerciseid);
             history.setPassed(passed);

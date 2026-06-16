@@ -157,6 +157,18 @@
                         </button>
                     </div>
                 </div>
+
+                <c:if test="${nback == 1}">
+                    <img src="resources/assets/img/nback-1.png">
+                </c:if>
+                <c:if test="${nback == 2}">
+                    <img src="resources/assets/img/nback-2.png">
+                </c:if>
+                <c:if test="${nback == 3}">
+                    <img src="resources/assets/img/nback-3.png">
+                </c:if>
+
+
             </div>
 
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->

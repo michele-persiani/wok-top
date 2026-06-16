@@ -112,7 +112,12 @@
             <div class="well well-sm">
                 <div class="row">
                     <div class="col-sm-18">
-                        <h3 class="pull-left">Memorizzi per il tempo indicato la posizione delle parole che compariranno sullo schermo.</h3>
+                        <h3 class="pull-left">Nella prossima pagina appariranno delle parole sullo schermo.  Memorizzi la loro posizione per il tempo indicato:</h3>
+                    
+                        <div>
+                            <img src="resources/assets/img/mem2-before.png">
+                        </div>
+                    
                     </div>
                     <c:if test="${difficulty!='training' && difficulty!='demo'}">
                         <div class="col-sm-6">
@@ -140,7 +145,11 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-18">
-                        <h3 class="pull-left">Poi, quando le parole spariranno, clicchi sulla posizione corrispondente alla figura che apparir&agrave;.</h3>
+                        <h3 class="pull-left">In seguito le verrà presentata un’immagine che corrisponde a una delle parole: clicchi sulla posizione corretta dello stimolo in base all’ordine di presentazione delle parole, ora indicata dal punto interrogativo:</h3>
+
+                        <div>
+                            <img src="resources/assets/img/mem2-after.png">
+                        </div>
                     </div>
                     <div class="col-sm-6">
                         <button class="btn btn-lg btn-success pull-right"

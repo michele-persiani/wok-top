@@ -246,7 +246,7 @@
                     $("#mem-cnt").addClass('hidden');
                    
                     for (var i = 0, element; element = elements[i]; i++) {
-                        document.getElementById("e-i"+i).innerHTML="<h1>?</h1>";
+                        document.getElementById("e-i"+i).innerHTML="<h1 style=\"border-block: 1px;border-style: solid;padding-left: 35px;padding-right: 35px;border-color: red;color: red;\">?</h1>";
                         //$("#"+element.id).disabled= false; 
                         document.getElementById("i"+i).disabled = false;                
                     }

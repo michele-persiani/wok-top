@@ -128,7 +128,6 @@
                             div.innerHTML = "Eviti gli ostacoli cliccando sullo schermo subito prima che tocchino la moto.";
                         else
                             div.innerHTML = "Eviti gli ostacoli premendo barra spaziatrice subito prima che tocchino la moto.";
-
                     </script>
 
                         

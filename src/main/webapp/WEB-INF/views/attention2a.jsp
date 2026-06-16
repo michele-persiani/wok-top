@@ -130,18 +130,18 @@
                 <div class="row">
                     <div class="col-sm-6">
                         <c:if test="${type=='ATT_SEL_FLW_FAC'}">
-                            <h3 class="pull-left">Memorizzi questi volti</h3>
+                            <h3 class="pull-left">Memorizzi attentamente questi volti</h3>
                         </c:if>
                         <c:if test="${type=='ATT_SEL_FLW_ORI'}">
                             <c:if test="${exname=='ATT_SEL_FLW_ARR' || exname == 'ATT_SEL_FLW_ARR_RL'}">
-                                <h3 class="pull-left">Memorizzi queste frecce </h3>
+                                <h3 class="pull-left">Memorizzi attentamente queste frecce</h3>
                             </c:if>
                             <c:if test="${exname=='ATT_SEL_FLW_CMP'}">
-                                <h3 class="pull-left">Memorizzi queste direzioni </h3>
+                                <h3 class="pull-left">Memorizzi attentamente queste direzioni</h3>
                             </c:if>
                         </c:if>
                         <c:if test="${type=='ATT_SEL_FLW'}">
-                            <h3 class="pull-left"> Memorizzi queste figure</h3>
+                            <h3 class="pull-left"> Memorizzi attentamente queste figure</h3>
                         </c:if>
                     </div>
                     <div id="targets">
@@ -163,19 +163,7 @@
                         <h3 class="pull-left"> entro il tempo massimo </h3>
                     </div-->
                 </div>
-                
-                
-                  <div class="row">
-                    <div class="col-sm-18">
-                        <H3>Nella prossima pagina vedr&agrave; scrorrere delle immagini. <br></h3>
-                    <h3 class="pull-left"><div id="im2"></div></h3>
-                            
-                             </div>
-                      
-                    <!--div class="col-sm-5">
-                        <h3 class="pull-left"> entro il tempo massimo </h3>
-                    </div-->
-                </div>
+
                 
                 
                 <div class="row">
@@ -249,25 +237,25 @@
             {
               
               if(${type=='ATT_SEL_FLW_FAC'})
-             document.getElementById("im2").innerHTML="Clicchi su queste figure quando le vedr&agrave; scorrere.";
+             document.getElementById("im2").innerHTML="Nella prossima pagina vedrà scorrere delle immagini. Tocchi lo schermo in corrispondenza delle figure quando compariranno quelle memorizzate.";
              if(${type=='ATT_SEL_FLW_ORI'} )
-                document.getElementById("im2").innerHTML = "Clicchi su queste frecce quando le vedr&agrave; scorrere.";
+                document.getElementById("im2").innerHTML = "Nella prossima pagina vedrà scorrere delle immagini. Tocchi lo schermo in corrispondenza delle figure quando compariranno quelle memorizzate.";
              if(${exname=='ATT_SEL_FLW_CMP'})
-                 document.getElementById("im2").innerHTML ="Clicchi sulle frecce che indicano queste direzioni quando le vedr&agrave; scorrere." ;
+                 document.getElementById("im2").innerHTML ="Nella prossima pagina vedrà scorrere delle immagini. Tocchi lo schermo in corrispondenza delle figure quando compariranno quelle memorizzate." ;
             if(${type=='ATT_SEL_FLW'})
-             document.getElementById("im2").innerHTML="Clicchi su queste figure quando le vedr&agrave; scorrere.";
+             document.getElementById("im2").innerHTML="Nella prossima pagina vedrà scorrere delle immagini. Tocchi lo schermo in corrispondenza delle figure quando compariranno quelle memorizzate.";
               
               }
             else
             {
                  if(${type=='ATT_SEL_FLW_FAC'})
-             document.getElementById("im2").innerHTML="Prema la barra spaziatrice quando vedr&agrave; scorrere queste figure.";
+             document.getElementById("im2").innerHTML="Nella prossima pagina vedrà scorrere delle immagini. Prema il tasto spazio sulla tastiera quando compariranno le figure memorizzate.";
              if(${type=='ATT_SEL_FLW_ORI'} )
-                document.getElementById("im2").innerHTML = "Prema la barra spaziatrice quando vedr&agrave; scorrere queste frecce.";
+                document.getElementById("im2").innerHTML = "Nella prossima pagina vedrà scorrere delle immagini. Prema il tasto spazio sulla tastiera quando compariranno le frecce memorizzate.";
              if(${exname=='ATT_SEL_FLW_CMP'})
-                 document.getElementById("im2").innerHTML ="Prema la barra spaziatrice quando vedr&agrave; scorrere le frecce che indicano queste direzioni." ;
+                 document.getElementById("im2").innerHTML ="Nella prossima pagina vedrà scorrere delle immagini. Prema il tasto spazio sulla tastiera quando compariranno le direzioni memorizzate." ;
             if(${type=='ATT_SEL_FLW'})
-             document.getElementById("im2").innerHTML="Prema la barra spaziatrice quando vedr&agrave; scorrere queste figure.";
+             document.getElementById("im2").innerHTML="Nella prossima pagina vedrà scorrere delle immagini. Prema il tasto spazio sulla tastiera quando compariranno le figure memorizzate.";
               
                 
                 

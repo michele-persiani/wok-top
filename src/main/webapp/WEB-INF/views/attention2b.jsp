@@ -168,26 +168,26 @@
             if(isMobile)
             {
              if(${type=='ATT_SEL_FLW_FAC'})
-             document.getElementById("im2").innerHTML="Clicchi solo i volti che ha memorizzato prima.";
+             document.getElementById("im2").innerHTML="Tocchi i volti che ha memorizzato prima.";
              if(${type=='ATT_SEL_FLW_ORI'} )
              if (${exname=='ATT_SEL_FLW_ARR'})
-                document.getElementById("im2").innerHTML = "Clicchi sulle frecce che prima ha memorizzato.";
+                document.getElementById("im2").innerHTML = "Tocchi le frecce che prima ha memorizzato.";
              if(${exname=='ATT_SEL_FLW_CMP'})
-                 document.getElementById("im2").innerHTML ="Clicchi solo le frecce che indicano le direzioni che ha memorizzato prima." ;
+                 document.getElementById("im2").innerHTML ="Tocchi le frecce che indicano le direzioni che ha memorizzato prima." ;
             if(${type=='ATT_SEL_FLW'})
-             document.getElementById("im2").innerHTML="Clicchi solo le figure che ha memorizzato prima.";
+             document.getElementById("im2").innerHTML="Tocchi le figure che ha memorizzato prima.";
           }
             else
             {
                if(${type=='ATT_SEL_FLW_FAC'})
-             document.getElementById("im2").innerHTML="Prema la barra spaziatrice quando compariranno i volti che ha memorizzato prima.";
+             document.getElementById("im2").innerHTML="Prema spazio quando compariranno i volti che ha memorizzato prima.";
              if(${type=='ATT_SEL_FLW_ORI'} )
              if (${exname=='ATT_SEL_FLW_ARR'})
-                document.getElementById("im2").innerHTML = "Prema la barra spaziatrice quando compariranno le frecce che ha memorizzato prima";
+                document.getElementById("im2").innerHTML = "Prema spazio quando compariranno le frecce che ha memorizzato prima";
              if(${exname=='ATT_SEL_FLW_CMP'})
-                 document.getElementById("im2").innerHTML ="Prema la barra spaziatrice solo quando compariranno le frecce che indicano le direzioni che ha memorizzato prima." ;
+                 document.getElementById("im2").innerHTML ="Prema spazio solo quando compariranno le frecce che indicano le direzioni che ha memorizzato prima." ;
             if(${type=='ATT_SEL_FLW'})
-             document.getElementById("im2").innerHTML="Prema la barra spaziatrice quando compariranno le figure che ha memorizzato prima.";
+             document.getElementById("im2").innerHTML="Prema spazio quando compariranno le figure che ha memorizzato prima.";
            
      }
     };
@@ -296,7 +296,7 @@
                 </form>
             </div>
 
-        <div class="well" style="text-align: center">
+        <div id="buttondiv" class="well" style="text-align: center">
             <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio" onclick="spacePressed()" style="width:100px; height:60px; font-size:20px;">
                 Spazio
             </button>
@@ -306,6 +306,15 @@
         <script src="resources/assets/js/ie10-viewport-bug-workaround.js"></script>
 
         <script>
+
+            var isMobile = isMobile();
+
+            if(isMobile) {
+                let buttondiv = document.getElementById('buttondiv');
+                buttondiv.style.display = 'none';
+            }
+
+
             <c:if test="${exname=='ATT_SEL_FLW_CMP'}">
                 var arrExElId = [];
                 var arrExElDescr = [];

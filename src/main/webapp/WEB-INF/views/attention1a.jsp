@@ -51,14 +51,14 @@
 
         <script type="text/javascript" src="resources/js/hello.js"></script>        
 
-                   <c:if test="${color=='bw'}">
+        <c:if test="${color=='bw'}">
                 <style>
                     img {
                         -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
                         filter: grayscale(100%);
                     }
                 </style>        
-            </c:if>
+        </c:if>
         <!--/c:if-->
         <c:if test="${color=='omo'}">
             <style>
@@ -68,6 +68,18 @@
                 }
             </style>        
         </c:if>
+
+        <style>
+            .circle {
+                border: 2px solid red;
+                background-color: #FFFFFF;
+                height: 100px;
+                border-radius:50%;
+                width: 100px;
+            }
+
+        </style>
+
     </head>
 
     <body>
@@ -122,7 +134,7 @@
                 <div class="well well-sm">
                     <div class="row">
                         <div class="col-sm-4">
-                            <h3 class="pull-right">Clicchi tutte le immagini di </h3>
+                            <h3 class="pull-right">Nella prossima pagina, clicchi tutte le immagini di </h3>
                         </div>
                         <div id="targets">
                             <c:forEach var="target" items="${targetElementList}">
@@ -138,16 +150,21 @@
                                         <img class="img-responsive pull-left" src="${target.url}" alt="${target.url}">
                                     </c:if>
                                 </div>
+
                             </c:forEach>
                         </div>
+
                         <div class="col-sm-8">
-                            <h3 class="pull-left">tra gli elementi che appariranno,<br> entro il tempo massimo. In alto a sinistra visualizza il tempo a disposizione.</h3>
+                            <h3 class="pull-left">tra gli elementi che appariranno,<br> Cerchi di farlo entro il tempo massimo indicato dal contatore in alto a sinistra:</h3>
+
+                                <h2 class="pull-right" style="color:red;border: 1px solid red;border-radius: 50%;padding: 10px;" id="timer">60</h2>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-2"></div>
                         <div class="col-sm-22">
-                            <h3 class="pull-left">Quando ha finito clicchi il bottone "Ho finito".</h3>
+                            <h3 class="pull-left">Quando ha finito clicchi il bottone "Ho finito":</h3>
+                            <input type="button" class="btn btn-lg btn-success pull-left" value="Ho finito">
                         </div>
                     </div>
                     <div class="row">

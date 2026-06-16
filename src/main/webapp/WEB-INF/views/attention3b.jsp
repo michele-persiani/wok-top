@@ -360,7 +360,7 @@ p<%--
                 function calculateResult() {
                  
 
-                   console.log("sono in calcola risutlato");
+                   console.log("sono in calcola risultato");
                    
                    
                     var currentIndex = $('div.active').index();

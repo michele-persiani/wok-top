@@ -78,8 +78,46 @@
                     }
                 </style-->        
             <!--/c:if-->
-        <!--/c:if-->            
+        <!--/c:if-->
 
+        <style>
+            .buttonsound {
+                position: relative;
+                background-color: red;
+                border: none;
+                font-size: 28px;
+                color: #FFFFFF;
+                padding: 20px;
+                width: 200px;
+                text-align: center;
+                -webkit-transition-duration: 0.4s; /* Safari */
+                transition-duration: 0.4s;
+                text-decoration: none;
+                overflow: hidden;
+                cursor: pointer;
+                display: inline-block;
+            }
+
+            .buttonsound:after {
+                content: "";
+                background: #90EE90;
+                display: block;
+                position: absolute;
+                padding-top: 300%;
+                padding-left: 350%;
+                margin-left: -20px!important;
+                margin-top: -120%;
+                opacity: 0;
+                transition: all 0.8s
+            }
+
+            .buttonsound:active:after {
+                padding: 0;
+                margin: 0;
+                opacity: 1;
+                transition: 0s
+            }
+        </style>
     </head>    
     
     <body>
@@ -155,7 +193,7 @@
                         </div>
                         <div class="col-sm-16">
                             <button id="trysound" class="btn btn-lg btn-danger pull-left" onclick="trySound()">
-                                Suono
+                                Prova suono
                             </button>
                         </div>
                     </div>
@@ -164,10 +202,10 @@
                             <h3 id="im2"></h3>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-sm-24 pull-left">
-                            <h3>Può usare i bottoni 'Spazio' e 'Suono' o tasti spazio e invio su tastiera intercambiabilmente</h3>
-                        </div>
+                    <div class="col-sm-24 pull-left">
+                        <!--<h3>Può usare i bottoni 'Spazio' e 'Suono' o tasti spazio e invio su tastiera intercambiabilmente</h3>-->
+                        <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio">Spazio</button>
+                        <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono">Invio</button>
                     </div>
                    
                         
@@ -249,42 +287,54 @@
                     {
                         isMobile = true;
                     }
+                    /*
 
+                    Quando sentirà un suono, prema il tasto “Invio” sulla tastiera.
+
+                    Quando vedrà queste figure sullo schermo, prema il tasto “Spazio” sulla tastiera:
+                    Se figura e suono compariranno contemporaneamente, prema “Spazio” e “Invio” il più velocemente possibile.
+
+
+Quando vedrà queste figure sullo schermo, tocchi il tasto “figura”:
+Quando sentirà un suono, tocchi il tasto “suono”.
+Se figura e suono compariranno contemporaneamente, tocchi “figura” e “suono” insieme il più velocemente possibile. Questi saranno i tasti da toccare sullo schermo:  → INSERIRE preview dei tasti “figura” e “suono” che serviranno per rispondere agli stimoli.
+
+                     */
                     if(isMobile)
                     {
-                        document.getElementById("suono").innerHTML="Se sente un suono, clicchi su questo tasto";
+                        document.getElementById("suono").innerHTML="Quando sentirà un suono, tocchi il tasto “Invio”.";
                         if(${type=='ATT_DIV_FAC'}){
-                            document.getElementById("im1").innerHTML ="Clicchi su questi volti quando compariranno sullo schermo." ;
-                            document.getElementById("im2").innerHTML = "Se sentir&agrave; il suono contemporanamente alla comparsa di un volto dovr&agrave; cliccare sia sul volto che sul tasto suono cercando di essere il pi&ugrave; veloce possibile."
+                            document.getElementById("im1").innerHTML ="Quando vedrà questi volti sullo schermo, tocchi il tasto “Spazio”.";
+                            document.getElementById("im2").innerHTML = "Se volto e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
                         }
                         if(${type=='ATT_DIV_ORI'})
                         {
-                            document.getElementById("im1").innerHTML="Clicchi sulle frecce che indicano questa direzione quando compariranno sullo schermo..";
-                            document.getElementById("im2").innerHTML="Se sentir&agrave; il suono contemporanamente alla comparsa della freccia dovr&agrave; cliccare sia sulla freccia che sul tasto suono cercando di essere il pi&ugrave; veloce possibile."
+                            document.getElementById("im1").innerHTML="Quando vedrà queste frecce sullo schermo, tocchi il tasto “Spazio”.";
+                            document.getElementById("im2").innerHTML="Se freccia e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
 
                         }
                         if(${type=='ATT_DIV'}){
-                            document.getElementById("im1").innerHTML="Clicchi su questa figure quando compariranno sullo schermo.";
-                            document.getElementById("im2").innerHTML="Se sentir&agrave; il suono contemporanamente alla comparsa della figura dovr&agrave; cliccare sia sulla freccia che sul tasto suono cercando di essere il pi&ugrave; veloce possibile."
+                            document.getElementById("im1").innerHTML="Quando vedrà queste figure sullo schermo, tocchi il tasto “Spazio”.";
+                            document.getElementById("im2").innerHTML="Se figura e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
                         }
                     }
                     else
                     {
-                        document.getElementById("suono").innerHTML="Se sente un suono, prema il pulsante invio";
+                        document.getElementById("suono").innerHTML="Quando sentirà un suono, prema il tasto “Invio” sulla tastiera.";
 
                         if(${type=='ATT_DIV_FAC'}){
-                            document.getElementById("im1").innerHTML ="Prema il tasto spazio quando vedr&agrave; questi volti sullo schermo." ;
-                            document.getElementById("im2").innerHTML = "Se sentir&agrave; il suono contemporanamente alla comparsa del volto dovr&agrave; premere il pulsante spazio e invio cercando di essere il pi&ugrave; veloce possibile."
+                            document.getElementById("im1").innerHTML ="Quando vedrà questi volti sullo schermo, prema il tasto “Spazio” sulla tastiera." ;
+                            document.getElementById("im2").innerHTML = "Se volto e suono compariranno contemporaneamente, prema “Spazio” e “Invio” il più velocemente possibile."
 
                         }  if(${type=='ATT_DIV_ORI'})
 
-                    {  document.getElementById("im1").innerHTML="Prema il tasto spazio quando vedr&agrave; queste frecce sullo schermo.";
-                        document.getElementById("im2").innerHTML="Se sentir&agrave; il suono contemporanamente alla comparsa della freccia dovr&agrave; premere il pulsante spazio e invio cercando di essere il pi&ugrave; veloce possibile."
+                    {  document.getElementById("im1").innerHTML="Quando vedrà queste frecce sullo schermo, prema il tasto “Spazio” sulla tastiera.";
+                        document.getElementById("im2").innerHTML="Se freccia e suono compariranno contemporaneamente, prema “Spazio” e “Invio” il più velocemente possibile."
 
                     }
                         if(${type=='ATT_DIV'}){
-                            document.getElementById("im1").innerHTML="Prema il pulsante spazio quando vedr&agrave; queste figure sullo schermo.";
-                            document.getElementById("im2").innerHTML = "Se sentir&agrave; il suono contemporanamente alla comparsa della figura dovr&agrave; premere il pulsante spazio e invio cercando di essere il pi&ugrave; veloce possibile."
+                            document.getElementById("im1").innerHTML="Quando vedrà queste figure sullo schermo, prema il tasto “Spazio” sulla tastiera.";
+                            document.getElementById("im2").innerHTML = "Se figura e suono compariranno contemporaneamente, prema “Spazio” e “Invio” il più velocemente possibile."
 
                         }
 

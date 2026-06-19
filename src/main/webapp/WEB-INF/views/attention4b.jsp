@@ -355,6 +355,8 @@
                 var dSoundTime = 0;
                 var sTime = new Date().getTime();
                 var soundEnabled = true;
+                var soundChecked =  false;
+                var soundDuration = 2000;
 
                 var exerciseTimer = setInterval(function () {
                     startTimer--;
@@ -371,6 +373,10 @@
                     soundTime = new Date().getTime();
                     soundCounter++;
                     soundEnabled = true;
+                    soundChecked = false;
+                    setInterval(function () {
+                        soundEnabled = false;
+                    }, soundDuration);
                     //document.getElementById("sndbtn").disabled = false;
 
                 }, soundintervalsecs*1000);
@@ -510,16 +516,18 @@
 
                 }
 
-                function checkanddisablecheck(id) {
+
+                function checkanddisablecheck(id)
+                {
                     var exElement = document.getElementById(id);
-                    if(!exElement.checked) {
-                        exElement.checked = true;
-                    }
+                    if (exElement.checked)
+                        return;
+                    exElement.checked = true;
+
                     var rTime = new Date().getTime();
                     dTime = dTime+(rTime-sTime);
                     sTime = new Date().getTime();
 
-                    var exElement = document.getElementById(id);
                     exElement.disabled = true;
                     var exElementId = exElement.value;
 
@@ -534,6 +542,7 @@
                         addBackground('img-' + id, 'red');
                     }
                 }
+
 
                 $("#myCarousel").on('slide.bs.carousel', function () {
                     var currentIndex = $('div.active').index();
@@ -563,26 +572,31 @@
                 function checkSound()
                 {
                     console.log('checkSound()');
+
+                    console.log('sound: ', rightSoundCounter, soundFalsePositive);
                     if(!soundEnabled)
+                    {
+                        soundFalsePositive++;
                         return;
+                    }
+
+                    if(soundChecked)
+                        return;
+                    soundChecked = true;
+
                     now = new Date().getTime();
                     var deltaTime = now - soundTime;
                     dTime = dTime + deltaTime;
                     console.log('dTime', dTime, 'now-deltaTime', deltaTime)
-                    if(deltaTime <= 2000)
-                    {
-                        rightSoundCounter++;
-                        console.log("suoni catturati: " + rightSoundCounter)
-                        cont=1;
-                        soundEnabled = false;
-                        document.getElementById("sndbtn").disabled = true;
-                        setTimeout(function() { enableSubmit("#sndbtn") }, 1000);
-                    }
-                     else{
-                        soundFalsePositive++;
-                        console.log("suono mancati: " + soundFalsePositive);
-                    }
+
+                    rightSoundCounter++;
+                    console.log("suoni catturati: " + rightSoundCounter)
+                    cont=1;
+                    soundEnabled = false;
+                    document.getElementById("sndbtn").disabled = true;
+                    setTimeout(function() { enableSubmit("#sndbtn") }, 1000);
                 }
+
 
                 function checkSpace()
                 {
@@ -590,6 +604,7 @@
                     var id = 'i' + currentIndex;
                     checkanddisablecheck(id);
                 }
+
 
                 function fun(event)
                 {
@@ -603,12 +618,12 @@
                         console.log('Premo Enter (suono)');
                         checkSound();
                     }
-
                 }
-
             </script>
 
+
             <jsp:include page="modal.jsp" />
+
 
         <script>
             history.pushState(null, null, document.URL);
@@ -629,12 +644,6 @@
                     }
 
                     if(isMobile)
-/*
-Quando vedrà queste figure sullo schermo, prema il tasto “Spazio” sulla tastiera:
-Quando sentirà un suono, prema il tasto “Invio” sulla tastiera.
-Se figura e suono compariranno contemporaneamente, prema “Spazio” e “Invio” il più velocemente possibile.
-
- */
                     {
                         document.getElementById("suono").innerHTML="Suono = Invio";
                         if(${type=='ATT_DIV_FAC'}){

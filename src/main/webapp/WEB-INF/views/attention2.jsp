@@ -118,6 +118,7 @@
                     </div>
                     <div class="col-sm-8"> </div>
                     <div class="col-sm-8">
+                        <!--
                         <button class="btn btn-lg btn-success pull-left"
                                 onclick="
                                         post('createattention2', {
@@ -133,7 +134,6 @@
                             Inizia esercizio
                         </button>
                         <c:if test="${rl == true}">
-                            <!--
                             <button class="btn btn-lg btn-success pull-left"
                             onclick="
                             post('createattention4', {
@@ -161,7 +161,7 @@
                                             exname: '${exname}',
                                             rlagent: 1
                                             }, 'get');">
-                                Inizia esercizio (agente adattivo)
+                                Inizia esercizio
                             </button>
                         </c:if>
                     </div>

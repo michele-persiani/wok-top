@@ -355,12 +355,12 @@
                         let thr = js.thr;
                         var passedMessage='';
                         <c:if test="${difficulty!='training'}">
-                        if(passed) {
+
+                        if(passed)
                             passedMessage = '<b>Ottimo! Esercizio superato!</b>';
-                        }
-                        else {
+                        else
                             passedMessage = '<b>Mi spiace, esercizio non superato</b>';
-                        }
+
                         </c:if>
                         bootbox.alert({
                             size:'small',
@@ -391,7 +391,7 @@
                 id.checked = true;
                 id.disabled = true;
                 //document.getElementById('img-i'+(i)).style.filter="blur(5px)";
-                document.getElementById('img-i' + (i)).style.backgroundColor = "orange";
+                document.getElementById('img-i' + (i)).style.backgroundColor = "black";
                 //addChildImage(document.getElementById('img-i'+(i)), "orange");
 
             }

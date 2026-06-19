@@ -116,7 +116,7 @@
                         </div>
                         <div class="col-sm-8"> </div>
                         <div class="col-sm-8">
-                            <c:if test="${rl != true}">
+                                <!--
                                 <button class="btn btn-lg btn-success pull-left"
                                         onclick="
                                                 post('createreflexes1', {
@@ -131,9 +131,7 @@
                                                 }, 'get');">
                                     Inizia esercizio
                                 </button>
-                            </c:if>
                             <c:if test="${rl == true}">
-                                <!--
                             <button class="btn btn-lg btn-success pull-left"
                                     onclick="                                        
                                         post('createreflexes1', {
@@ -161,7 +159,7 @@
                                             exname: '${exname}',
                                             rlagent: 1
                                             }, 'get');">
-                                Inizia esercizio (agente adattivo)
+                                Inizia esercizio
                             </button>
                             </c:if>
                         </div>

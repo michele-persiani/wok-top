@@ -9,6 +9,7 @@ import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -71,6 +72,7 @@ public class HistoryController extends BaseEntityController<History>
 
     public List<Object[]> findAllByTypeNoDifficulty(Integer userid, String type, Integer group, Long start, Long end)
     {
+
         return getTransactionManager()
                 .<Object[]>executeResultListNamedQuery("History.findAllByTypeNoDifficulty", q -> {
                     q.setParameter("userid", userid)
@@ -79,7 +81,10 @@ public class HistoryController extends BaseEntityController<History>
                             .setParameter("start", start)
                             .setParameter("end", end);
                 })
-                .orElse(new ArrayList<>());
+                .orElse(new ArrayList<>())
+                .stream()
+                .filter(arr -> Arrays.stream(arr).allMatch(Objects::nonNull))
+                .collect(Collectors.toList());
 
     }
 

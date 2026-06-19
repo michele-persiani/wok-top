@@ -9,6 +9,7 @@ import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.IntervalTime;
+import it.unibo.msrehab.model.entities.History;
 import it.unibo.msrehab.model.entities.MSRGroup;
 import it.unibo.msrehab.model.entities.MSRUser;
 import it.unibo.msrehab.model.controller.ExerciseController;
@@ -348,13 +349,16 @@ public class StatisticService
         
         JSONObject json_graph = extractJSONPerformance(temp1, temp2, temp3);
         //json_graph.append(extractJSONPerformance(temp2,temp22,temp23));
-        
+
+
         //temp1.addAll(temp2);
         //temp1.addAll(temp3);
         //JSONObject json_bar = extractJSONSuccess(temp1);
         JSONObject json_bar = extractJSONSuccess(temp1, temp2, temp3);
-        
-        model.addAttribute("patient", userController.findEntity(id).get());
+
+        addIncomplete(id, json_bar);
+
+        model.addAttribute("patient", userController.getEntityOrThrow(id));
         model.addAttribute("json_graph", json_graph);
         model.addAttribute("json_bar", json_bar);
         model.addAttribute("kind",kind);
@@ -365,6 +369,30 @@ public class StatisticService
         model.addAttribute("end",tend);
         return new ModelAndView("patientgraphoverview");
     }
+
+
+    private void addIncomplete(Integer userid, JSONObject jobj)
+    {
+        List<History> incomplete = historyController.getAllEntities(h -> h.getUserid() == userid && !h.isSolved());
+
+        jobj.getJSONArray("groups").getJSONArray(0).put("incompleti");
+
+        incomplete.forEach(h -> {
+
+            LocalDate localDate1 = new LocalDate(new Date(Long.parseLong(h.getTimestamp().toString())));
+            String tempo1 = localDate1.getYear()+"-"+localDate1.getMonthOfYear()+"-"+localDate1.getDayOfMonth();
+
+
+
+            for( JSONObject o : jobj.getJSONArray("json"))
+            {
+
+            }
+
+        });
+    }
+
+
 
     @RequestMapping(value = "/patientbuildgraphsuccandfail", method = RequestMethod.GET)
     public ModelAndView patientbuildgraphsuccandfail(
@@ -811,7 +839,8 @@ public class StatisticService
     	mtemp.addAll(temp2);
     	mtemp.addAll(temp3);*/
     	//Integer successi=0, fallimenti=0;
-        for(Object[] h : temp1){
+        for(Object[] h : temp1)
+        {
             JSONObject t=new JSONObject();
             Date date=new Date(Long.parseLong(""+h[TIMESTAMP]));
 
@@ -824,7 +853,8 @@ public class StatisticService
             t.put("successi",successi);
             Integer fallimenti=Integer.parseInt( ""+ h[NPROVE])-successi;
             t.put("fallimenti",fallimenti);
-            for(Object[] m : temp2){
+            for(Object[] m : temp2)
+            {
                 Date date2 = new Date(Long.parseLong(""+m[TIMESTAMP]));
 
                 LocalDate localDate2 = new LocalDate(date2);
@@ -841,7 +871,8 @@ public class StatisticService
                     t.put("fallimenti",fallimenti);
                 }
             }
-            for(Object[] f : temp3){
+            for(Object[] f : temp3)
+            {
                 Date date3 = new Date(Long.parseLong(""+f[TIMESTAMP]));
 
                 LocalDate localDate3 = new LocalDate(date3);

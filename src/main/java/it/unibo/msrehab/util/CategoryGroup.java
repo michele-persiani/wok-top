@@ -19,9 +19,11 @@ public class CategoryGroup implements Serializable {
 		return exerciseCategory;
 	}
 
+
 	public void setExerciseCategory(ArrayList<ExerciseCategory> exerciseCategory) {
 		this.exerciseCategory = exerciseCategory;
 	}
+
 
 	public String getGroupName() {
 		switch (groupName) {
@@ -32,7 +34,7 @@ public class CategoryGroup implements Serializable {
 			case "MEMORY_FAC": return "Memoria: volti";
 			case "MEMORY_ORI": return "Memoria: orientamento";
 			case "EX_FUNC": return "Funzioni esecutive";
-			case "ATT_RFLXS": return "Attenzione: riflessi";
+			case "ATT_RFLXS": return "RL moto";
 			default: return "Senza nome";
 		}
 	}

@@ -19,24 +19,6 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="MS-rehab-padova-memory2" uuid="4a2e9899-7fab-4835-9bd6-e6498b621bba">
-      <driver-ref>sqlite.xerial</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-padova-memory2.db</jdbc-url>
-      <jdbc-additional-properties>
-        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
-      </jdbc-additional-properties>
-      <working-dir>$ProjectFileDir$</working-dir>
-      <libraries>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.jar</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar</url>
-        </library>
-      </libraries>
-    </data-source>
     <data-source source="LOCAL" name="MS-rehab-test-bagnara" uuid="8c5fce43-fe70-4fb0-8fec-37a8320aaa4c">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
@@ -73,16 +55,6 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="rehab-adattivo" uuid="9897f823-7ff7-4197-ae43-df09c58af669">
-      <driver-ref>sqlite.xerial</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-adattivo.db</jdbc-url>
-      <jdbc-additional-properties>
-        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
-      </jdbc-additional-properties>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
     <data-source source="LOCAL" name="identifier.sqlite [2]" uuid="6c121754-5fbe-420e-b165-ab079cd28236">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
@@ -111,11 +83,11 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="MS-rehab-wok-top" uuid="94eda978-45d8-4dfe-9341-f4e2316ee0a1">
+    <data-source source="LOCAL" name="MS-rehab-wok-top" uuid="05c52846-cd4e-49c5-9e41-e1e2e8f58208">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-wok-top.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>

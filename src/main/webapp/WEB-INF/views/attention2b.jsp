@@ -360,12 +360,12 @@
 //                    audio02.load();
 //                }
 //            };
-    
+
 //            function pauseAudio(aud) {
 //                aud.pause();
 //            };
-            
-//            function setCurTime(t) { 
+
+//            function setCurTime(t) {
 //                myAudio.currentTime = t;
 //            };
                 

@@ -2752,7 +2752,7 @@ public class ExerciseService
         //Integer time = (Integer) (parameters.get("time"));
         Double time = (Double) (parameters.get("time"));
 
-            Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
+        Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
 
         String url = "/attention2phase1"
                 + "?difficulty=" + difficulty

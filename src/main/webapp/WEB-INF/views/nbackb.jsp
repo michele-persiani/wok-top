@@ -239,7 +239,7 @@
                 var dTime = 0;
                 var sTime = new Date().getTime();
                 
-                var elements = ${exElementList};                
+                var elements = ${exElementList};
                 
                 var sameButtonPushed = false;
                 var currentIndex = -1;
@@ -388,6 +388,13 @@
                     sTime = new Date().getTime();
                     console.log("salvo nuovo timestamp per slide"+elements[currentIndex]+imgId);
                 });
+
+
+                document.addEventListener('keydown', function(event){
+                    if(event.keyCode === 32)
+                        samePushed();
+                } );
+
             </script>
 
             <jsp:include page="modal.jsp" />

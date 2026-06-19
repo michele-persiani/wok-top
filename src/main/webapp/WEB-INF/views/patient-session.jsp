@@ -321,7 +321,7 @@
                         <div class="col-sm-6">
                             <spring:bind path="ATT_RFLXS">
                                 <div class="form-group">
-                                    <label>Attenzione (Riflessi 1)</label>
+                                    <label>RL Moto</label>
                                     <form:select id="a12" path = "ATT_RFLXS" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_RFLXS}">

@@ -2317,6 +2317,13 @@ public class ExerciseService
 
 
 
+    @RequestMapping(value = "/instructions", method = RequestMethod.GET)
+    public ModelAndView instructions(HttpServletRequest request)
+    {
+        return new ModelAndView("instructions");
+    }
+
+
     // RL Exercise
     @RequestMapping(value = "/createattention1", method = RequestMethod.GET)
     public ModelAndView createattention1(

@@ -93,6 +93,12 @@
                 </div>
             </div>
             <div class="row">
+                <div class="well col-sm-24">
+                    <h3>Istruzioni</h3>
+                    <a class="btn btn-lg btn-primary" href="instructions" role="button">Vai</a>
+                </div>
+            </div>
+            <div class="row">
                 <c:if test="${id<99999999}">
                     <div class="well col-sm-12">
                         <div><!--h3>Esercizi di riabilitazione</h3-->
@@ -113,6 +119,8 @@
                 </c:if>
             </div>
 
+
+
             <footer class="footer">
                 <p>&copy; 2016-2026 Universit&agrave; di Bologna</p>
             </footer>
@@ -120,11 +128,11 @@
         </div> <!-- /container -->
 
 
+
         <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
         <script src="resources/assets/js/ie10-viewport-bug-workaround.js"></script>
 
         <jsp:include page="modal-pat.jsp" />
-        
         <jsp:include page="modal-intro.jsp" />
 
 

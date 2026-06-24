@@ -20,12 +20,13 @@ import it.unibo.msrehab.model.controller.MSRSessionController;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.util.CookiesManager;
 import it.unibo.msrehab.util.WebPagesUtilities;
-import java.util.ArrayList;
-import java.util.Arrays;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.joda.time.LocalDateTime;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 //import org.apache.commons.lang3.ArrayUtils;
 import org.joda.time.LocalDate;
@@ -373,23 +374,27 @@ public class StatisticService
 
     private void addIncomplete(Integer userid, JSONObject jobj)
     {
-        List<History> incomplete = historyController.getAllEntities(h -> h.getUserid() == userid && !h.isSolved());
+        List<History> incomplete = historyController.getAllEntities(h -> Objects.equals(h.getUserid(), userid) && !h.isSolved());
 
         jobj.getJSONArray("groups").getJSONArray(0).put("incompleti");
+        jobj.getJSONObject("keys").getJSONArray("value").put("incompleti");
 
-        incomplete.forEach(h -> {
+        incomplete
+                .stream()
+                .collect(Collectors.groupingBy(h -> {
+                    LocalDate localDate1 = new LocalDate(new Date(Long.parseLong(h.getTimestamp().toString())));
+                    return localDate1.getYear() + "-"+localDate1.getMonthOfYear() + "-" + localDate1.getDayOfMonth();
+                }))
+                .forEach((tempo, histories) -> {
 
-            LocalDate localDate1 = new LocalDate(new Date(Long.parseLong(h.getTimestamp().toString())));
-            String tempo1 = localDate1.getYear()+"-"+localDate1.getMonthOfYear()+"-"+localDate1.getDayOfMonth();
+                    jobj.getJSONArray("json").put(
+                            new JSONObject()
+                                    .put("tempo", tempo)
+                                    .put("incompleti", histories.size())
+                    );
 
 
-
-            for( JSONObject o : jobj.getJSONArray("json"))
-            {
-
-            }
-
-        });
+                });
     }
 
 

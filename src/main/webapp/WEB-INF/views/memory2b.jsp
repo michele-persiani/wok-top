@@ -386,8 +386,8 @@
                                         '<br><b>Risposte sbagliate</b>: ' + nWrong +
                                         '<br><b>Omissioni</b>: ' + nMissed +
                                         '<br>' +
-                                        '<br><b>Performance</b>: ' + Math.floor(perf * 100) + '%' +
-                                        '<br><b>Soglia Superamento</b>: ' + Math.floor(thr * 100) + '%' +
+                                        '<br><b>Performance</b>: ' + Math.round(perf * 100) + '%' +
+                                        '<br><b>Soglia Superamento</b>: ' + Math.round(thr * 100) + '%' +
                                         '<br>' +
                                         '<br>' + passedMessage + '</h4>',
                         callback:function() {

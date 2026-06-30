@@ -169,13 +169,17 @@ public class JPAEntityController<T> extends EntityController<T>
             logger.error("one or more entities are invalid").flush();
             return false;
         }
+
         EntityManager em = getEntityManager();
 
         try
         {
             em.getTransaction().begin();
 
-            Collection<T> merged = entities.stream().map(em::merge).collect(Collectors.toList());
+            Collection<T> merged = entities
+                    .stream()
+                    .map(em::merge)
+                    .collect(Collectors.toList());
 
             boolean success = onEntitiesUpdated(merged);
             if(!success)
@@ -255,11 +259,13 @@ public class JPAEntityController<T> extends EntityController<T>
             userList = query.getResultList();
             return userList;
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             logger.error("Error while executing named query", ex);
             return null;
-        } finally
+        }
+        finally
         {
             em.close();
         }

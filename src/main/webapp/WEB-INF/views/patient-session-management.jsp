@@ -217,7 +217,7 @@
                                     <td>
                                         <button
                                             class="btn btn-primary"
-                                            onclick="showexercises('${hospitalexercisenames[status.index]}')">
+                                            onclick="showexercises(true, ${status.index})">
                                             <span class="fa fa-eye fa-2x"></span>
                                         </button>
                                     </td>
@@ -294,7 +294,7 @@
                                     <td>
                                         <button
                                             class="btn btn-primary"
-                                            onclick="showexercises('${homeexercisenames[status.index]}')">
+                                            onclick="showexercises(false, ${status.index})">
                                             <span class="fa fa-eye fa-2x"></span>
                                         </button>
                                     </td>
@@ -322,24 +322,70 @@
             window.addEventListener('popstate', function () {
                 history.pushState(null, null, document.URL);
             });
-            
-        function showexercises(exerciseNames) {
-                    
-            var aa =
-                    exerciseNames.substring(1, exerciseNames.length-1);
-            var array = aa.split(",")
 
-            var arrayLength = array.length;
-            var message="<h4><b>";
-            for (var i = 0; i < arrayLength; i++) {
-                message += i+1 +'. '+array[i];
-                message += "<br>"
-            }
-            message += "</b></h4>"
+        let hospitalSessions = JSON.parse('${hospitalexercisenames}');
+        let homeSessions = JSON.parse('${homeexercisenames}');
+
+
+        function showexercises(isHospital, idx)
+        {
+
+
+
+            var sessions;
+            if(isHospital)
+                sessions = hospitalSessions;
+            else
+                sessions = homeSessions;
+
+
+            let msg = document.createElement("ul")
+
+            Array.from(sessions[idx])
+                .filter(exercise => !exercise.done)
+                .map(exercise => {
+                    const checkbox = document.createElement("input");
+                    checkbox.setAttribute('type', 'checkbox');
+                    if(exercise.visible)
+                        checkbox.setAttribute('checked', true);
+                    checkbox.addEventListener('change', (event) => {
+                        if (event.currentTarget.checked) {
+                            $.post("setexercisevisibility",
+                                {
+                                    sessionid : exercise.sessionid,
+                                    exerciseid : exercise.id,
+                                    visible : true
+                                },
+                                function () {
+                                exercise.visible = true;
+                                });
+                        } else {
+                            $.post("setexercisevisibility",
+                                {
+                                    sessionid : exercise.sessionid,
+                                    exerciseid : exercise.id,
+                                    visible : false
+                                },
+                                function () {
+                                    exercise.visible = false;
+                                });
+                        }
+                    })
+                    let li = document.createElement("li");
+                    let h4 = document.createElement("h4");
+
+                    h4.innerHTML = exercise.name;
+                    li.appendChild(h4);
+                    li.appendChild(checkbox);
+                    return li;
+                })
+                .forEach(elem => msg.append(elem))
+
+
             
             bootbox.alert({
                 title: "Esercizi assegnati",
-                message: message
+                message: msg
             });
         }     
             

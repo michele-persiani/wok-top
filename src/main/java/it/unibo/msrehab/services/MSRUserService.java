@@ -3,18 +3,10 @@ package it.unibo.msrehab.services;
 import flexjson.JSONDeserializer;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
-import it.unibo.msrehab.model.entities.Exercise;
+import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.model.entities.Exercise.ExerciseCategoryValue;
 
-import it.unibo.msrehab.model.entities.MSRSession;
-import it.unibo.msrehab.model.entities.MSRUser;
 import it.unibo.msrehab.model.entities.MSRUser.RoleValue;
-import it.unibo.msrehab.model.entities.ClinicalProfile;
-import it.unibo.msrehab.model.entities.MSRGroup;
-import it.unibo.msrehab.model.entities.NPSTest;
-import it.unibo.msrehab.model.entities.PersonalData;
-import it.unibo.msrehab.model.entities.RaoTest;
-import it.unibo.msrehab.model.entities.WhiteTest;
 import it.unibo.msrehab.model.controller.ExerciseController;
 import it.unibo.msrehab.model.controller.HistoryController;
 import it.unibo.msrehab.model.controller.MSRSessionController;
@@ -794,7 +786,7 @@ public class MSRUserService
         {
             List<MSRSession> sessionList = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request));
 
-            if (sessionList.isEmpty())
+            if (sessionList.isEmpty() || !sessionList.stream().anyMatch(EntityUtils::hasVisibleExercises))
             {
                 model.addAttribute("back", "patienthome");
                 model.addAttribute("home", "patienthome");
@@ -832,10 +824,17 @@ public class MSRUserService
                 for (int i = 0; i < jArr.length(); i++)
                 {
                     json = jArr.getJSONObject(i);
+
+
                     cat = json.getString("cat");
                
                     id = json.getInt("id");
                     done = json.getBoolean("done");
+
+                    if(!EntityUtils.getExerciseVisibilityInSession(session, id))
+                        continue;
+
+
                     Exercise exercise = exerciseController.getEntityOrThrow(id);
                     exercise.setStatus(historyController.isExerciseInHistory(id, session.getId()), done);
                     // se l'esercizio è da iniziare, controllo se il paziente lo aveva già iniziato durante la sessione in ospedale

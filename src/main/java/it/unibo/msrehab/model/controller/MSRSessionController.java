@@ -28,22 +28,17 @@ import org.slf4j.LoggerFactory;
 public class MSRSessionController extends BaseEntityController<MSRSession>
 {
 
-    private EntityManagerFactory emf;
-    private String peristenceUnit = "DEFAULT_PU";
-    private static final Logger logger = LoggerFactory.getLogger(MSRSessionController.class);
-
     public MSRSessionController()
     {
         super(MSRSession.class);
     }
 
-    private EntityManager getEntityManager() {
-        if (emf == null) {
-            emf = Persistence.createEntityManagerFactory(this.peristenceUnit);
-        }
-        return emf.createEntityManager();
-    }
 
+    @Override
+    public List<MSRSession> getAllEntities()
+    {
+        return super.getAllEntities();
+    }
 
     public List<MSRSession> findAllByUserOrGroup(Integer usrgrpid)
     {
@@ -95,7 +90,7 @@ public class MSRSessionController extends BaseEntityController<MSRSession>
      */
     public boolean updateExerciseDone(int sessid, int exerciseId, boolean done)
     {
-        MSRSession sess = findEntity(sessid).get();
+        MSRSession sess = getEntityOrThrow(sessid);
         JSONArray jsonArr = new JSONArray(sess.getExercises());
         JSONObject json;
         boolean sessionEnded = true;

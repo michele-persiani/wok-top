@@ -5184,12 +5184,12 @@ public class ExerciseService
         HttpSession httpSess = request.getSession();
         String argument = "";
 
-        if (ATT_SEL_STD.toString().equals(type))
-            argument = "diffVar7";
-        else if (ATT_SEL_STD_FAC.toString().equals(type))
+        if (NBACK_FAC.toString().equals(type))
             argument = "diffVar7Fac";
-        else if (ATT_SEL_STD_ORI.toString().equals(type))
+        else if (NBACK_ORI.toString().equals(type))
             argument = "diffVar7Ori";
+        else
+            argument = "diffVar7";
 
         diffVar = (Integer[]) (httpSess.getAttribute(argument));
         if (diffVar == null)
@@ -5204,12 +5204,12 @@ public class ExerciseService
 
         Map<String, Object> parameters = createParametersNback(level, diffVar, exname);
 
-        if (NBACK.toString().equals(type))
-            httpSess.setAttribute("diffVar7", diffVar);
-        else if (NBACK_FAC.toString().equals(type))
+        if (NBACK_FAC.toString().equals(type))
             httpSess.setAttribute("diffVar7Fac", diffVar);
         else if (NBACK_ORI.toString().equals(type))
             httpSess.setAttribute("diffVar7Ori", diffVar);
+        else
+            httpSess.setAttribute("diffVar7", diffVar);
 
         ParametersParser parser = new ParametersParser(parameters);
 
@@ -5447,12 +5447,12 @@ public class ExerciseService
 
         HttpSession httpSess = request.getSession();
         Integer[] diffVar = null;
-        if (NBACK.toString().equals(type))
-            diffVar = (Integer[]) (httpSess.getAttribute("diffVar7"));
-        else if (NBACK_FAC.toString().equals(type))
+        if (NBACK_FAC.toString().equals(type))
             diffVar = (Integer[]) (httpSess.getAttribute("diffVar7Fac"));
         else if (NBACK_ORI.toString().equals(type))
             diffVar = (Integer[]) (httpSess.getAttribute("diffVar7Ori"));
+        else
+            diffVar = (Integer[]) (httpSess.getAttribute("diffVar7"));
 
         Map<String, Object> parameters = createParametersNback(level, diffVar, exname);
         ParametersParser parser = new ParametersParser(parameters);

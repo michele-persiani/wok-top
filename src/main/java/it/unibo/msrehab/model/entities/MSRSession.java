@@ -1,6 +1,8 @@
 package it.unibo.msrehab.model.entities;
 
 import flexjson.JSON;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -9,6 +11,10 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import java.util.stream.IntStream;
+
+
+
 
 /**
  * Class modeling a group of users of the
@@ -31,8 +37,8 @@ import javax.validation.constraints.NotNull;
     @NamedQuery(name = "MSRSession.findAllForPatientsInGroup", query = "SELECT l FROM MSRSession l where l.forgroup = false AND l.grpid= :grpid ORDER BY l.id DESC"),
     @NamedQuery(name = "MSRSession.findAllHospitalActiveForPatients", query = "SELECT l FROM MSRSession l where l.forgroup = false AND l.active = true AND l.hospital = true ORDER BY l.id DESC"),
     @NamedQuery(name = "MSRSession.findAllHomeActiveForPatients", query = "SELECT l FROM MSRSession l where l.forgroup = false AND l.active = true AND l.hospital = false ORDER BY l.id DESC"),
-    @NamedQuery(name = "MSRSession.delete", query = "DELETE FROM MSRSession l WHERE l.id= :sessionid")})
-
+    @NamedQuery(name = "MSRSession.delete", query = "DELETE FROM MSRSession l WHERE l.id= :sessionid")
+})
 public class MSRSession extends BaseEntity
 {
     @JSON(include = false)
@@ -140,6 +146,7 @@ public class MSRSession extends BaseEntity
 	public void setFromSessionId(Integer fromSessionId) {
 		this.fromSessionId = fromSessionId;
 	}
+
 
 
 }

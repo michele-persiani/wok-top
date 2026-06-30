@@ -2,12 +2,11 @@ package it.unibo.msrehab.services;
 
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
-import it.unibo.msrehab.model.entities.Exercise;
+import it.unibo.msrehab.model.entities.*;
+
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseCategoryValue.*;
-import it.unibo.msrehab.model.entities.MSRGroup;
-import it.unibo.msrehab.model.entities.MSRSession;
+
 import it.unibo.msrehab.model.MSRSessionForm;
-import it.unibo.msrehab.model.entities.MSRUser;
 import it.unibo.msrehab.model.controller.ExerciseController;
 import it.unibo.msrehab.model.controller.MSRGroupController;
 import it.unibo.msrehab.model.controller.MSRSessionController;
@@ -22,6 +21,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -68,14 +69,14 @@ public class MSRSessionService {
         int cid = CookiesManager.getLoggedUserCenter(request);
         List<MSRGroup> groups = groupController.findAllGroupsInCenter(cid);
         List<MSRGroup> notEmptyGroups = new ArrayList<>();
-        List<String> hospitalGroupNames = new ArrayList();
-        List<String> homeGroupNames = new ArrayList();
-        List<List<String>> hospitalExerciseNames = new ArrayList();
-        List<List<String>> homeExerciseNames = new ArrayList();
+        List<String> hospitalGroupNames = new ArrayList<>();
+        List<String> homeGroupNames = new ArrayList<>();
+        List<List<String>> hospitalExerciseNames = new ArrayList<>();
+        List<List<String>> homeExerciseNames = new ArrayList<>();
         List<MSRSession> hospitalActiveSessions = sessionController.findAllHospitalActiveForGroups();
         List<MSRSession> homeActiveSessions = sessionController.findAllHomeActiveForGroups();
-        List<MSRSession> hospitalActiveSessionsPerCurrentCenter = new ArrayList(); 
-        List<MSRSession> homeActiveSessionsPerCurrentCenter = new ArrayList(); 
+        List<MSRSession> hospitalActiveSessionsPerCurrentCenter = new ArrayList<>();
+        List<MSRSession> homeActiveSessionsPerCurrentCenter = new ArrayList<>();
  
         for (MSRGroup group : groups) {
             if (!userController.findAllPatientsInGroup(group.getId()).isEmpty()) {
@@ -83,7 +84,7 @@ public class MSRSessionService {
             }
         }
         
-        if(notEmptyGroups.size()>0) {
+        if(!notEmptyGroups.isEmpty()) {
             for (MSRSession session : hospitalActiveSessions) {
                 int grid = session.getUsrgrpid();
                 for (MSRGroup group : groups) {
@@ -91,12 +92,12 @@ public class MSRSessionService {
                         hospitalGroupNames.add(group.getName());
                         String exs = session.getExercises();
                         JSONArray exsJsonArr = new JSONArray(exs);
-                        List<String> exerciseNamesGroup = new ArrayList();
+                        List<String> exerciseNamesGroup = new ArrayList<>();
                         for (int i = 0; i < exsJsonArr.length(); i++) {
                             JSONObject exJson = exsJsonArr.getJSONObject(i);
                             int exId = exJson.getInt("id");
                             exerciseNamesGroup.add(
-                                    exerciseController.findEntity(exId).get().getFullName());
+                                    exerciseController.getEntityOrThrow(exId).getFullName());
                         }
                         hospitalExerciseNames.add(exerciseNamesGroup);
                         hospitalActiveSessionsPerCurrentCenter.add(session);
@@ -110,12 +111,12 @@ public class MSRSessionService {
                         homeGroupNames.add(group.getName());
                         String exs = session.getExercises();
                         JSONArray exsJsonArr = new JSONArray(exs);
-                        List<String> exerciseNamesGroup = new ArrayList();
+                        List<String> exerciseNamesGroup = new ArrayList<>();
                         for (int i = 0; i < exsJsonArr.length(); i++) {
                             JSONObject exJson = exsJsonArr.getJSONObject(i);
                             int exId = exJson.getInt("id");
                             exerciseNamesGroup.add(
-                                    exerciseController.findEntity(exId).get().getFullName());
+                                    exerciseController.getEntityOrThrow(exId).getFullName());
                         }
                         homeExerciseNames.add(exerciseNamesGroup);
                         homeActiveSessionsPerCurrentCenter.add(session);
@@ -145,7 +146,43 @@ public class MSRSessionService {
             return new ModelAndView("error");
         }        
     }
-    
+
+
+    private void buildNames(List<MSRSession> sessions, List<MSRUser> patients, List<String> patientNames, List<List<JSONObject>> exerciseNames)
+    {
+        for (MSRSession session : sessions)
+        {
+            int patid = session.getUsrgrpid();
+            MSRUser patient = patients.stream()
+                    .filter(u -> u.getId() == patid)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Patient not found"));
+
+            patientNames.add(patient.getName() + " " + patient.getSurname());
+            String exs = session.getExercises();
+            JSONArray exsJsonArr = new JSONArray(exs);
+            List<JSONObject> exerciseNamesPatient = new ArrayList<>();
+
+            for (int i = 0; i < exsJsonArr.length(); i++)
+            {
+                JSONObject exJson = exsJsonArr.getJSONObject(i);
+                int exId = exJson.getInt("id");
+                boolean visible = !exJson.has("visible") || exJson.getBoolean("visible");
+                exerciseController.findEntity(exId)
+                        .map(Exercise::getFullName)
+                        .ifPresent(name -> {
+                            exJson.put("sessionid", session.getId());
+                            exJson.put("name", name);
+                            exJson.put("visible", visible);
+                            exerciseNamesPatient.add(exJson);
+                        });
+
+            }
+            exerciseNames.add(exerciseNamesPatient);
+        }
+    }
+
+
     @RequestMapping(value = "/patientsessionmanagement", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView patientsessionmanagement(
@@ -156,77 +193,61 @@ public class MSRSessionService {
                 = userController.findAllPatientsInCenter(cid);
         List<String> hospitalPatientNames = new ArrayList<>();
         List<String> homePatientNames = new ArrayList<>();
-        List<List<String>> hospitalExerciseNames = new ArrayList<>();
-        List<List<String>> homeExerciseNames = new ArrayList<>();
+        List<List<JSONObject>> hospitalExerciseNames = new ArrayList<>();
+        List<List<JSONObject>> homeExerciseNames = new ArrayList<>();
         List<MSRSession> hospitalActiveSessions = sessionController.findAllHospitalActiveForPatients();
         List<MSRSession> homeActiveSessions = sessionController.findAllHomeActiveForPatients();
-        List<MSRSession> hospitalActiveSessionsPerCurrentCenter = new ArrayList<>();
-        List<MSRSession> homeActiveSessionsPerCurrentCenter = new ArrayList<>();
-        
-        for (MSRSession session : hospitalActiveSessions)
-        {
-            int patid = session.getUsrgrpid();
-            for (MSRUser patient : patients) {
-                if (patient.getId() == patid) {
-                    hospitalPatientNames.add(
-                            patient.getName() + " " + patient.getSurname());
-                    String exs = session.getExercises();
-                    JSONArray exsJsonArr = new JSONArray(exs);
-                    List<String> exerciseNamesPatient = new ArrayList<>();
 
-                    for (int i = 0; i < exsJsonArr.length(); i++)
-                    {
-                        JSONObject exJson = exsJsonArr.getJSONObject(i);
-                        int exId = exJson.getInt("id");
-                        exerciseController.findEntity(exId).map(Exercise::getFullName).ifPresent(exerciseNamesPatient::add);
-                    }
-                    hospitalExerciseNames.add(exerciseNamesPatient);
-                    hospitalActiveSessionsPerCurrentCenter.add(session);
-                }
-            }
-        }
-        for (MSRSession session : homeActiveSessions) {
-            int patid = session.getUsrgrpid();
-            for (MSRUser patient : patients) {
-                if (patient.getId() == patid) {
-                    homePatientNames.add(
-                            patient.getName() + " " + patient.getSurname());
-                    String exs = session.getExercises();
-                    JSONArray exsJsonArr = new JSONArray(exs);
-                    List<String> exerciseNamesPatient = new ArrayList<>();
-                    for (int i = 0; i < exsJsonArr.length(); i++) {
-                        JSONObject exJson = exsJsonArr.getJSONObject(i);
-                        int exId = exJson.getInt("id");
-                        exerciseController.findEntity(exId).map(Exercise::getFullName).ifPresent(exerciseNamesPatient::add);
-                    }
-                    homeExerciseNames.add(exerciseNamesPatient);
-                    homeActiveSessionsPerCurrentCenter.add(session);
-                }
-            }
+        buildNames(hospitalActiveSessions, patients, hospitalPatientNames, hospitalExerciseNames);
+        buildNames(homeActiveSessions, patients, homePatientNames, homeExerciseNames);
 
-        }
                     
-        if (hospitalActiveSessionsPerCurrentCenter.isEmpty() && homeActiveSessionsPerCurrentCenter.isEmpty()) {
+        if (hospitalActiveSessions.isEmpty() && homeActiveSessions.isEmpty())
             model.addAttribute("message", "Nessuna sessione attiva definita");
-        }        
-        
-        List<MSRUser>patientsNotInGroupsInCenter=userController.findAllPatientsNotInGroupsInCenter(cid);
-        boolean newSession=false;
-        for(MSRUser patient: patientsNotInGroupsInCenter) {
-            if(sessionController.findAllActiveByUserOrGroup(patient.getId()).isEmpty()) {
-                newSession = true;
-                break;
-            }
-        }
+
+
+        boolean newSession = userController.findAllPatientsNotInGroupsInCenter(cid)
+                .stream()
+                .anyMatch(patient -> sessionController.findAllActiveByUserOrGroup(patient.getId()).isEmpty())
+                ;
+
         model.addAttribute("newsession", newSession);
-        model.addAttribute("hospitalsessions", hospitalActiveSessionsPerCurrentCenter);
-        model.addAttribute("homesessions", homeActiveSessionsPerCurrentCenter);
+        model.addAttribute("hospitalsessions", hospitalActiveSessions);
+        model.addAttribute("homesessions", homeActiveSessions);
         model.addAttribute("hospitalpatientnames", hospitalPatientNames);
         model.addAttribute("homepatientnames", homePatientNames);
         model.addAttribute("hospitalexercisenames", hospitalExerciseNames);
         model.addAttribute("homeexercisenames", homeExerciseNames);
         return new ModelAndView("patient-session-management");
     }
+
+
+    @RequestMapping(value = "/setexercisevisibility", method = RequestMethod.POST)
+    public HttpEntity<String> setExerciseVisibiltiy(
+            int sessionid,
+            int exerciseid,
+            boolean visible
+    )
+    {
+        MSRSession session = sessionController.getEntityOrThrow(sessionid);
+        boolean success = EntityUtils.setExerciseVisibilityInSession(session, exerciseid, visible);
+        if(success)
+            return ResponseEntity.ok("Success");
+        return ResponseEntity.ok("Failure");
+    }
+
+
+    @RequestMapping(value = "/getexercisevisibility", method = RequestMethod.GET)
+    public HttpEntity<Boolean> getExerciseVisibiltiy(
+            int sessionid,
+            int exerciseid
+    )
+    {
+        MSRSession session = sessionController.getEntityOrThrow(sessionid);
+        boolean visible = EntityUtils.getExerciseVisibilityInSession(session, exerciseid);
+        return ResponseEntity.ok(visible);
+    }
+
 
     @RequestMapping(value = "/patientsession", method = RequestMethod.GET)
     @ResponseBody
@@ -291,6 +312,7 @@ public class MSRSessionService {
             JSONObject json1 = new JSONObject()
                     .put("id", exId.getInt(i))
                     .put("cat", exCat.getString(i))
+                    .put("visible", true)
                     .put("done", exDone.getBoolean(i));
             jsonArr.put(json1);
         }

@@ -204,8 +204,8 @@
             <div></div>
             <div class="well">
                 <div class="row">
-                    <div class="col-sm-9"></div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-10"></div>
+                    <div class="col-sm-4">
                         <button type="button" id="sameButton" class="btn btn-lg btn-success btn-block pull-right" style="height:10%" disabled="true" onclick="samePushed()">
                         </button>
                     </div>
@@ -252,11 +252,13 @@
                 }
 
                 function samePushed() {
+                    if(sameButtonPushed)
+                        return;
+                    sameButtonPushed = true;
                     var rTime = new Date().getTime();
                     dTime = dTime+(rTime-sTime);
                     sTime = new Date().getTime();
-                    
-                    sameButtonPushed = true;
+
                     document.getElementById('sameButton').disabled = true;
                     
                     var suffix = currentIndex+1
@@ -361,7 +363,8 @@
                                                             
                  $("#myCarousel").on('slide.bs.carousel', function () {
                     document.getElementById('sameButton').disabled = false;
-    
+
+                    sameButtonPushed = false;
                 
                     currentIndex = $(this).find('.active').index();
                     var imgId = 'img-i' + currentIndex;
@@ -383,7 +386,6 @@
  
                         }
                     }
-                        sameButtonPushed = false;
                     }
                     sTime = new Date().getTime();
                     console.log("salvo nuovo timestamp per slide"+elements[currentIndex]+imgId);

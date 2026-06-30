@@ -392,8 +392,6 @@ public class StatisticService
                                     .put("tempo", tempo)
                                     .put("incompleti", histories.size())
                     );
-
-
                 });
     }
 

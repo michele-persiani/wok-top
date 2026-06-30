@@ -105,6 +105,12 @@
     <div id="imageMobile">
         <img src="resources/images/buttons.jpg" alt="Buttons Image" style="width: 40%"/>
     </div>
+    <div>
+        Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori:<br>
+        <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF0000">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
+        Alcuni esercizi prevedono di fornire le risposte in base a uno <b>stimolo sonoro</b>: ricordi di tenere alto il <b>volume</b> del dispositivo al fine di poter rilevare correttamente il suddetto stimolo.<br>
+
+    </div>
 
     <script type="application/javascript">
 

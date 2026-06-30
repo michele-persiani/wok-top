@@ -474,8 +474,8 @@
                                             '<br><b>Suoni sbagliati (falsi positivi)</b>: ' + soundFalsePositive +
                                             //'<br><b>Suoni totali</b>: ' + soundCounter +
                                             '<br>' +
-                                            '<br><b>Performance</b>: ' + Math.floor(perf * 100) + '%' +
-                                            '<br><b>Soglia Superamento</b>: ' + Math.floor(thr * 100) + '%' +
+                                            '<br><b>Performance</b>: ' + Math.round(perf * 100) + '%' +
+                                            '<br><b>Soglia Superamento</b>: ' + Math.round(thr * 100) + '%' +
                                             '<br>' +
                                             '<br>' + passedMessage + '</h4>',
                                         callback:function() {

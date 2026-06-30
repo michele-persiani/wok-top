@@ -7000,17 +7000,22 @@ public class ExerciseService
 
 
         // Calculate performance
+        
+         // Calculate performance
+    
         double perf = fitnessController.calculateFitness(false, history);
 
         double thr = fitnessController.getFitnessWeightOrThrow(exerciseid).getThr();
-
-        if(assignmentid != null && assignmentid != -1)
+        double around=0.0049;
+        if(assignmentid != null)
             thr = historyController.getEntityOrThrow(assignmentid).getPassThreshold();
-
-        boolean passed = perf >= thr;
-
-
+        
+        //boolean passed = (perf >= thr || (Math.abs(perf-thr))< Double.MIN_VALUE);
+        //boolean passed = (perf >= thr);  
+        boolean passed=(perf+around-thr)>=0;
         HttpHeaders headers = new HttpHeaders();
+        
+        
 
         JSONObject res = new JSONObject();
         res.put("perf", perf);

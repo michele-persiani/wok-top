@@ -14,7 +14,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="MS-rehab" options="-endorseddirs C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\target/endorsed" />
+      <module name="MS-rehab" options="-endorseddirs $PROJECT_DIR$/target/endorsed" />
     </option>
   </component>
 </project>

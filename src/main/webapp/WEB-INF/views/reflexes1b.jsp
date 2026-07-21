@@ -69,9 +69,11 @@
         {
             totalTime: ${totalTime},
             decoys: ${decoys},
+            obstaclesType: ${obstaclesType},
             obstaclesDelay: ${obstaclesSpawnDelay},
             speed: ${speed},
             changeOfLane: ${changeOfLane},
+            changeOfLaneDistance: ${changeOfLaneDistance},
             fog: ${fog},
             rain: ${rain},
             scale: ${scale},

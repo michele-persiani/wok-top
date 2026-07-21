@@ -145,7 +145,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-18">
-                        <h3 class="pull-left">In seguito le verrà presentata un’immagine che corrisponde a una delle parole: clicchi sulla posizione corretta dello stimolo in base all’ordine di presentazione delle parole, ora indicata dal punto interrogativo:</h3>
+                        <h3 class="pull-left">In seguito le verrà presentata un’immagine che indica una delle parole: clicchi sul punto interrogativo corrispondente</h3>
 
                         <div>
                             <img src="resources/assets/img/mem2-after.png">

@@ -288,7 +288,10 @@ public class MSRSessionService {
         MSRSession session = new MSRSession();
         session.setActive(Boolean.TRUE);
         session.setHospital(Boolean.TRUE);
-        session.setDifficulty(msrSessionForm.getDifficulty());
+        String difficulty = msrSessionForm.getDifficulty();
+        if(difficulty == null)
+            difficulty = "easy";
+        session.setDifficulty(difficulty);
         session.setUsrgrpid(msrSessionForm.getUsrgrpid());
         session.setForgroup(Boolean.FALSE);
         session.setGrpid(-1);

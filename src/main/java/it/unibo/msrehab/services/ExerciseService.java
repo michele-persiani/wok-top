@@ -1900,13 +1900,72 @@ public class ExerciseService
         int obstaclesSpawnDelay = 2000;
         boolean decoys = true;
         boolean changeOfLane = false;
-        double scale = 1;
+        double scale = 1.4;
+
+        Map<String, Object[]> parameters = new HashMap<>();
 
 
+        parameters.put(
+                "totalTime",
+                new Integer[]{45,49,53,57,61,65,69,73,77,81,85,89,93,97,101,105,109,113,117,120}
+        );
+
+        parameters.put(
+                "speed",
+                new Double[]{1d, 1.05, 1.10, 1.15, 1.20, 1.25, 1.35, 1.4, 1.45, 1.55,1.6,1.65,1.8,1.85,1.9,2.0,2.15,2.25,2.4,2.5}
+        );
+
+        parameters.put(
+                "obstaclesType",
+                new Integer[] {1,1,1,2,2,2,3,3,3,4,4,4,4,4,4,4,4,4,4,4}
+        );
+
+        parameters.put(
+                "obstaclesSpawnDelay",
+                new Integer[]{12000,10909,10000,9230,8571,8000,7500,7058,6666,6315,6000,5714,5454,5217,5000,4800,4615,4444,4285,4000}
+        );
+
+        parameters.put(
+                "decoys",
+                new Boolean[] {false,false,false,false,	true,true,true,true,true, true,true,true,true,true,true,true,true,true,true,true}
+        );
+
+        parameters.put(
+                "changeOfLane",
+                new Boolean[] {false,false,false,false,	true,true,true,true,true, true,true,true,true,true,true,true,true,true,true,true}
+        );
+
+        parameters.put(
+                "changeOfLaneDistance",
+                new Integer[] {0,0,0,0,1,1,2,2,3,3,4,4,4,5,5,5,5,5,5,5}
+        );
+
+        parameters.put(
+                "rain",
+                new Boolean[] {false,false,false,false,true,false,false,false,true,true,false,false,true,false,false,true,false,true,false,true}
+        );
+
+
+        parameters.put(
+                "fog",
+                new Boolean[] {false,false,false,true,false,false,false,true,false,false,false,true,false,false,true,false,true,false,true,true}
+        );
+
+        parameters.put(
+                "scale",
+                new Double[] {1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4}
+        );
+
+        return parameters.keySet()
+                .stream()
+                .collect(Collectors.toMap(p -> p, p -> parameters.get(p)[level - 1]));
+
+        /*
         Map<String, Object> parameters = new HashMap<>();
 
         parameters.put("totalTime", Double.valueOf(60));
         parameters.put("speed", speed);
+        parameters.put("obstaclesType", 1);
         parameters.put("obstaclesSpawnDelay", obstaclesSpawnDelay);
         parameters.put("decoys", decoys);
         parameters.put("changeOfLane", changeOfLane);
@@ -1933,116 +1992,229 @@ public class ExerciseService
         {
             case -1:
             case 0:
-                parameters.put("speed", 0.8);
-                parameters.put("obstaclesSpawnDelay", 1400);
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 12000);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.4);
                 break;
             case 1:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1);
-                parameters.put("obstaclesSpawnDelay", 1300);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 12000);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.3);
                 break;
             case 2:
-                parameters.put("speed", 1);
-                parameters.put("obstaclesSpawnDelay", 1300);
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.05);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 10900);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.3);
                 break;
             case 3:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.1);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 1100);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.3);
                 break;
             case 4:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.1);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 1100);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.2);
                 break;
             case 5:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.2);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 900);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.2);
                 break;
             case 6:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.2);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 900);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", true);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.2);
                 break;
             case 7:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.3);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 700);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", true);
                 parameters.put("fog", false);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.2);
                 break;
             case 8:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.3);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 700);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", true);
                 parameters.put("fog", true);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.2);
                 break;
             case 9:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.4);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 700);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", true);
                 parameters.put("fog", true);
                 parameters.put("rain", false);
-                parameters.put("scale", 1.1);
                 break;
             case 10:
+                parameters.put("totalTime", 45d);
                 parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 700);
                 parameters.put("decoys", true);
                 parameters.put("changeOfLane", true);
                 parameters.put("fog", false);
                 parameters.put("rain", true);
-                parameters.put("scale", 1);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
+                break;
+            case 10:
+                parameters.put("totalTime", 45d);
+                parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
+                parameters.put("obstaclesSpawnDelay", 700);
+                parameters.put("decoys", true);
+                parameters.put("changeOfLane", true);
+                parameters.put("fog", false);
+                parameters.put("rain", true);
                 break;
             default:
                 parameters.put("speed", 1.5);
+                parameters.put("obstaclesType", 1);
                 parameters.put("obstaclesSpawnDelay", 1200);
                 parameters.put("decoys", false);
                 parameters.put("changeOfLane", false);
                 parameters.put("fog", false);
                 parameters.put("rain", true);
-                parameters.put("scale", 1);
                 break;
         }
 
         return parameters;
+        */
+
     }
 
     public static boolean isRLDriven(ExerciseNameValue exName)

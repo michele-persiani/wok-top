@@ -53,19 +53,23 @@
     <![endif]-->
 
     <script type="text/javascript" src="resources/js/hello.js"></script>
+
+    <style>
+        .spacer {
+            height: 10px;
+        }
+
+        .big-font {
+            font-size: 20px;
+        }
+
+    </style>
 </head>
 
 <body>
 <div class="container">
     <div class="header clearfix">
         <nav>
-            <ul class="nav nav-pills pull-left">
-                <li role="presentation">
-                    <a data-toggle="modal" href="#infoModal">
-                        <span class="glyphicon glyphicon-info-sign fa-2x" data-toggle="tooltip" data-placement="bottom" title="Info"></span>
-                    </a>
-                </li>
-            </ul>
             <ul class="nav nav-pills pull-right">
                 <li>
                     <a href="patienthome">
@@ -82,16 +86,18 @@
     </div>
 
     <div id="textComputer">
-        <div>
-            Per svolgere gli esercizi di questo programma, le verrà richiesto di fornire delle risposte selezionandole con il mouse (click sul tasto sinistro del mouse) oppure premendo dei tasti specifici sulla tastiera.
+        <div class="big-font">
+            Per svolgere gli esercizi di questo programma,
+            le verrà richiesto di fornire delle risposte selezionandole con il mouse (click sul tasto sinistro del mouse)
+            oppure premendo dei tasti specifici sulla tastiera.
         </div>
-        <div>
-            Cerchi di identificarli sulla propria tastiera fin da ora:
-        </div>
+        <div class="big-font">
+            Cerchi di identificarli sulla propria tastiera fin da ora:<br>
         <ul>
             <li>Barra spaziatrice o spazio, in basso al centro</li>
             <li>Tasto 'invio' o 'Enter', a destra</li>
         </ul>
+        </div>
     </div>
     <div id="imageComputer">
         <img src="resources/images/mouse.png" alt="Mouse Image" style="width: 40%"/>
@@ -99,13 +105,15 @@
     </div>
 
 
-    <div id="textMobile">
+    <div id="textMobile" class="big-font">
         Per svolgere gli esercizi di questo programma, le verrà richiesto di fornire delle risposte toccando specifici tasti che compariranno sullo schermo, ad esempio:
+
+        <div id="imageMobile">
+            <img src="resources/images/buttons.jpg" alt="Buttons Image" style="width: 40%"/>
+        </div>
+        Altre volte, le verrà chiesto di rispondere toccando direttamente la risposta che ritiene corretta.
     </div>
-    <div id="imageMobile">
-        <img src="resources/images/buttons.jpg" alt="Buttons Image" style="width: 40%"/>
-    </div>
-    <div>
+    <div class="big-font">
         Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori:<br>
         <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF0000">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
         Alcuni esercizi prevedono di fornire le risposte in base a uno <b>stimolo sonoro</b>: ricordi di tenere alto il <b>volume</b> del dispositivo al fine di poter rilevare correttamente il suddetto stimolo.<br>

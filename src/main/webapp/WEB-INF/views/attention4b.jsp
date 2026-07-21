@@ -206,7 +206,7 @@
 
                     <div class="row">
                         <div class="col-sm-12 pull-left">
-                            <h3 id="im1"></h3>
+                            <h3>Faccia attenzione a queste figure:<br> e alla comparsa del suono.</h3>
                         </div>
                         <div id="targets">
                             <c:forEach var="target" items="${targetElementList}">
@@ -221,13 +221,10 @@
                             </c:forEach>
                         </div>
                     </div>
-                    <div clas="row">
+                    <div class="row">
                         <div class="col-sm-24 pull-left">
                             <h3 id="suono"></h3>
-                        </div>
-                    </div>
-                    <div clas="row">
-                        <div class="col-sm-24 pull-left">
+                            <h3 id="im1"></h3>
                             <h3 id="im2"></h3>
                         </div>
                     </div>
@@ -301,8 +298,8 @@
             </div>
 
             <div class="well" style="text-align: center">
-                <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Spazio" onclick="checkSpace()">Spazio</button>
-                <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono" onclick="checkSound()">Invio</button>
+                <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Figura" onclick="checkSpace()">Figura</button>
+                <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono" onclick="checkSound()">Suono</button>
             </div>
 
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->

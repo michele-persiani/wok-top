@@ -33,9 +33,13 @@ export class Game
             cameraPosition: options.cameraPosition || { x: 3, y: 2, z: 5 },
             speed: options.speed || 1,
             obstaclesSpawnDelay: options.obstaclesSpawnDelay || 2000,
+            obstaclesType: options.obstaclesType || 1,
             decoys: options.decoys || false,
             decoysSpawnDelay: options.decoysSpawnDelay || 5000,
             changeOfLane: options.changeOfLane || false,
+            changeOfLaneDistance: options.changeOfLaneDistance || 0,
+            obstacleChangeOfLaneMinDistance: -200,
+            obstacleChangeOfLaneMultiplier: 40,
             fog: options.fog || true,
             rain: options.rain || false,
             scale: options.scale || 1,
@@ -43,7 +47,7 @@ export class Game
         };
 
 
-        this.OBSTACLE_TYPES = ["car", "motorbike", "pedestrian", "deer"];
+        this.OBSTACLE_TYPES = ["car", "pedestrian", "motorbike"];
         this.OBSTACLE_SIZES = {
             car: { width: 2, height: 1, color: 0xff0000 },
             motorbike: { width: 1, height: 1, color: 0x0000ff },
@@ -171,7 +175,6 @@ export class Game
             })
         ;
 
-
         url = 'resources/gltf/deer/deer.gltf';
         let pr3 = gltfLoader.loadAsync(url)
             .then((gltf) => {
@@ -179,11 +182,24 @@ export class Game
             })
         ;
 
+        url = 'resources/gltf/kid/scene.gltf';
+        let pr4 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.kid = gltf.scene;
+            })
+        ;
+
+        url = 'resources/gltf/cat/scene.gltf';
+        let pr5 = gltfLoader.loadAsync(url)
+            .then((gltf) => {
+                game.textures.cat = gltf.scene;
+            })
+        ;
 
 
         // Row elements
         url = 'resources/gltf/house/house.gltf';
-        let pr4 = gltfLoader.loadAsync(url)
+        let pr6 = gltfLoader.loadAsync(url)
             .then((gltf) => {
                 game.textures.house = gltf.scene;
             })
@@ -191,13 +207,13 @@ export class Game
 
 
         url = 'resources/gltf/tree/tree.gltf';
-        let pr5 = gltfLoader.loadAsync(url)
+        let pr7 = gltfLoader.loadAsync(url)
             .then((gltf) => {
                 game.textures.tree = gltf.scene;
             })
         ;
 
-        return Promise.all([pr0, pr1, pr2, pr3, pr4, pr5]);
+        return Promise.all([pr0, pr1, pr2, pr3, pr4, pr5, pr6, pr7]);
     }
 
 
@@ -482,6 +498,9 @@ export class Game
                 }
             }
 
+            let xa = this.config.obstacleChangeOfLaneMinDistance;
+            let xb = this.config.obstacleChangeOfLaneMultiplier;
+            let xc = this.config.changeOfLaneDistance;
 
             // Move obstacles
             for (const obstacle of obstacles)
@@ -489,7 +508,7 @@ export class Game
                 obstacle.position.z += zMovement;
 
                 // Change of lane
-                if(obstacle.position.z > -100 && !obstacle.laneChanged && this.config.changeOfLane)
+                if(obstacle.position.z > xa + xc * xb && !obstacle.laneChanged && this.config.changeOfLane)
                 {
                     obstacle.laneChanged = true;
                     if(Math.random() > 0.9)
@@ -576,7 +595,7 @@ export class Game
 
 
         this.obstacleSpawnInterval = setInterval(() => {
-            const type = this.OBSTACLE_TYPES[Math.floor(Math.random() * this.OBSTACLE_TYPES.length)];
+            const type = this.OBSTACLE_TYPES[Math.floor(Math.random() * this.config.obstaclesType)];
             let isDecoy = this.config.decoys ? Math.random() > 0.5 : false;
             this.createObstacle(type, isDecoy);
         }, this.config.obstaclesSpawnDelay);

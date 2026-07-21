@@ -112,6 +112,7 @@
                                 </div>                        
                             </spring:bind>                      
                         </div>
+                        <!--
                         <div class="col-sm-8">
                             <spring:bind path="difficulty">
                                 <div class="form-group">
@@ -122,8 +123,10 @@
                                         <form:option value="difficult">Difficile</form:option>
                                     </form:select>
                                 </div>
-                            </spring:bind>                      
+                            </spring:bind>
+
                         </div>
+                        -->
                     </div>
                     <hr>
 

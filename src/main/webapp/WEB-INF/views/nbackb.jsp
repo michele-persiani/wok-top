@@ -149,7 +149,15 @@
                         <!--div class="col-sm-3"></div-->
                         <div class="col-sm-18">
                             <h3 class="pull-left">Osserva le figure che scorrono sullo schermo.</h3>
-                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red">${nback}</span> figure prima, allora clicchi il tasto verde.</h3>
+                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red; color: #ffffff">${nback}</span>
+                                <c:if test="${nback == 1}">
+                                    figura
+                                </c:if>
+                                <c:if test="${nback > 1}">
+                                    figure
+                                </c:if>
+                                prima, allora clicchi il tasto verde.
+                            </h3>
                         </div>
                         <div class="col-sm-3">
                             <c:if test="${difficulty=='training' && patientid=='-1'}">
@@ -272,7 +280,8 @@
                         //document.getElementById(imgId).style.filter= "grayscale(0%)";
                         addBackground(imgId, 'green');
                     }
-                    else {
+                    else
+                    {
                         audio01.load();
                         audio01.play();        
                         nWrong++;
@@ -360,7 +369,7 @@
                         });
                     });   
                 }
-                                                            
+
                  $("#myCarousel").on('slide.bs.carousel', function () {
                     document.getElementById('sameButton').disabled = false;
 

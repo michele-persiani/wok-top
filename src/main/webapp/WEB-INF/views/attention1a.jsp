@@ -155,7 +155,7 @@
                         </div>
 
                         <div class="col-sm-8">
-                            <h3 class="pull-left">tra gli elementi che appariranno,<br> Cerchi di farlo entro il tempo massimo indicato dal contatore in alto a sinistra:</h3>
+                            <h3 class="pull-left">tra gli elementi che appariranno.<br> Cerchi di farlo entro il tempo massimo indicato dal contatore in alto a sinistra:</h3>
 
                                 <h2 class="pull-right" style="color:red;border: 1px solid red;border-radius: 50%;padding: 10px;" id="timer">60</h2>
                         </div>
@@ -163,7 +163,7 @@
                     <div class="row">
                         <div class="col-sm-2"></div>
                         <div class="col-sm-22">
-                            <h3 class="pull-left">Quando ha finito clicchi il bottone "Ho finito":</h3>
+                            <h3 class="pull-left">Quando ha finito clicchi il bottone</h3>
                             <input type="button" class="btn btn-lg btn-success pull-left" value="Ho finito">
                         </div>
                     </div>

@@ -119,17 +119,17 @@
                 <div class="row">                    
                     <div class="col-sm-18">
                         <c:if test="${type=='NBACK_FAC'&& nback=='1'}">
-                            <h3 class="pull-left">Se il  volto corrente &egrave; uguale a quello visto <span style="background-color:red">${nback}</span> volto prima.</h3>
+                            <h3 class="pull-left">Se il  volto corrente &egrave; uguale a quello visto <span style="background-color:red; color: #ffffff">${nback}</span> volto prima.</h3>
                         </c:if>
                         <c:if test="${type=='NBACK_FAC'&& nback>'1'}">
-                            <h3 class="pull-left">Se il  volto corrente &egrave; uguale a quello visto <span style="background-color:red">${nback}</span> volti prima, allora clicchi il tasto verde.</h3>
+                            <h3 class="pull-left">Se il  volto corrente &egrave; uguale a quello visto <span style="background-color:red; color: #ffffff">${nback}</span> volti prima, allora clicchi il tasto verde.</h3>
                         </c:if>
                        
                         <c:if test="${type!='NBACK_FAC'&& nback=='1'}">
-                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red">${nback}</span> figura prima, allora clicchi il tasto verde.</h3>
+                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red; color: #ffffff">${nback}</span> figura prima, allora clicchi il tasto verde.</h3>
                         </c:if>
                         <c:if test="${type!='NBACK_FAC' && nback>'1'}">
-                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red">${nback}</span> figure prima, allora clicchi il tasto verde.</h3>
+                            <h3 class="pull-left">Se la figura corrente &egrave; uguale a quella vista <span style="background-color:red; color: #ffffff">${nback}</span> figure prima, allora clicchi il tasto verde.</h3>
                         </c:if>
                     </div>
                     <div class="col-sm-6">

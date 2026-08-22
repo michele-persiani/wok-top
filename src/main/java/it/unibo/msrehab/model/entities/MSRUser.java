@@ -45,7 +45,7 @@ public class MSRUser extends BaseEntity
      * Enumeration of the system roles
      */
      public enum RoleValue {
-        ADMIN, OPERATOR, PATIENT;
+        ADMIN, OPERATOR, PATIENT, DEMO;
     };
 
     @JSON(include = false)

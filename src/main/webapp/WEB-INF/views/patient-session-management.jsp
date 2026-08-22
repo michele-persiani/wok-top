@@ -345,7 +345,13 @@
                 .filter(exercise => !exercise.done)
                 .map(exercise => {
                     const checkbox = document.createElement("input");
+                    checkbox.setAttribute('id', exercise.id);
                     checkbox.setAttribute('type', 'checkbox');
+                    checkbox.setAttribute('value', exercise.name);
+
+                    const label = document.createElement("label");
+                    label.setAttribute('for', exercise.id);
+                    label.innerText = " " + exercise.name;
                     if(exercise.visible)
                         checkbox.setAttribute('checked', true);
                     checkbox.addEventListener('change', (event) => {
@@ -372,11 +378,9 @@
                         }
                     })
                     let li = document.createElement("li");
-                    let h4 = document.createElement("h4");
 
-                    h4.innerHTML = exercise.name;
-                    li.appendChild(h4);
                     li.appendChild(checkbox);
+                    li.appendChild(label);
                     return li;
                 })
                 .forEach(elem => msg.append(elem))

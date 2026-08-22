@@ -34,7 +34,7 @@ public class CategoryGroup implements Serializable {
 			case "MEMORY_FAC": return "Memoria: volti";
 			case "MEMORY_ORI": return "Memoria: orientamento";
 			case "EX_FUNC": return "Funzioni esecutive";
-			case "ATT_RFLXS": return "RL moto";
+			case "ATT_RFLXS": return "Moto";
 			default: return "Senza nome";
 		}
 	}

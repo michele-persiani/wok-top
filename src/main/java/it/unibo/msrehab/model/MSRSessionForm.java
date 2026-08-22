@@ -2,6 +2,8 @@ package it.unibo.msrehab.model;
 
 import flexjson.JSONSerializer;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -18,42 +20,42 @@ public class MSRSessionForm implements Serializable
     @NotNull
     private String difficulty;
         
-    private Integer ATT_SEL_STD;
-    private Integer ATT_SEL_STD_FAC;
-    private Integer ATT_SEL_STD_ORI;
+    private List<Integer> ATT_SEL_STD = new ArrayList<>();
+    private List<Integer> ATT_SEL_STD_FAC = new ArrayList<>();
+    private List<Integer> ATT_SEL_STD_ORI = new ArrayList<>();
 
-    private Integer ATT_SEL_FLW;
-    private Integer ATT_SEL_FLW_FAC;
-    private Integer ATT_SEL_FLW_ORI;
+    private List<Integer> ATT_SEL_FLW = new ArrayList<>();
+    private List<Integer> ATT_SEL_FLW_FAC = new ArrayList<>();
+    private List<Integer> ATT_SEL_FLW_ORI = new ArrayList<>();
 
-    private Integer ATT_ALT;
-    private Integer ATT_ALT_FAC;
-    private Integer ATT_ALT_ORI;
+    private List<Integer> ATT_ALT = new ArrayList<>();
+    private List<Integer> ATT_ALT_FAC = new ArrayList<>();
+    private List<Integer> ATT_ALT_ORI = new ArrayList<>();
 
-    private Integer ATT_DIV;
-    private Integer ATT_DIV_FAC;
-    private Integer ATT_DIV_ORI;
+    private List<Integer> ATT_DIV = new ArrayList<>();
+    private List<Integer> ATT_DIV_FAC = new ArrayList<>();
+    private List<Integer> ATT_DIV_ORI = new ArrayList<>();
 
-    private Integer MEM_VIS_1;
-    private Integer MEM_VIS_1_FAC;
-    private Integer MEM_VIS_1_ORI;
+    private List<Integer> MEM_VIS_1 = new ArrayList<>();
+    private List<Integer> MEM_VIS_1_FAC = new ArrayList<>();
+    private List<Integer> MEM_VIS_1_ORI = new ArrayList<>();
 
-    private Integer MEM_VIS_2;
-    private Integer MEM_VIS_5;
+    private List<Integer> MEM_VIS_2 = new ArrayList<>();
+    private List<Integer> MEM_VIS_5 = new ArrayList<>();
     
-    private Integer NBACK;
-    private Integer NBACK_FAC;
-    private Integer NBACK_ORI;
+    private List<Integer> NBACK = new ArrayList<>();
+    private List<Integer> NBACK_FAC = new ArrayList<>();
+    private List<Integer> NBACK_ORI = new ArrayList<>();
     
-    private Integer MEM_LONG_1;
+    private List<Integer> MEM_LONG_1 = new ArrayList<>();
 
-    private Integer RES_INH;
+    private List<Integer> RES_INH = new ArrayList<>();
 
-    private Integer PLAN_1;
-    private Integer PLAN_2;
-    private Integer PLAN_3;
+    private List<Integer> PLAN_1 = new ArrayList<>();
+    private List<Integer> PLAN_2 = new ArrayList<>();
+    private List<Integer> PLAN_3 = new ArrayList<>();
 
-    private Integer ATT_RFLXS;
+    private List<Integer> ATT_RFLXS = new ArrayList<>();
 
     public MSRSessionForm() {
     }
@@ -74,211 +76,211 @@ public class MSRSessionForm implements Serializable
         this.difficulty = difficulty;
     }
 
-    public Integer getATT_SEL_STD() {
+    public List<Integer> getATT_SEL_STD() {
         return ATT_SEL_STD;
     }
 
-    public void setATT_SEL_STD(Integer attSelStd) {
+    public void setATT_SEL_STD(List<Integer> attSelStd) {
         this.ATT_SEL_STD = attSelStd;
     }
 
-    public Integer getATT_SEL_FLW() {
+    public List<Integer> getATT_SEL_FLW() {
         return ATT_SEL_FLW;
     }
 
-    public void setATT_SEL_FLW(Integer attSelFlw) {
+    public void setATT_SEL_FLW(List<Integer> attSelFlw) {
         this.ATT_SEL_FLW = attSelFlw;
     }
 
-    public Integer getATT_ALT() {
+    public List<Integer> getATT_ALT() {
         return ATT_ALT;
     }
 
-    public void setATT_ALT(Integer ATT_ALT) {
+    public void setATT_ALT(List<Integer> ATT_ALT) {
         this.ATT_ALT = ATT_ALT;
     }
 
-    public Integer getATT_DIV() {
+    public List<Integer> getATT_DIV() {
         return ATT_DIV;
     }
 
-    public void setATT_DIV(Integer ATT_DIV) {
+    public void setATT_DIV(List<Integer> ATT_DIV) {
         this.ATT_DIV = ATT_DIV;
     }
 
-    public Integer getMEM_VIS_1() {
+    public List<Integer> getMEM_VIS_1() {
         return MEM_VIS_1;
     }
 
-    public void setMEM_VIS_1(Integer MEM_VIS_1) {
+    public void setMEM_VIS_1(List<Integer> MEM_VIS_1) {
         this.MEM_VIS_1 = MEM_VIS_1;
     }
 
-    public Integer getMEM_VIS_2() {
+    public List<Integer> getMEM_VIS_2() {
         return MEM_VIS_2;
     }
 
-    public void setMEM_VIS_2(Integer MEM_VIS_2) {
+    public void setMEM_VIS_2(List<Integer> MEM_VIS_2) {
         this.MEM_VIS_2 = MEM_VIS_2;
     }
-     public Integer getMEM_VIS_5() {
+     public List<Integer> getMEM_VIS_5() {
         return MEM_VIS_5;
     }
 
-    public void setMEM_VIS_5(Integer MEM_VIS_5) {
+    public void setMEM_VIS_5(List<Integer> MEM_VIS_5) {
         this.MEM_VIS_5 = MEM_VIS_5;
     }
 
-    public Integer getNBACK() {
+    public List<Integer> getNBACK() {
         return NBACK;
     }
 
-    public void setNBACK(Integer NBACK) {
+    public void setNBACK(List<Integer> NBACK) {
         this.NBACK = NBACK;
     }
 
-    public Integer getMEM_LONG_1() {
+    public List<Integer> getMEM_LONG_1() {
         return MEM_LONG_1;
     }
 
-    public void setMEM_LONG_1(Integer MEM_LONG_1) {
+    public void setMEM_LONG_1(List<Integer> MEM_LONG_1) {
         this.MEM_LONG_1 = MEM_LONG_1;
     }
 
-    public Integer getRES_INH() {
+    public List<Integer> getRES_INH() {
         return RES_INH;
     }
 
-    public void setRES_INH(Integer RES_INH) {
+    public void setRES_INH(List<Integer> RES_INH) {
         this.RES_INH = RES_INH;
     }    
 
-    public Integer getPLAN_1() {
+    public List<Integer> getPLAN_1() {
         return PLAN_1;
     }
 
-    public void setPLAN_1(Integer PLAN_1) {
+    public void setPLAN_1(List<Integer> PLAN_1) {
         this.PLAN_1 = PLAN_1;
     }    
-      public Integer getPLAN_2() {
+      public List<Integer> getPLAN_2() {
         return PLAN_2;
     }
 
-    public void setPLAN_2(Integer PLAN_2) {
+    public void setPLAN_2(List<Integer> PLAN_2) {
         this.PLAN_2 = PLAN_2;
     }    
 
-          public Integer getPLAN_3() {
+          public List<Integer> getPLAN_3() {
         return PLAN_3;
     }
 
-    public void setPLAN_3(Integer PLAN_3) {
+    public void setPLAN_3(List<Integer> PLAN_3) {
         this.PLAN_3 = PLAN_3;
     } 
     
     
-    public Integer getATT_SEL_STD_FAC() {
+    public List<Integer> getATT_SEL_STD_FAC() {
         return ATT_SEL_STD_FAC;
     }
      
-    public void setATT_SEL_STD_FAC(Integer ATT_SEL_STD_FAC) {
+    public void setATT_SEL_STD_FAC(List<Integer> ATT_SEL_STD_FAC) {
         this.ATT_SEL_STD_FAC = ATT_SEL_STD_FAC;
     }
 
-    public Integer getATT_SEL_FLW_FAC() {
+    public List<Integer> getATT_SEL_FLW_FAC() {
         return ATT_SEL_FLW_FAC;
     }
 
-    public void setATT_SEL_FLW_FAC(Integer ATT_SEL_FLW_FAC) {
+    public void setATT_SEL_FLW_FAC(List<Integer> ATT_SEL_FLW_FAC) {
         this.ATT_SEL_FLW_FAC = ATT_SEL_FLW_FAC;
     }
 
-    public Integer getATT_ALT_FAC() {
+    public List<Integer> getATT_ALT_FAC() {
         return ATT_ALT_FAC;
     }
 
-    public void setATT_ALT_FAC(Integer ATT_ALT_FAC) {
+    public void setATT_ALT_FAC(List<Integer> ATT_ALT_FAC) {
         this.ATT_ALT_FAC = ATT_ALT_FAC;
     }
 
-    public Integer getATT_DIV_FAC() {
+    public List<Integer> getATT_DIV_FAC() {
         return ATT_DIV_FAC;
     }
 
-    public void setATT_DIV_FAC(Integer ATT_DIV_FAC) {
+    public void setATT_DIV_FAC(List<Integer> ATT_DIV_FAC) {
         this.ATT_DIV_FAC = ATT_DIV_FAC;
     }
 
-    public Integer getMEM_VIS_1_FAC() {
+    public List<Integer> getMEM_VIS_1_FAC() {
         return MEM_VIS_1_FAC;
     }
 
-    public void setMEM_VIS_1_FAC(Integer MEM_VIS_1_FAC) {
+    public void setMEM_VIS_1_FAC(List<Integer> MEM_VIS_1_FAC) {
         this.MEM_VIS_1_FAC = MEM_VIS_1_FAC;
     }
 
-    public Integer getMEM_VIS_1_ORI() {
+    public List<Integer> getMEM_VIS_1_ORI() {
         return MEM_VIS_1_ORI;
     }
 
-    public void setMEM_VIS_1_ORI(Integer MEM_VIS_1_ORI) {
+    public void setMEM_VIS_1_ORI(List<Integer> MEM_VIS_1_ORI) {
         this.MEM_VIS_1_ORI = MEM_VIS_1_ORI;
     }
 
-    public Integer getNBACK_FAC() {
+    public List<Integer> getNBACK_FAC() {
         return NBACK_FAC;
     }
 
-    public void setNBACK_FAC(Integer NBACK_FAC) {
+    public void setNBACK_FAC(List<Integer> NBACK_FAC) {
         this.NBACK_FAC = NBACK_FAC;
     }
 
-    public Integer getNBACK_ORI() {
+    public List<Integer> getNBACK_ORI() {
         return NBACK_ORI;
     }
 
-    public void setNBACK_ORI(Integer NBACK_ORI) {
+    public void setNBACK_ORI(List<Integer> NBACK_ORI) {
         this.NBACK_ORI = NBACK_ORI;
     }
 
-    public Integer getATT_SEL_STD_ORI() {
+    public List<Integer> getATT_SEL_STD_ORI() {
         return ATT_SEL_STD_ORI;
     }
 
-    public void setATT_SEL_STD_ORI(Integer ATT_SEL_STD_ORI) {
+    public void setATT_SEL_STD_ORI(List<Integer> ATT_SEL_STD_ORI) {
         this.ATT_SEL_STD_ORI = ATT_SEL_STD_ORI;
     }
 
-    public Integer getATT_SEL_FLW_ORI() {
+    public List<Integer> getATT_SEL_FLW_ORI() {
         return ATT_SEL_FLW_ORI;
     }
 
-    public void setATT_SEL_FLW_ORI(Integer ATT_SEL_FLW_ORI) {
+    public void setATT_SEL_FLW_ORI(List<Integer> ATT_SEL_FLW_ORI) {
         this.ATT_SEL_FLW_ORI = ATT_SEL_FLW_ORI;
     }
 
-    public Integer getATT_ALT_ORI() {
+    public List<Integer> getATT_ALT_ORI() {
         return ATT_ALT_ORI;
     }
 
-    public void setATT_ALT_ORI(Integer ATT_ALT_ORI) {
+    public void setATT_ALT_ORI(List<Integer> ATT_ALT_ORI) {
         this.ATT_ALT_ORI = ATT_ALT_ORI;
     }
 
-    public Integer getATT_DIV_ORI() {
+    public List<Integer> getATT_DIV_ORI() {
         return ATT_DIV_ORI;
     }
 
-    public void setATT_DIV_ORI(Integer ATT_DIV_ORI) {
+    public void setATT_DIV_ORI(List<Integer> ATT_DIV_ORI) {
         this.ATT_DIV_ORI = ATT_DIV_ORI;
     }
 
-    public Integer getATT_RFLXS()
+    public List<Integer> getATT_RFLXS()
     {
         return this.ATT_RFLXS;
     }
 
-    public void setATT_RFLXS(Integer ATT_RFLXS)
+    public void setATT_RFLXS(List<Integer> ATT_RFLXS)
     {
         this.ATT_RFLXS = ATT_RFLXS;
     }

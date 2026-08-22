@@ -1,10 +1,7 @@
 package it.unibo.msrehab.model.entities;
 
-import javax.persistence.Entity;
 
 
-
-@Entity
 public class PassThreshold extends BaseEntity
 {
     private Integer assignmentId;

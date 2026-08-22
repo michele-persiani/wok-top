@@ -47,7 +47,7 @@ export class Game
         };
 
 
-        this.OBSTACLE_TYPES = ["car", "pedestrian", "motorbike"];
+        this.OBSTACLE_TYPES = ["car", "pedestrian", "motorbike", "deer"];
         this.OBSTACLE_SIZES = {
             car: { width: 2, height: 1, color: 0xff0000 },
             motorbike: { width: 1, height: 1, color: 0x0000ff },
@@ -478,7 +478,7 @@ export class Game
             if(!this.initialized)
                 return;
 
-            let zMovement = this.config.speed;
+            let zMovement = 0.7 * this.config.speed;
 
             // Move environment objects
             for (let i = environmentObjects.length - 1; i >= 0; i--) {

@@ -306,18 +306,18 @@ public class MSRSessionService {
         }
         else {
         JSONArray exId = json.toJSONArray(exCat);
-        boolean[] done = new boolean[exId.length()];
-        Arrays.fill(done, false);
-        JSONArray exDone = new JSONArray(done);
         
         JSONArray jsonArr = new JSONArray();
         for(int i=0; i<exId.length(); i++) {
-            JSONObject json1 = new JSONObject()
-                    .put("id", exId.getInt(i))
-                    .put("cat", exCat.getString(i))
-                    .put("visible", true)
-                    .put("done", exDone.getBoolean(i));
-            jsonArr.put(json1);
+            JSONArray ids = exId.getJSONArray(i);
+            for(int j = 0; j<ids.length(); j++) {
+                JSONObject json1 = new JSONObject()
+                        .put("id", ids.getInt(j))
+                        .put("cat", exCat.getString(i))
+                        .put("visible", true)
+                        .put("done", false);
+                jsonArr.put(json1);
+            }
         }
                 
         session.setExercises(jsonArr.toString());

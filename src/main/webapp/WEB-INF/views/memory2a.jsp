@@ -112,7 +112,7 @@
             <div class="well well-sm">
                 <div class="row">
                     <div class="col-sm-18">
-                        <h3 class="pull-left">Nella prossima pagina appariranno delle parole sullo schermo.  Memorizzi la loro posizione per il tempo indicato:</h3>
+                        <h3 class="pull-left">Nella prossima pagina appariranno delle parole come quelle che vede qui sotto. Il suo compito è di memorizzare la loro posizione per il tempo indicato.</h3>
                     
                         <div>
                             <img src="resources/assets/img/mem2-before.png">
@@ -145,7 +145,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-18">
-                        <h3 class="pull-left">In seguito le verrà presentata un’immagine che indica una delle parole: clicchi sul punto interrogativo corrispondente</h3>
+                        <h3 class="pull-left">L’esercizio consiste nel collocare l’immagine che le verrà presentata nella posizione giusta, ovvero dove appariva la parola corrispondente all’immagine.</h3>
 
                         <div>
                             <img src="resources/assets/img/mem2-after.png">

@@ -77,7 +77,7 @@
                     </div>
                     <div class="col-md-4 col-lg-4">
                         <!--h1>Riabilitazione cognitiva</h1-->
-                        
+
                         <h1>Training cognitivo</h1>
                     </div>
                 </div>
@@ -99,23 +99,21 @@
                 </div>
             </div>
             <div class="row">
-                <c:if test="${id<99999999}">
-                    <div class="well col-sm-12">
-                        <div><!--h3>Esercizi di riabilitazione</h3-->
-                        <h3>Esercizi di training</h3>
-                        </div>
-                        <a class="btn btn-lg btn-primary" href="patientrehabilitation" role="button">Vai</a>
-                    </div>
-                    <div class="well col-sm-12">
+
+                <c:if test="${demo}">
+                    <div class="well col-sm-24">
                         <div><h3>Esercizi di prova</h3></div>
                         <a class="btn btn-lg btn-primary" href="patienttraining" role="button">Vai</a>
                     </div>
                 </c:if>
-                <c:if test="${id>=9999999999}">
-                    <div class="well col-sm-24">
-                        <div><h3>Esercizi demo</h3></div>
-                        <a class="btn btn-lg btn-primary" href="patientdemo" role="button">Vai</a>
+
+                <c:if test="${demo == false}">
+                <div class="well col-sm-24">
+                    <div><!--h3>Esercizi di riabilitazione</h3-->
+                        <h3>Esercizi di training</h3>
                     </div>
+                    <a class="btn btn-lg btn-primary" href="patientrehabilitation" role="button">Vai</a>
+                </div>
                 </c:if>
             </div>
 

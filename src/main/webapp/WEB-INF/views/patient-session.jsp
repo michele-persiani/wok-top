@@ -98,19 +98,19 @@
                 <div><h2>Configura sessione esercizi individuale</h2></div>
 
 			<form:form id="sessForm" class="form-inline" method="post" modelAttribute="sessionForm" action="buildpatientsession">
-                    
+
                     <div class="row">
                         <div class="col-sm-8">
                             <spring:bind path="usrgrpid">
                                 <div class="form-group">
-                                    <label><!--paziente-->Partecipante</label>
+                                    <label>Partecipante</label>
                                     <form:select path="usrgrpid" class="form-control selectpicker" data-style="btn-primary">
                                         <c:forEach var="patient" items="${patients}">
                                             <form:option value="${patient.id}">${patient.surname} ${patient.name}</form:option>
                                         </c:forEach>
                                     </form:select>
-                                </div>                        
-                            </spring:bind>                      
+                                </div>
+                            </spring:bind>
                         </div>
                         <!--
                         <div class="col-sm-8">
@@ -136,27 +136,42 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_STD">
+
                                 <div class="form-group">
-                                    <label>Cogli gli oggetti (Selett. 1)</label>
+                                    <div style="color: #337ab7">Cogli gli oggetti (Selett. 1)</div>
+                                    <c:forEach var="ex" items="${ATT_SEL_STD}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_STD" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a0" path = "ATT_SEL_STD" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_STD}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_FLW">
                                 <div class="form-group">
-                                    <label>Beccali al volo (Selett. 2)</label>
+                                    <div style="color: #337ab7">Beccali al volo (Selett. 2)</div>
+                                    <c:forEach var="ex" items="${ATT_SEL_FLW}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_FLW" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a1" path="ATT_SEL_FLW" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_FLW}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -165,13 +180,21 @@
                         <div class="col-sm-6">
                             <spring:bind path="ATT_ALT">
                                 <div class="form-group">
-                                    <label>Prima uno e poi l’altro (Alternata)</label>
+                                    <div style="color: #337ab7">Prima uno e poi l’altro (Alternata)</div>
+
+                                    <c:forEach var="ex" items="${ATT_ALT}">
+                                        <div>
+                                            <form:checkbox path="ATT_ALT" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a2" path="ATT_ALT" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_ALT}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -180,13 +203,21 @@
                         <div class="col-sm-6">
                             <spring:bind path="ATT_DIV">
                                 <div class="form-group">
-                                    <label>Su due fronti (Divisa)</label>
+                                    <div style="color: #337ab7">Su due fronti (Divisa)</div>
+
+                                    <c:forEach var="ex" items="${ATT_DIV}">
+                                        <div>
+                                            <form:checkbox path="ATT_DIV" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a3" path="ATT_DIV" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_DIV}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -202,52 +233,83 @@
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_STD_FAC">
                                 <div class="form-group">
-                                    <label>Cogli gli oggetti (Selett. 1)</label>
+                                    <div style="color: #337ab7">Cogli gli oggetti (Selett. 1)</div>
+
+                                    <c:forEach var="ex" items="${ATT_SEL_STD_FAC}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_STD_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a4" path = "ATT_SEL_STD_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_STD_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_FLW_FAC">
                                 <div class="form-group">
-                                    <label>Beccali al volo (Selett. 2)</label>
+                                    <div style="color: #337ab7">Beccali al volo (Selett. 2)</div>
+
+                                    <c:forEach var="ex" items="${ATT_SEL_FLW_FAC}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_FLW_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a5" path="ATT_SEL_FLW_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_FLW_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_ALT_FAC">
                                 <div class="form-group">
-                                    <label>Prima uno e poi l’altro  (Alternata)</label>
+                                    <div style="color: #337ab7">Prima uno e poi l’altro  (Alternata)</div>
+                                    <c:forEach var="ex" items="${ATT_ALT_FAC}">
+                                        <div>
+                                            <form:checkbox path="ATT_ALT_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a6" path="ATT_ALT_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_ALT_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_DIV_FAC">
                                 <div class="form-group">
-                                    <label>Su due fronti (Divisa)</label>
+                                    <div style="color: #337ab7">Su due fronti (Divisa)</div>
+
+                                    <c:forEach var="ex" items="${ATT_DIV_FAC}">
+                                        <div>
+                                            <form:checkbox path="ATT_DIV_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a7" path="ATT_DIV_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_DIV_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -265,52 +327,84 @@
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_STD_ORI">
                                 <div class="form-group">
-                                    <label>Cogli gli oggetti (Selett. 1)</label>
+                                    <div style="color: #337ab7">Cogli gli oggetti (Selett. 1)</div>
+
+                                    <c:forEach var="ex" items="${ATT_SEL_STD_ORI}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_STD_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a8" path = "ATT_SEL_STD_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_STD_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_SEL_FLW_ORI">
                                 <div class="form-group">
-                                    <label>Beccali al volo (Selett. 2)</label>
+                                    <div style="color: #337ab7">Beccali al volo (Selett. 2)</div>
+
+                                    <c:forEach var="ex" items="${ATT_SEL_FLW_ORI}">
+                                        <div>
+                                            <form:checkbox path="ATT_SEL_FLW_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a9" path="ATT_SEL_FLW_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_SEL_FLW_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_ALT_ORI">
                                 <div class="form-group">
-                                    <label> Prima uno e poi l’altro (Alternata)</label>
+                                    <div style="color: #337ab7"> Prima uno e poi l’altro (Alternata)</div>
+
+                                    <c:forEach var="ex" items="${ATT_ALT_ORI}">
+                                        <div>
+                                            <form:checkbox path="ATT_ALT_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a10" path="ATT_ALT_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_ALT_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="ATT_DIV_ORI">
                                 <div class="form-group">
-                                    <label>Su due fronti (Divisa)</label>
+                                    <div style="color: #337ab7">Su due fronti (Divisa)</div>
+
+                                    <c:forEach var="ex" items="${ATT_DIV_ORI}">
+                                        <div>
+                                            <form:checkbox path="ATT_DIV_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a11" path="ATT_DIV_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_DIV_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -319,18 +413,26 @@
                     <hr>
 
                 <c:if test="${not empty ATT_RFLXS}">
-                    <h3>Attenzione: riflessi</h3>
+                    <h3>Attenzione: tempi di reazione</h3>
                     <div class="row">
                         <div class="col-sm-6">
                             <spring:bind path="ATT_RFLXS">
                                 <div class="form-group">
-                                    <label>RL Moto</label>
+                                    <div style="color: #337ab7">Moto</div>
+
+                                    <c:forEach var="ex" items="${ATT_RFLXS}">
+                                        <div>
+                                            <form:checkbox path="ATT_RFLXS" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a12" path = "ATT_RFLXS" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${ATT_RFLXS}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -345,52 +447,84 @@
                         <div class="col-sm-6">
                             <spring:bind path="MEM_VIS_1">
                                 <div class="form-group">
-                                    <label>Quali erano? Riconoscimento</label>
+                                    <div style="color: #337ab7">Quali erano? Riconoscimento</div>
+
+                                    <c:forEach var="ex" items="${MEM_VIS_1}">
+                                        <div>
+                                            <form:checkbox path="MEM_VIS_1" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a12" path="MEM_VIS_1" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_VIS_1}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="MEM_VIS_2">
                                 <div class="form-group">
-                                    <label>Nel posto giusto (Memoria visuo-spaziale)</label>
+                                    <div style="color: #337ab7">Nel posto giusto (Memoria visuo-spaziale)</div>
+
+                                    <c:forEach var="ex" items="${MEM_VIS_2}">
+                                        <div>
+                                            <form:checkbox path="MEM_VIS_2" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a13" path="MEM_VIS_2" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_VIS_2}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                          <div class="col-sm-6">
                             <spring:bind path="MEM_VIS_5">
                                 <div class="form-group">
-                                    <label>Nel posto giusto griglia(Memoria visuo-spaziale)</label>
+                                    <div style="color: #337ab7">Nel posto giusto griglia(Memoria visuo-spaziale)</div>
+
+                                    <c:forEach var="ex" items="${MEM_VIS_5}">
+                                        <div>
+                                            <form:checkbox path="MEM_VIS_5" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a23" path="MEM_VIS_5" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_VIS_5}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="NBACK">
                                 <div class="form-group">
-                                    <label>Occhio alle spalle (Memoria di lavoro)</label>
+                                    <div style="color: #337ab7">Occhio alle spalle (Memoria di lavoro)</div>
+
+                                    <c:forEach var="ex" items="${NBACK}">
+                                        <div>
+                                            <form:checkbox path="NBACK" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a14" path="NBACK" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${NBACK}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>                            
                         </div>
@@ -405,39 +539,63 @@
                         <div class="col-sm-6">
                             <spring:bind path="MEM_VIS_1_FAC">
                                 <div class="form-group">
-                                    <label>Quali erano? (Riconoscimento)</label>
+                                    <div style="color: #337ab7">Quali erano? (Riconoscimento)</div>
+
+                                    <c:forEach var="ex" items="${MEM_VIS_1_FAC}">
+                                        <div>
+                                            <form:checkbox path="MEM_VIS_1_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a15" path="MEM_VIS_1_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_VIS_1_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="NBACK_FAC">
                                 <div class="form-group">
-                                    <label>Occhio alle spalle (Memoria di lavoro)</label>
+                                    <div style="color: #337ab7">Occhio alle spalle (Memoria di lavoro)</div>
+
+                                    <c:forEach var="ex" items="${NBACK_FAC}">
+                                        <div>
+                                            <form:checkbox path="NBACK_FAC" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a16" path="NBACK_FAC" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${NBACK_FAC}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>                            
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="MEM_LONG_1">
                                 <div class="form-group">
-                                    <label>Chi sarà? (Associazione volti-nomi)</label>
+                                    <div style="color: #337ab7">Chi sarà? (Associazione volti-nomi)</div>
+
+                                    <c:forEach var="ex" items="${MEM_LONG_1}">
+                                        <div>
+                                            <form:checkbox path="MEM_LONG_1" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a17" path="MEM_LONG_1" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_LONG_1}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
@@ -451,26 +609,43 @@
                         <div class="col-sm-6">
                             <spring:bind path="MEM_VIS_1_ORI">
                                 <div class="form-group">
-                                    <label>Riconoscimento</label>
+                                    <div style="color: #337ab7">Riconoscimento</div>
+
+                                    <c:forEach var="ex" items="${MEM_VIS_1_ORI}">
+                                        <div>
+                                            <form:checkbox path="MEM_VIS_1_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a18" path="MEM_VIS_1_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${MEM_VIS_1_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="NBACK_ORI">
                                 <div class="form-group">
-                                    <label>Occhio alle spalle (Memoria di lavoro)</label>
+                                    <div style="color: #337ab7">Occhio alle spalle (Memoria di lavoro)</div>
+
+                                    <c:forEach var="ex" items="${NBACK_ORI}">
+                                        <div>
+                                            <form:checkbox path="NBACK_ORI" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+
+                                    <!--
                                     <form:select id="a19" path="NBACK_ORI" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${NBACK_ORI}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>                            
                         </div>
@@ -484,26 +659,42 @@
                         <div class="col-sm-6">
                             <spring:bind path="RES_INH">
                                 <div class="form-group">
-                                    <label>Controllo - inibizione</label>
+                                    <div style="color: #337ab7">Controllo - inibizione</div>
+
+                                    <c:forEach var="ex" items="${RES_INH}">
+                                        <div>
+                                            <form:checkbox path="RES_INH" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a20" path="RES_INH" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${RES_INH}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>
                         </div>
                         <div class="col-sm-6">
                             <spring:bind path="PLAN_1">
                                 <div class="form-group">
-                                    <label>Pianificazione - Giornata</label>
+                                    <div style="color: #337ab7">Pianificazione - Giornata</div>
+
+                                    <c:forEach var="ex" items="${PLAN_1}">
+                                        <div>
+                                            <form:checkbox path="PLAN_1" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a21" path="PLAN_1" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${PLAN_1}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind>                            
                         </div>                  
@@ -511,13 +702,21 @@
                         <div class="col-sm-6">
                             <spring:bind path="PLAN_2">
                                 <div class="form-group">
-                                    <label>Pianificazione - Zoo</label>
+                                    <div style="color: #337ab7">Pianificazione - Zoo</div>
+
+                                    <c:forEach var="ex" items="${PLAN_2}">
+                                        <div>
+                                            <form:checkbox path="PLAN_2" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a22" path="PLAN_2" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${PLAN_2}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                         </spring:bind> 
                             </div>
@@ -525,13 +724,21 @@
                                 <div class="col-sm-6"> 
                             <spring:bind path="PLAN_3">
                                 <div class="form-group">
-                                    <label>Pianificazione - Roma</label>
+                                    <div style="color: #337ab7">Pianificazione - Roma</div>
+
+                                    <c:forEach var="ex" items="${PLAN_3}">
+                                        <div>
+                                            <form:checkbox path="PLAN_3" value="${ex.id}" label="${ex.description}"/>
+                                        </div>
+                                    </c:forEach>
+                                    <!--
                                     <form:select id="a24" path="PLAN_3" class="form-control selectpicker" data-style="btn-warning">
                                         <form:option value="">Nessuno</form:option>
                                         <c:forEach var="ex" items="${PLAN_3}">
                                             <form:option value="${ex.id}">${ex.description}</form:option>
                                         </c:forEach>
                                     </form:select>
+                                    -->
                                 </div>
                             </spring:bind> 
                                     </div>
@@ -541,7 +748,7 @@
                     <hr>
             </c:if>
                     <div class="form-group">
-                        <button id="submit-data" disabled="" type="submit" class="btn btn-success">Configura</button>
+                        <button id="submit-data" type="submit" class="btn btn-success">Configura</button>
                         <!--button id="clear-data" type="reset" class="btn btn-warning">Annulla</button-->
                     </div>                    
                     

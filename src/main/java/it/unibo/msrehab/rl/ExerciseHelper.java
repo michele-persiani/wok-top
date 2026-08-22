@@ -19,7 +19,7 @@ import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_CHS_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_FRT_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_VEG_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_RFLXS_MOTORBIKE;
+import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_RFLXS_MOTORBIKE_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_VEG_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_ANM_RL;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_CHS_RL;
@@ -136,7 +136,7 @@ public class ExerciseHelper
                         ATT_DIV_ANM_RL,
                         ATT_DIV_CHS_RL,
                         ATT_DIV_VEG_RL,
-                        ATT_RFLXS_MOTORBIKE
+                        ATT_RFLXS_MOTORBIKE_RL
                 )
                 .contains(exercise.getName());
     }

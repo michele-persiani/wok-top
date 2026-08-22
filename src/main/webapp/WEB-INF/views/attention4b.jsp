@@ -206,7 +206,7 @@
 
                     <div class="row">
                         <div class="col-sm-12 pull-left">
-                            <h3>Faccia attenzione a queste figure:<br> e alla comparsa del suono.</h3>
+                            <h3>Faccia attenzione a queste figure e alla comparsa del suono.</h3>
                         </div>
                         <div id="targets">
                             <c:forEach var="target" items="${targetElementList}">
@@ -286,7 +286,7 @@
                                      <div class="inner-item">
                                          <input type="checkbox" id="i${n}" value="${exelement.id}"/>
                                          <label for="i${n}">
-                                             <img class="img-responsive img-thumbnail center-block" id="img-i${n}" src="${exelement.url}" alt="Image" onmousedown="checkanddisablecheck('i${n}')"/>
+                                             <img class="img-responsive img-thumbnail center-block" id="img-i${n}" src="${exelement.url}" alt="Image" />
                                          </label>
                                      </div>
                                  </div>
@@ -371,7 +371,7 @@
                     soundCounter++;
                     soundEnabled = true;
                     soundChecked = false;
-                    setInterval(function () {
+                    setTimeout(function () {
                         soundEnabled = false;
                     }, soundDuration);
                     //document.getElementById("sndbtn").disabled = false;
@@ -571,23 +571,26 @@
                     console.log('checkSound()');
 
                     console.log('sound: ', rightSoundCounter, soundFalsePositive);
-                    if(!soundEnabled)
-                    {
-                        soundFalsePositive++;
-                        return;
-                    }
 
                     if(soundChecked)
                         return;
                     soundChecked = true;
 
+                    if(!soundEnabled)
+                    {
+                        soundFalsePositive++;
+                        console.log("falso positivo suono");
+                        return;
+                    }
+
+
                     now = new Date().getTime();
                     var deltaTime = now - soundTime;
                     dTime = dTime + deltaTime;
-                    console.log('dTime', dTime, 'now-deltaTime', deltaTime)
+                    console.log('dTime', dTime, 'now-deltaTime', deltaTime);
 
                     rightSoundCounter++;
-                    console.log("suoni catturati: " + rightSoundCounter)
+                    console.log("vero positivo suono: " + rightSoundCounter);
                     cont=1;
                     soundEnabled = false;
                     document.getElementById("sndbtn").disabled = true;
@@ -642,47 +645,48 @@
 
                     if(isMobile)
                     {
-                        document.getElementById("suono").innerHTML="Suono = Invio";
+                        //document.getElementById("suono").innerHTML="Suono = Invio";
                         if(${type=='ATT_DIV_FAC'}){
-                            document.getElementById("im1").innerHTML = "Volto = Spazio";
+                            //document.getElementById("im1").innerHTML = "Volto = Spazio";
                             //document.getElementById("im2").innerHTML = "Suono = Invio";
                         }
                         if(${type=='ATT_DIV_ORI'})
                         {
                             if(${exname=='ATT_DIV_ARR'}){
-                                document.getElementById("im1").innerHTML="Freccia = Spazio";
+                                //document.getElementById("im1").innerHTML="Freccia = Spazio";
                                 //document.getElementById("im2").innerHTML="Suono = Invio";
                             }else if(${exname=='ATT_DIV_CMP'}){
-                                document.getElementById("im1").innerHTML="Freccia = Spazio";
+                                //document.getElementById("im1").innerHTML="Freccia = Spazio";
                                 //document.getElementById("im2").innerHTML="Suono = Invio";
 
                             }
                         }
                         if(${type=='ATT_DIV'}){
-                            document.getElementById("im1").innerHTML="Figura = Spazio";
+                            //document.getElementById("im1").innerHTML="Figura = Spazio";
                             //document.getElementById("im2").innerHTML="Suono = Invio";
                         }
                     }
                     else
                     {
-                        document.getElementById("suono").innerHTML="Suono = Invio";
+                        //document.getElementById("suono").innerHTML="Suono = Invio";
 
                         if(${type=='ATT_DIV_FAC'}){
-                            document.getElementById("im1").innerHTML = "Volto = Spazio";
+                            //document.getElementById("im1").innerHTML = "Volto = Spazio";
                             //document.getElementById("im2").innerHTML = "Suono = Invio";
 
                         }  if(${type=='ATT_DIV_ORI'})
                         if(${exname=='ATT_DIV_ARR'})
-                        {  document.getElementById("im1").innerHTML="Freccia = Spazio";
+                        {
+                            //document.getElementById("im1").innerHTML="Freccia = Spazio";
                             //document.getElementById("im2").innerHTML="Suono = Invio";
 
                         }else if(${exname=='ATT_DIV_CMP'}){
-                            document.getElementById("im1").innerHTML="Freccia = Spazio";
+                            //document.getElementById("im1").innerHTML="Freccia = Spazio";
                             //document.getElementById("im2").innerHTML="Suono = Invio";
 
                         }
                         if(${type=='ATT_DIV'}){
-                            document.getElementById("im1").innerHTML = "Figura = Spazio";
+                            //document.getElementById("im1").innerHTML = "Figura = Spazio";
                             //document.getElementById("im2").innerHTML = "Suono = Invio";
 
                         }

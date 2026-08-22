@@ -21,9 +21,24 @@ function post(path, params, method)
 	form.submit();
 }
 
+
+/*
+
+Tablet 1: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
+Tablet 2: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36
+Tablet 3: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+
+Il primo e' corretto, gli altri due derivano dall'abilitazione del desktop mode
+
+ */
+
 function isMobile() {
-	const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-	return regex.test(navigator.userAgent);
+	const regex = new RegExp(/Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i);
+	//const tabletRegex = new RegExp("Mozilla\/5\.0 \(X11; Linux x86_64\) AppleWebKit\/537\.36 \(KHTML, like Gecko\) Chrome\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ Safari\/537\.36");
+	const userAgent = navigator.userAgent;
+
+
+	return regex.test(userAgent);
 }
 
 

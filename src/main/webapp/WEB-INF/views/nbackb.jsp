@@ -373,8 +373,6 @@
                  $("#myCarousel").on('slide.bs.carousel', function () {
                     document.getElementById('sameButton').disabled = false;
 
-                    sameButtonPushed = false;
-                
                     currentIndex = $(this).find('.active').index();
                     var imgId = 'img-i' + currentIndex;
                     if (currentIndex >= ${nback}) {
@@ -395,6 +393,7 @@
  
                         }
                     }
+                        sameButtonPushed = false;
                     }
                     sTime = new Date().getTime();
                     console.log("salvo nuovo timestamp per slide"+elements[currentIndex]+imgId);

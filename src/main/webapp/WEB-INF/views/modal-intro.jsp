@@ -30,17 +30,17 @@
                     consistono in una serie di processi cognitivi di livello
                     superiore che ordinano e controllano altri processi, in
                     funzione di un raggiungimento di uno scopo.</h4>
-                <h4>Nella Sclerosi Multipla possono essere
+                <!--<h4>Nella Sclerosi Multipla possono essere
                     colpite l'attenzione, la memoria e le funzioni esecutive.
                     Nel caso che una o pi&ugrave; di queste funzioni cognitive
                     siano compromesse, &egrave; necessario intervenire con
                     programmi di riabilitazione cognitiva.</h4>
                 <h4>L'applicazione MS-rehab fornisce una vasta
                     gamma di esercizi, studiati e implementati per migliorare le
-                    funzioni cognitive deficitarie. Nello specifico, ogni <!--paziente-->partecipante
-                    o gruppo di <!--pazienti-->partecipanto potr&agrave; svolgere gli esercizi utili a
+                    funzioni cognitive deficitarie. Nello specifico, ogni partecipante
+                    o gruppo di partecipanto potr&agrave; svolgere gli esercizi utili a
                     migliorare le proprie difficolt&agrave; cognitive, grazie ad un
-                    programma riabilitativo creato ad hoc.</h4>
+                    programma riabilitativo creato ad hoc.</h4>-->
                 <h4>Buon lavoro!</h4>
             </div>
             <div class="modal-footer">

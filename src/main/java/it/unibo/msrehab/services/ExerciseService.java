@@ -10,28 +10,6 @@ import static it.unibo.msrehab.model.entities.Exercise.ExerciseCategoryValue.*;
 
 import it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue;
 import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_ALT_CMP;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_ANM_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_CHS_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_FRT_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_DIV_VEG_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_RFLXS_MOTORBIKE;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_ANM_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_ARR_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_CHS_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_FAC_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_FRT_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_FLW_VEG_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_ANM_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_CHS_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_FRT_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.ATT_SEL_STD_VEG_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_ANM_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_CHS_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_FRT_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.MEM_VIS_2_VEG_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.NBACK_ANM_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.NBACK_FRT_RL;
-import static it.unibo.msrehab.model.entities.Exercise.ExerciseNameValue.NBACK_VEG_RL;
 
 import it.unibo.msrehab.model.entities.PersonalData.Gender;
 
@@ -50,7 +28,6 @@ import it.unibo.msrehab.rl.model.IModel;
 import it.unibo.msrehab.rl.model.JPAController;
 import it.unibo.msrehab.rl.ExerciseHelper;
 import it.unibo.msrehab.model.entities.ThresholdAgentConfig;
-import it.unibo.msrehab.rl.utils.Lists;
 import it.unibo.msrehab.rl.utils.ParametersParser;
 import it.unibo.msrehab.rl.utils.ScoreComparator;
 import org.joda.time.LocalDateTime;
@@ -329,21 +306,6 @@ public class ExerciseService
                 color = "omo";
                 diffVar[5] = 2;
                 break;
-            case 13:
-                ntargets = 6;
-                diffVar[0] = 3;
-                nelements = 75;
-                diffVar[1] = 3;
-                ncols = 3;
-                alignment = "aligned";
-                diffVar[2] = 3;
-                distractor = "no";
-                diffVar[3] = 3;
-                time = 2;
-                diffVar[4] = 3;
-                color = "bw";
-                diffVar[5] = 3;
-                break;
         }
 
         parameters.put("ntargets", ntargets);
@@ -363,7 +325,10 @@ public class ExerciseService
         int ntargets = 0, nelements = 0; //time = 0;
         double time = 0.0;
 
+
+
         String color = "", distractor = "";
+
         switch (level)
         {
             case -1: // training
@@ -550,6 +515,7 @@ public class ExerciseService
                 break;
         }
 
+
         parameters.put("ntargets", ntargets);
         parameters.put("nelements", nelements);
         parameters.put("color", color);
@@ -557,7 +523,6 @@ public class ExerciseService
         parameters.put("time", time);
 
         return parameters;
-
     }
 
     public static Map<String, Object> createParametersAttention3(Integer level, Integer[] diffVar)
@@ -1476,7 +1441,7 @@ public class ExerciseService
                 diffVar[3] = 1;
                 break;
             case 7:
-                nelements = 6;//era 5
+                nelements = 6;
                 ntargets = 6;
                 diffVar[0] = 3;
                 nRigheCol = 3;
@@ -1487,7 +1452,7 @@ public class ExerciseService
                 diffVar[3] = 1;
                 break;
             case 8://alta
-                nelements = 6;//era 5
+                nelements = 6;
                 ntargets = 6;
                 diffVar[0] = 3;
                 nRigheCol = 3;
@@ -1498,7 +1463,7 @@ public class ExerciseService
                 diffVar[3] = 1;
                 break;
             case 9:
-                nelements = 7;//non c'era
+                nelements = 7;
                 ntargets = 7;
                 diffVar[0] = 3;
                 nRigheCol = 3;
@@ -1509,7 +1474,7 @@ public class ExerciseService
                 diffVar[3] = 1;
                 break;
             case 10:
-                nelements = 7;//non c'era
+                nelements = 7;
                 ntargets = 7;
                 diffVar[0] = 3;
                 nRigheCol = 3;
@@ -1564,7 +1529,7 @@ public class ExerciseService
             case 2:
                 nback = 1;
                 diffVar[0] = 1;
-                time = 2;
+                time = 3;
                 diffVar[1] = 2;
                 color = "color";
                 diffVar[2] = 1;
@@ -1594,7 +1559,7 @@ public class ExerciseService
             case 5:
                 nback = 2;
                 diffVar[0] = 1;
-                time = 2;
+                time = 3;
                 diffVar[1] = 3;
                 color = "omo";
                 diffVar[2] = 3;
@@ -1604,7 +1569,7 @@ public class ExerciseService
             case 6: // medio
                 nback = 2;
                 diffVar[0] = 2;
-                time = 2;
+                time = 3;
                 diffVar[1] = 1;
                 color = "omo";
                 diffVar[2] = 1;
@@ -1634,7 +1599,7 @@ public class ExerciseService
             case 9:
                 nback = 3;
                 diffVar[0] = 2;
-                time = 2;
+                time = 3;
                 diffVar[1] = 3;
                 color = "omo";
                 diffVar[2] = 1;
@@ -1919,10 +1884,12 @@ public class ExerciseService
                 "obstaclesType",
                 new Integer[] {1,1,1,2,2,2,3,3,3,4,4,4,4,4,4,4,4,4,4,4}
         );
-
+        Integer[] delay = new Integer[20];
+        Arrays.fill(delay, 1000);
         parameters.put(
                 "obstaclesSpawnDelay",
-                new Integer[]{12000,10909,10000,9230,8571,8000,7500,7058,6666,6315,6000,5714,5454,5217,5000,4800,4615,4444,4285,4000}
+                delay
+                //new Integer[]{12000,10909,10000,9230,8571,8000,7500,7058,6666,6315,6000,5714,5454,5217,5000,4800,4615,4444,4285,4000}
         );
 
         parameters.put(
@@ -1960,290 +1927,11 @@ public class ExerciseService
                 .stream()
                 .collect(Collectors.toMap(p -> p, p -> parameters.get(p)[level - 1]));
 
-        /*
-        Map<String, Object> parameters = new HashMap<>();
-
-        parameters.put("totalTime", Double.valueOf(60));
-        parameters.put("speed", speed);
-        parameters.put("obstaclesType", 1);
-        parameters.put("obstaclesSpawnDelay", obstaclesSpawnDelay);
-        parameters.put("decoys", decoys);
-        parameters.put("changeOfLane", changeOfLane);
-        parameters.put("fog", false);
-        parameters.put("rain", false);
-        parameters.put("scale", scale);
-
-
-        // Ostacoli piccoli e grandi che vengono incontro GIA FATTO
-        // Presenza di macchine nella corsia opposta che vengono incontro ? FATTO CON TUTTI I TIPI DI OSTACOLI
-        // Spostare la moto quando l'ostacolo viene evitato FATTO
-        // Aggiungere condizione metereologica alla pioggia FATTO
-        // Presentare tabella delle difficolta' XL con un parametro aggiuntivo la presenza di macchine.
-        // I parametri sono: speed=velocita' della moto
-        // Spawn: intervallo di tempo tra due ostacoli,
-        // Decoy: presenza di oggetti nell'altra corsia
-        // Change of lane: cambio di lane all'improvviso
-        // Condizioni metereologiche: Normali, Nebbia, Pioggia
-        // PresenceOfCars: presenza di macchine
-
-
-
-        switch (level)
-        {
-            case -1:
-            case 0:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 12000);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 1:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 12000);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 2:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.05);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 10900);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 3:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.1);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 1100);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 4:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.1);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 1100);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 5:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.2);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 900);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 6:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.2);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 900);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 7:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.3);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", false);
-                break;
-            case 8:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.3);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", true);
-                parameters.put("rain", false);
-                break;
-            case 9:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.4);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", true);
-                parameters.put("rain", false);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            case 10:
-                parameters.put("totalTime", 45d);
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 700);
-                parameters.put("decoys", true);
-                parameters.put("changeOfLane", true);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-            default:
-                parameters.put("speed", 1.5);
-                parameters.put("obstaclesType", 1);
-                parameters.put("obstaclesSpawnDelay", 1200);
-                parameters.put("decoys", false);
-                parameters.put("changeOfLane", false);
-                parameters.put("fog", false);
-                parameters.put("rain", true);
-                break;
-        }
-
-        return parameters;
-        */
-
     }
 
     public static boolean isRLDriven(ExerciseNameValue exName)
     {
-        return Lists.of(
-                        ATT_SEL_STD_ANM_RL,
-                        ATT_SEL_STD_CHS_RL,
-                        ATT_SEL_STD_FRT_RL,
-                        ATT_SEL_STD_VEG_RL,
-                        MEM_VIS_2_ANM_RL,
-                        MEM_VIS_2_FRT_RL,
-                        MEM_VIS_2_VEG_RL,
-                        MEM_VIS_2_CHS_RL,
-                        NBACK_ANM_RL,
-                        NBACK_FRT_RL,
-                        NBACK_VEG_RL,
-                        ATT_DIV_FRT_RL,
-                        ATT_DIV_ANM_RL,
-                        ATT_DIV_CHS_RL,
-                        ATT_DIV_VEG_RL,
-                        ATT_SEL_FLW_VEG_RL,
-                        ATT_SEL_FLW_FRT_RL,
-                        ATT_SEL_FLW_ANM_RL,
-                        ATT_SEL_FLW_CHS_RL,
-                        ATT_SEL_FLW_ARR_RL,
-                        ATT_SEL_FLW_FAC_RL,
-                        ATT_RFLXS_MOTORBIKE
-                )
-                .contains(exName);
+        return exName.toString().endsWith("RL");
     }
 
 
@@ -2598,7 +2286,6 @@ public class ExerciseService
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
-
         logger.info("attention1()");
 
         model.addAttribute("difficulty", difficulty);
@@ -4213,7 +3900,7 @@ public class ExerciseService
             @RequestParam(value = "category", required = true) String category,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = false) ExerciseNameValue exname,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             Model model)
     {
@@ -5550,7 +5237,7 @@ public class ExerciseService
             @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             Model model,
-            HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+            HttpServletRequest request, HttpServletResponse response)
     {
         if (patientid == -1)
             if (difficulty.equals("training"))
@@ -5689,7 +5376,7 @@ public class ExerciseService
 
         Map<String, Object> parameters = createParametersMemory4(level, diffVar);
         httpSess.setAttribute("diffVar8", diffVar);
-        Integer nback = (Integer) (parameters.get("nfaces"));
+        Integer nfaces = (Integer) (parameters.get("nfaces"));
         Integer time = (Integer) (parameters.get("time"));
         String color = (String) (parameters.get("name"));
         String namediff = (String) (parameters.get("namediff"));
@@ -5701,7 +5388,7 @@ public class ExerciseService
                 + "&exerciseid=" + exerciseid
                 + "&category=" + category
                 + "&lastexercisepassed=" + false
-                + "&nfaces=" + nback
+                + "&nfaces=" + nfaces
                 + "&time=" + time
                 + "&name=" + color
                 + "&namediff=" + namediff

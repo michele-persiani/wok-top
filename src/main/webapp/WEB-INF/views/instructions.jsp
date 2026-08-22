@@ -56,7 +56,7 @@
 
     <style>
         .spacer {
-            height: 10px;
+            height: 15px;
         }
 
         .big-font {
@@ -91,6 +91,7 @@
             le verrà richiesto di fornire delle risposte selezionandole con il mouse (click sul tasto sinistro del mouse)
             oppure premendo dei tasti specifici sulla tastiera.
         </div>
+        <div class="spacer"></div>
         <div class="big-font">
             Cerchi di identificarli sulla propria tastiera fin da ora:<br>
         <ul>
@@ -113,24 +114,28 @@
         </div>
         Altre volte, le verrà chiesto di rispondere toccando direttamente la risposta che ritiene corretta.
     </div>
+    <div class="spacer"></div>
     <div class="big-font">
-        Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori:<br>
-        <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF0000">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
-        Alcuni esercizi prevedono di fornire le risposte in base a uno <b>stimolo sonoro</b>: ricordi di tenere alto il <b>volume</b> del dispositivo al fine di poter rilevare correttamente il suddetto stimolo.<br>
-
+        Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori: <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF0000">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
     </div>
+
+    <div class="spacer"></div>
+    <div class="big-font">
+        Alcuni esercizi prevedono di fornire le risposte in base a uno <b>stimolo sonoro</b>: ricordi di tenere alto il <b>volume</b> del dispositivo al fine di poter rilevare correttamente il suddetto stimolo.<br>
+    </div>
+
 
     <script type="application/javascript">
 
         if(isMobile())
         {
-            document.getElementById("textComputer").style.visibility = "hidden";
-            document.getElementById("imageComputer").style.visibility = "hidden";
+            document.getElementById("textComputer").style.display = "none";
+            document.getElementById("imageComputer").style.display = "none";
         }
         else
         {
-            document.getElementById("textMobile").style.visibility = "hidden";
-            document.getElementById("imageMobile").style.visibility = "hidden";
+            document.getElementById("textMobile").style.display = "none";
+            document.getElementById("imageMobile").style.display = "none";
         }
 
     </script>

@@ -391,9 +391,9 @@
                 id.checked = true;
                 id.disabled = true;
                 //document.getElementById('img-i'+(i)).style.filter="blur(5px)";
-                document.getElementById('img-i' + (i)).style.backgroundColor = "black";
+                //document.getElementById('img-i' + (i)).style.backgroundColor = "orange";
                 //addChildImage(document.getElementById('img-i'+(i)), "orange");
-
+                addBackground('img-i'+i, "orange");
             }
         </script>
 

@@ -85,7 +85,6 @@
                     </div>
                 </div>
                 <p></p>
-                <p class="lead"><h3>Salve <b>${name}</b></h3>
             </div>
 
             <div class="row">                

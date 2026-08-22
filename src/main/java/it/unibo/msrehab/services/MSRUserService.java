@@ -316,7 +316,7 @@ public class MSRUserService
             final RedirectAttributes redirectAttributes) {
 
         logger.info("Start to delete user " + patientid);
-        MSRUser user = (MSRUser) userController.findEntity(patientid).get();
+        MSRUser user = userController.getEntityOrThrow(patientid);
         if (user == null) {
             logger.warn("User " + patientid + " not found");
             model.addAttribute("message", "Utente non trovato");
@@ -326,8 +326,9 @@ public class MSRUserService
         }
 
         // Delete patient group if it contains only the patient being deleted
-        if (userController.findAllPatientsInGroup(user.getGid()).size() <= 1) {
-            MSRGroup group = groupController.findEntity(user.getGid()).get();
+        if (userController.findAllPatientsInGroup(user.getGid()).size() <= 1)
+        {
+            MSRGroup group = groupController.getEntityOrThrow(user.getGid());
             if (!groupController.removeEntity(group)) {
                 logger.error("...group update failed");
                 model.addAttribute("message", "Gruppo " + group.getId()+ ", cancellazione fallita");
@@ -337,9 +338,10 @@ public class MSRUserService
 
             }
         }
-        List<ClinicalProfile> profiles
-                = profileController.findAllByUser(patientid);
-        for (ClinicalProfile profile : profiles) {
+        List<ClinicalProfile> profiles = profileController.findAllByUser(patientid);
+
+        for (ClinicalProfile profile : profiles)
+        {
             if(!profileController.removeEntity(profile)) {
                 logger.error("...clinical profile delete failed");
                 model.addAttribute("message", "Cancellazione del profilo clinico " + profile + " fallita");
@@ -348,8 +350,8 @@ public class MSRUserService
                 return new ModelAndView("error");
             }
         }
-        List<NPSTest> npsTests
-                = npsTestController.findAllByUser(patientid);
+        List<NPSTest> npsTests = npsTestController.findAllByUser(patientid);
+
         for (NPSTest npsTest : npsTests) {
             // TODO manage nps test deletion failure
             npsTestController.removeEntity(npsTest);
@@ -378,17 +380,24 @@ public class MSRUserService
             // TODO: manage failure of deleteRecord
             sessionController.removeEntity(session);
         }
+
+        List<History> histories = historyController.findAllByUser(patientid);
+
+
+        historyController.removeEntities(histories);
+
+
         // Delete photo
         String photoFile = user.getPhoto();
         if (photoFile != null) {
             String photosPath = config.getPhotosPath();
-            String filePath
-                    = photosPath + File.separator + photoFile;
+            String filePath = photosPath + File.separator + photoFile;
             File file = new File(filePath);
             file.delete();
         }
 
-        if (userController.removeEntity(user)) {
+        if (userController.removeEntity(user))
+        {
             logger.info("User " + patientid + " deleted with success");
             /* TODO Check the following two lines */
             redirectAttributes.addFlashAttribute("css", "success");
@@ -766,9 +775,14 @@ public class MSRUserService
         }
         else
         {
+            Integer userId = CookiesManager.geLoggedUserId(request);
+            MSRUser user = userController.getEntityOrThrow(userId);
+            boolean demo = user.getMsrrole() == RoleValue.DEMO;
+
             model.addAttribute("name", CookiesManager.geLoggedUserName(request));
             
-            model.addAttribute("id", CookiesManager.geLoggedUserId(request));
+            model.addAttribute("id", userId);
+            model.addAttribute("demo", demo);
             //return new ModelAndView("attention-motorbike");
             return new ModelAndView("patient");
         }

@@ -158,16 +158,43 @@
                     </div>
                 </div>
 
-                <c:if test="${nback == 1}">
-                    <img src="resources/assets/img/nback-1.png">
-                </c:if>
-                <c:if test="${nback == 2}">
-                    <img src="resources/assets/img/nback-2.png">
-                </c:if>
-                <c:if test="${nback == 3}">
-                    <img src="resources/assets/img/nback-3.png">
+                <c:if test="${type == 'NBACK'}">
+                    <c:if test="${nback == 1}">
+                        <img src="resources/assets/img/nback-1.png">
+                    </c:if>
+                    <c:if test="${nback == 2}">
+                        <img src="resources/assets/img/nback-2.png">
+                    </c:if>
+                    <c:if test="${nback == 3}">
+                        <img src="resources/assets/img/nback-3.png">
+                    </c:if>
                 </c:if>
 
+
+                <c:if test="${type == 'NBACK_ORI'}">
+                    <c:if test="${nback == 1}">
+                        <img src="resources/assets/img/nback-1-ori.png">
+                    </c:if>
+                    <c:if test="${nback == 2}">
+                        <img src="resources/assets/img/nback-2-ori.png">
+                    </c:if>
+                    <c:if test="${nback == 3}">
+                        <img src="resources/assets/img/nback-3-ori.png">
+                    </c:if>
+                </c:if>
+
+
+                <c:if test="${type == 'NBACK_FAC'}">
+                    <c:if test="${nback == 1}">
+                        <img src="resources/assets/img/nback-1-fac.png">
+                    </c:if>
+                    <c:if test="${nback == 2}">
+                        <img src="resources/assets/img/nback-2-fac.png">
+                    </c:if>
+                    <c:if test="${nback == 3}">
+                        <img src="resources/assets/img/nback-3-fac.png">
+                    </c:if>
+                </c:if>
 
             </div>
 

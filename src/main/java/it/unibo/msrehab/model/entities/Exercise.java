@@ -82,19 +82,22 @@ public class Exercise extends BaseEntity
         // att sel std
         ATT_SEL_STD_ANM, ATT_SEL_STD_ARR, ATT_SEL_STD_CHS, ATT_SEL_STD_CMP,
         ATT_SEL_STD_FAC, ATT_SEL_STD_FRT, ATT_SEL_STD_VEG,
+        ATT_SEL_STD_FAC_RL, ATT_SEL_STD_ORI_RL,                                             // Names for RL versions
         ATT_SEL_STD_ANM_RL, ATT_SEL_STD_CHS_RL, ATT_SEL_STD_FRT_RL, ATT_SEL_STD_VEG_RL,     // Names for RL versions
+
         // att sel flw
         ATT_SEL_FLW_ANM, ATT_SEL_FLW_ARR, ATT_SEL_FLW_CHS, ATT_SEL_FLW_CMP,
         ATT_SEL_FLW_FAC, ATT_SEL_FLW_FRT, ATT_SEL_FLW_VEG,
+        ATT_SEL_FLW_ANM_RL, ATT_SEL_FLW_CHS_RL,                                         // Names for RL versions
+        ATT_SEL_FLW_VEG_RL, ATT_SEL_FLW_ARR_RL, ATT_SEL_FLW_FAC_RL, ATT_SEL_FLW_FRT_RL, // Names for RL versions
         // att alt
         ATT_ALT_ANM, ATT_ALT_ARR, ATT_ALT_CHS, ATT_ALT_CMP,
         ATT_ALT_FAC, ATT_ALT_FRT, ATT_ALT_VEG,
-        ATT_SEL_FLW_ANM_RL, ATT_SEL_FLW_CHS_RL, // Names for RL versions
-        ATT_SEL_FLW_VEG_RL, ATT_SEL_FLW_ARR_RL, ATT_SEL_FLW_FAC_RL, ATT_SEL_FLW_FRT_RL, // Names for RL versions
         // att div
         ATT_DIV_ANM, ATT_DIV_ARR, ATT_DIV_CHS, ATT_DIV_CMP,
         ATT_DIV_FAC, ATT_DIV_FRT, ATT_DIV_VEG,
         ATT_DIV_FRT_RL, ATT_DIV_CHS_RL, ATT_DIV_ANM_RL, ATT_DIV_VEG_RL,  // Names for RL versions
+        ATT_DIV_FAC_RL, ATT_DIV_ARR_RL, // Names for RL versions
         // mem vis 1
         MEM_VIS_1_ANM, MEM_VIS_1_ARR, MEM_VIS_1_CHS, MEM_VIS_1_CMP,
         MEM_VIS_1_FAC, MEM_VIS_1_FRT, MEM_VIS_1_VEG,
@@ -106,12 +109,13 @@ public class Exercise extends BaseEntity
         MEM_LONG_1_FAC,
         // nback
         NBACK_ANM, NBACK_ARR, NBACK_CHS, NBACK_FAC, NBACK_FRT, NBACK_VEG,
+        NBACK_FAC_RL, NBACK_ORI_RL,                                                         // Names for RL versions
         NBACK_FRT_RL, NBACK_VEG_RL, NBACK_ANM_RL,                                           // Names for RL versions
         // fun exec
         RES_INH_1, RES_INH_2, RES_INH_3,
         PLAN_1, PLAN_2, PLAN_3,
         //att reflxs
-        ATT_RFLXS_MOTORBIKE;
+        ATT_RFLXS_MOTORBIKE_RL;
     };
 
 

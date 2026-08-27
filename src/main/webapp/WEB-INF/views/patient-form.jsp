@@ -102,6 +102,19 @@
                      <form:hidden path="username"/>
 
 
+                    <spring:bind path="msrrole">
+                        <div class="form-group ${status.error ? 'has-error' : ''}">
+                            <label class="col-sm-4 control-label">Ruolo</label>
+                            <div class="col-sm-20">
+                                <form:select path="msrrole" class="form-control">
+                                    <form:option value="ADMIN">Admin</form:option>
+                                    <form:option value="PATIENT" selected="true">Paziente</form:option>
+                                    <form:option value="DEMO">Demo</form:option>
+                                </form:select>
+                            </div>
+                        </div>
+                    </spring:bind>
+
                     <spring:bind path="surname">
                         <div class="form-group ${status.error ? 'has-error' : ''}">
                             <label class="col-sm-4 control-label">Cognome</label>

@@ -235,8 +235,8 @@
 														<c:param name="sessid" value="${sessid}" />
 													</c:url>
 												</c:if>
-                                                                                                 </c:when>
-                                                                                        <c:when test="${category.id == 'PLAN_2'}">
+                                            </c:when>
+                                            <c:when test="${category.id == 'PLAN_2'}">
 												<c:if test="${exercise.name == 'PLAN_2'}">
 													<c:url var="exerciseURL" value="pianificazione2phase1">
 														<c:param name="difficulty" value="${difficulty}" />

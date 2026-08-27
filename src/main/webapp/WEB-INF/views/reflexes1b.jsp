@@ -12,6 +12,14 @@
     <script type="text/javascript" src="resources/js/bootbox.min.js"></script>
     <!--<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/motorbike/motorbike.js"></script>-->
 
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="resources/css/bootstrap.min.css">
+
+    <!-- font-awesome -->
+    <link rel="stylesheet" href="resources/css/font-awesome.min.css">
+
+    <!-- disableselect -->
+    <link rel="stylesheet" href="resources/css/disableselect.css">
 
     <script type="importmap">
         {
@@ -50,6 +58,22 @@
 </head>
 <body>
 
+<div class="navbar navbar-fixed-top" style="background-color:white">
+    <div class="well well-sm">
+        <c:if test="${difficulty=='training' && patientid=='-1'}">
+            <a href="patienttraining" class="btn btn-lg btn-warning pull-right" role="button">Interrompi esercizio</a>
+        </c:if>
+        <c:if test="${difficulty=='training' && patientid!='-1'}">
+            <a href="patientrehabilitation" class="btn btn-lg btn-warning pull-right" role="button">Interrompi esercizio</a>
+        </c:if>
+        <c:if test="${difficulty=='demo'}">
+            <a href="patientdemo" class="btn btn-lg btn-warning pull-right" role="button">Interrompi esercizio</a>
+        </c:if>
+        <c:if test="${difficulty!='training' && difficulty!='demo'}">
+            <a href="patientrehabilitation" class="btn btn-lg btn-warning pull-right" role="button">Interrompi esercizio</a>
+        </c:if>
+    </div>
+</div>
     <div id="stats" class="row">
         Tempo: <span id="timeLeft">0</span>s<br>
         Ostacoli: <span id="totalObstacles">0</span><br>

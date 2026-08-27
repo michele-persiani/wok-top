@@ -614,7 +614,7 @@ public class MSRUserService
                             + "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false},"
                             + "{\"cat\":\"PLAN_1\",\"id\":52,\"done\":false},"
                             + "{\"cat\":\"PLAN_2\",\"id\":53,\"done\":false},"
-                            + "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false},"
+                            //+ "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false},"
                             + "{\"cat\":\"ATT_RFLXS\",\"id\":65,\"done\":false}"
                             + "]"
                     );
@@ -1001,7 +1001,7 @@ public class MSRUserService
             List<MSRUser> patients = userController.findAllPatientsInCenter(cid);
             if (!patients.isEmpty()) {
                 model.addAttribute("patients", patients);
-                model.addAttribute("email", userController.findEntity(uid).get().getEmail());
+                model.addAttribute("email", userController.getEntityOrThrow(uid).getEmail());
                 List<MSRGroup> groups = new ArrayList<MSRGroup>();
                 for (MSRUser patient : patients) {
                     groupController.findEntity(patient.getGid()).ifPresent(groups::add);
@@ -1073,7 +1073,6 @@ public class MSRUserService
                 }
             }
             if (patientForm.isNew()) {
-                patientForm.setMsrrole(RoleValue.PATIENT);
                 patientForm.setGid(-1);
                 patientForm.setCid(CookiesManager.getLoggedUserCenter(request));
 

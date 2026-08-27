@@ -116,6 +116,7 @@
                                     <th class="text-center">Id</th> 
                                     <th class="text-center">Username</th> 
                                     <th class="text-center">Password</th>
+                                    <th class="text-center">Ruolo</th>
                                     <th class="text-center">Foto</th>
                                     <th class="text-center">Cognome</th>
                                     <th class="text-center">Nome</th>
@@ -167,7 +168,8 @@
 
                                     <td>${patient.id}</td> 
                                     <td>${patient.username}</td> 
-                                    <td>${patient.password}</td>                                
+                                    <td>${patient.password}</td>
+                                    <td>${patient.msrrole}</td>
 
                                     <td>
                                         <c:if test="${patient.photo!='' && patient.photo!=null}">

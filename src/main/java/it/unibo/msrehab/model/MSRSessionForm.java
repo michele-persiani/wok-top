@@ -19,7 +19,9 @@ public class MSRSessionForm implements Serializable
     
     @NotNull
     private String difficulty;
-        
+
+    private boolean allSelected = false;
+
     private List<Integer> ATT_SEL_STD = new ArrayList<>();
     private List<Integer> ATT_SEL_STD_FAC = new ArrayList<>();
     private List<Integer> ATT_SEL_STD_ORI = new ArrayList<>();
@@ -289,4 +291,13 @@ public class MSRSessionForm implements Serializable
         return new JSONSerializer().exclude("*.class").serialize(this);
     }
 
+    public boolean isAllSelected()
+    {
+        return allSelected;
+    }
+
+    public void setAllSelected(boolean allSelected)
+    {
+        this.allSelected = allSelected;
+    }
 }

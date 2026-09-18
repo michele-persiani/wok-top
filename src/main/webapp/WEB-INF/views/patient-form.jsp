@@ -101,7 +101,6 @@
                    
                      <form:hidden path="username"/>
 
-
                     <spring:bind path="msrrole">
                         <div class="form-group ${status.error ? 'has-error' : ''}">
                             <label class="col-sm-4 control-label">Ruolo</label>

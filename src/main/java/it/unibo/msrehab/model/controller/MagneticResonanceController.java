@@ -5,28 +5,34 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.MagneticResonance;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author floriano
  */
-public class MagneticResonanceController extends BaseEntityController<MagneticResonance>
+public class MagneticResonanceController extends JPAEntityController<MagneticResonance>
 {
 
     public MagneticResonanceController()
     {
-        super(MagneticResonance.class);
+        super(MagneticResonance.class, PersistenceUnit.DEFAULT_PU);
     }
 
 
     public List<MagneticResonance> findAllByClinicalprofileid(Integer id)
     {
-        return new ArrayList<>(getAllEntities(mr -> Objects.equals(mr.getClinicalprofileid(), id)));
+        return getAllEntities()
+                .stream()
+                .filter(mr -> Objects.equals(mr.getClinicalprofileid(), id))
+                .collect(Collectors.toList());
     }
 
 

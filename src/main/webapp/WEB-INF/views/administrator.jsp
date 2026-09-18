@@ -165,7 +165,6 @@
                     </div>                    
                 </div>
             </div>
-            <c:if test="${rlEnabled == true}">
 
                 <div class="row">
                     <div class="well col-sm-12">
@@ -177,7 +176,6 @@
                         </div>
                     </div>
                 </div>
-            </c:if>
 
             <footer class="footer">
                

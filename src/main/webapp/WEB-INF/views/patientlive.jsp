@@ -169,12 +169,12 @@
                                 '<td class="col-sm-6">'+
                                     h[i].name+
                                 '</td>'+
-                                '<td class="col-sm-6">'+
-                                    '<button type="button" class="btn btn-sm btn-danger min" aria-label="Abbassa difficoltà"> <span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>'+
-                                    '<input id="" class="short '+addChangedColor(h[i].changed, h[i].level, h[i].oldlevel)+'" type="text" readonly value="'+h[i].level+'/'+h[i].maxdiff+'" historyid="'+h[i].historyid+'"/>'+
-                                    '<button type="button" class="btn btn-sm btn-success plus" aria-label="Alza difficoltà"> <span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>'+
-                                    '<br />'+
-                                    '<p class="infodiff">('+addChangedDifficulty(h[i].changed, h[i].level, h[i].oldlevel)+')</p>'+
+                                //'<td class="col-sm-6">'+
+                                //    '<button type="button" class="btn btn-sm btn-danger min" aria-label="Abbassa difficoltà"> <span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>'+
+                                //    '<input id="" class="short '+addChangedColor(h[i].changed, h[i].level, h[i].oldlevel)+'" type="text" readonly value="'+h[i].level+'/'+h[i].maxdiff+'" historyid="'+h[i].historyid+'"/>'+
+                                //    '<button type="button" class="btn btn-sm btn-success plus" aria-label="Alza difficoltà"> <span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>'+
+                                //    '<br />'+
+                                //    '<p class="infodiff">('+addChangedDifficulty(h[i].changed, h[i].level, h[i].oldlevel)+')</p>'+
                                 '</td>'+
                                 '<td class="col-sm-6">'+
                                     (parseInt(h[i].performance*100))+
@@ -276,7 +276,7 @@
                     <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Livello di difficolt&agrave;</th>
+                        <!-- <th>Livello di difficolt&agrave;</th> -->
                         <th>Performance</th>
                         <th>Ultimo accesso</th>
                     </tr>

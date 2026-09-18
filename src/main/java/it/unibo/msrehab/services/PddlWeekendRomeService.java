@@ -345,7 +345,7 @@ public class PddlWeekendRomeService {
         ft = fitnessController.calculateFitness(false, history);
         history.setAbsperformance(ft);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setCreateTimestamp(t);
         
         
       //   history.setLevel(level);
@@ -379,7 +379,7 @@ public class PddlWeekendRomeService {
         
          double perf = fitnessController.calculateFitness(false, h);
         //history.setAbsperformance(perf);
-        double thr = fitnessController.getFitnessWeightOrThrow(exerciseid).getThr();
+        double thr = fitnessController.getEntity(exerciseid).getThr();
         passed = (perf >= thr);
         
         
@@ -465,7 +465,7 @@ public class PddlWeekendRomeService {
             history.setRelperformance(ft);
 
             Long t = LocalDateTime.now().toDateTime().getMillis();
-            history.setTimestamp(t);
+            history.setCreateTimestamp(t);
             history.setLevel(newLevel);
             history.setSessid(sessid);
             boolean success=historyController.insertEntity(history);

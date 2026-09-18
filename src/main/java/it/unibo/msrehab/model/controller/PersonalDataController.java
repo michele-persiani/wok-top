@@ -5,6 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.PersonalData;
 
 import java.util.Comparator;
@@ -13,18 +15,19 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 
-public class PersonalDataController extends BaseEntityController<PersonalData>
+public class PersonalDataController extends JPAEntityController<PersonalData>
 {
 
     public PersonalDataController()
     {
-        super(PersonalData.class);
+        super(PersonalData.class, PersistenceUnit.DEFAULT_PU);
     }
 
     public List<PersonalData> findAllByUser(Integer id)
     {
-        return getAllEntities(tst -> Objects.equals(tst.getUserid(), id))
+        return getAllEntities()
                 .stream()
+                .filter(tst -> Objects.equals(tst.getUserid(), id))
                 .sorted(Comparator.comparing(PersonalData::getTimestamp).reversed())
                 .collect(Collectors.toList());
     }

@@ -5,6 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.NPSTest;
 
 import java.util.Comparator;
@@ -16,17 +18,18 @@ import java.util.stream.Collectors;
  *
  * @author floriano
  */
-public class NPSTestController extends BaseEntityController<NPSTest>
+public class NPSTestController extends JPAEntityController<NPSTest>
 {
     public NPSTestController()
     {
-        super(NPSTest.class);
+        super(NPSTest.class, PersistenceUnit.DEFAULT_PU);
     }
 
     public List<NPSTest> findAllByUser(Integer id)
     {
-        return getAllEntities(tst -> Objects.equals(tst.getUserid(), id))
+        return getAllEntities()
                 .stream()
+                .filter(tst -> Objects.equals(tst.getUserid(), id))
                 .sorted(Comparator.comparing(NPSTest::getTimestamp).reversed())
                 .collect(Collectors.toList());
     }

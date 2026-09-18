@@ -290,7 +290,7 @@ public class PddlZooMapService {
         ft = fitnessController.calculateFitness(false, history);
         history.setAbsperformance(ft);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setCreateTimestamp(t);
 
         /*
          history.setLevel(level);
@@ -422,17 +422,11 @@ public class PddlZooMapService {
             history.setRelperformance(ft);
 
             Long t = LocalDateTime.now().toDateTime().getMillis();
-            history.setTimestamp(t);
+            history.setCreateTimestamp(t);
             history.setLevel(level);
             history.setSessid(sessid);
 
-            if (!historyController.insertEntity(history)) {
-                logger.error("Error adding History to DB");
-                model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                model.addAttribute("back", "patienthome");
-                model.addAttribute("home", "patienthome");
-                return new ModelAndView("error");
-            }
+            historyController.insertEntity(history);
 
         }
         //pianificazione1phase1

@@ -116,7 +116,7 @@
     </div>
     <div class="spacer"></div>
     <div class="big-font">
-        Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori: <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF0000">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
+        Inoltre, è utile sapere che durante lo svolgimento degli esercizi riceverà un feedback a colori: <font color="#00FF00">verde</font> per le risposte corrette, <font color="#FF2400">rosso</font> per le risposte sbagliate, <font color="#e5de00">giallo</font> per le risposte omesse/non date.<br>
     </div>
 
     <div class="spacer"></div>

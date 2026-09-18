@@ -1,31 +1,23 @@
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.FitnessWeight;
 import it.unibo.msrehab.model.entities.History;
-
-import java.util.Objects;
-
 
 
 /**
  * @author danger
  */
-public class FitnessWeightController extends BaseEntityController<FitnessWeight>
+public class FitnessWeightController extends JPAEntityController<FitnessWeight>
 {
 
     public FitnessWeightController()
     {
-        super(FitnessWeight.class);
+        super(FitnessWeight.class, PersistenceUnit.DEFAULT_PU);
     }
 
 
-    public FitnessWeight getFitnessWeightOrThrow(Integer exId)
-    {
-        return getAllEntities(fw -> Objects.equals(fw.getExid(), exId))
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No FitnessWeight found for exercise id " + exId));
-    }
 
     public double calculateRelativePerformance(String difficulty, double absPerformance)
     {
@@ -46,7 +38,7 @@ public class FitnessWeightController extends BaseEntityController<FitnessWeight>
     {
         double ft = 0;
 
-        FitnessWeight w = getFitnessWeightOrThrow(h.getExid());
+        FitnessWeight w = getEntity(h.getExid());
 
         double pC = h.getpCorrect();
         double pM = h.getpMissed();

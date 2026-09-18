@@ -13,6 +13,9 @@ public class BaseEntity implements Serializable, Comparable<BaseEntity>
 {
     private static class Util
     {
+        /**
+         * Must be a nested class or entities fail to instantiate
+         */
         private static final Comparator<BaseEntity> comparator = Comparator.nullsLast(Comparator.comparingLong(BaseEntity::getId));
 
         private static final JSONSerializer jsonSerializer = new JSONSerializer().exclude("*.class");

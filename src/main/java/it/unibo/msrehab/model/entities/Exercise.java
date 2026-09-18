@@ -170,6 +170,7 @@ public class Exercise extends BaseEntity
     @Transient
     private String status;
 
+    private boolean isRL;
 
 
     public ExerciseNameValue getName() {
@@ -325,5 +326,16 @@ public class Exercise extends BaseEntity
     public void setMediumLevel(int mediumLevel)
     {
         this.mediumLevel = mediumLevel;
+    }
+
+
+    public boolean isRL()
+    {
+        return isRL;
+    }
+
+    public void setRL(boolean RL)
+    {
+        isRL = RL;
     }
 }

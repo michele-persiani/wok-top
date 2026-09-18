@@ -198,7 +198,7 @@
                                             assignmentid : '${assignmentid}',
                                             rlagent: '${rlagent}'
                                         }, 'get');">
-                                Inizia
+                                Inizia esercizio
                             </button>
                         </div>
                     </div>

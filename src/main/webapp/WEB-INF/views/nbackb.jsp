@@ -276,8 +276,6 @@
                         audio03.play(); 
                         nCorrect++;
                         elementiBack++;
-                        //document.getElementById(imgId).style.backgroundColor = "green";
-                        //document.getElementById(imgId).style.filter= "grayscale(0%)";
                         addBackground(imgId, 'green');
                     }
                     else
@@ -285,8 +283,6 @@
                         audio01.load();
                         audio01.play();        
                         nWrong++;
-                        //document.getElementById(imgId).style.backgroundColor = "red";
-                        //document.getElementById(imgId).style.filter= "grayscale(0%)";
                         addBackground(imgId, 'red');
                     }
                 }
@@ -382,7 +378,7 @@
                             audio01.play();     
                             nWrong++;
                             elementiBack++;
-                            document.getElementById(imgId).style.backgroundColor = "red";
+                            document.getElementById(imgId).style.backgroundColor = "yellow";
                             document.getElementById(imgId).style.filter= "grayscale(0%)";}
                         else {
                         //audio03.load();

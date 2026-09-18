@@ -3,17 +3,11 @@ package it.unibo.msrehab.services;
 
 import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
-import it.unibo.msrehab.model.controller.FitnessWeightController;
 import it.unibo.msrehab.model.entities.*;
-import it.unibo.msrehab.rl.impl.NextLevelAgent;
-import it.unibo.msrehab.rl.impl.TemplateNextLevelAgent;
-import it.unibo.msrehab.rl.rewardmodel.RewardModel;
-import it.unibo.msrehab.rl.impl.*;
-import it.unibo.msrehab.rl.model.*;
-import it.unibo.msrehab.rl.utils.Maps;
-import it.unibo.msrehab.rl.utils.Tuple;
-import it.unibo.msrehab.rl.utils.XYFunction;
-import it.unibo.msrehab.rl.utils.regression.LinearRegression;
+import it.unibo.msrehab.model.levelselection.LevelThreshold;
+import it.unibo.msrehab.model.levelselection.NextLevelStrategy;
+import it.unibo.msrehab.model.levelselection.HistoryRecord;
+import it.unibo.msrehab.model.*;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,18 +18,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
+/**
+ * Service per la simulazione degli agenti dall'interfaccia admin.
+ */
 @Controller
 public class RLService
 {
-    IModel model = JPAController.getInstance();
+    Model model = JPAModel.getInstance();
     JSONDeserializer<List<Map<String, String>>> dataDeserializer = new JSONDeserializer<>();
     JSONSerializer serializer = new JSONSerializer();
 
-    FitnessWeightController fitnessController = new FitnessWeightController();
 
     @RequestMapping(value = "/rlconfig", method = RequestMethod.GET)
     public ModelAndView rlConfigPage()
@@ -50,7 +46,7 @@ public class RLService
                 ;
     }
 
-    @RequestMapping(value = "/rl-threshold-agent-config", method = {RequestMethod.POST})
+    @RequestMapping(value = "adaptive-agent-config", method = {RequestMethod.POST})
     public HttpEntity<String> thresholdAgentConfig(
             @RequestParam(required = false, defaultValue = "0.2") Double deltaInferiorLevel,
             @RequestParam(required = false, defaultValue = "0.8") Double startThreshold,
@@ -66,21 +62,20 @@ public class RLService
         config.setThresholdDeltaNotPassed(thresholdDeltaNotPassed);
 
 
-
-        if(!config.isValid())
+        if (!config.isValid())
             return ResponseEntity.badRequest().body("Invalid configuration");
 
 
         boolean updateSuccess = ThresholdAgentConfig.putSingletonEntity(model, config);
 
 
-        if(!updateSuccess)
+        if (!updateSuccess)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating configuration");
 
         return ResponseEntity.ok().body("Configuration updated successfully");
     }
 
-    @RequestMapping(value = "/rl-level-agent-config", method = {RequestMethod.POST})
+    @RequestMapping(value = "/rl-agent-config", method = {RequestMethod.POST})
     public HttpEntity<String> levelAgentConfig(
             @RequestParam Optional<Double> targetPerformance,
             @RequestParam Optional<Double> priorWeight,
@@ -89,7 +84,7 @@ public class RLService
             @RequestParam Optional<Double> priorModelIntercept,
             @RequestParam Optional<Double> discountFactor,
             @RequestParam Optional<Double> policyEpsilon
-            )
+    )
     {
         LevelAgentConfig config = LevelAgentConfig.getSingletonEntity(model);
 
@@ -102,59 +97,89 @@ public class RLService
         policyEpsilon.map(eps -> Math.max(0, Math.min(1, eps))).ifPresent(config::setPolicyEpsilon);
 
 
-
-        if(!config.isValid())
+        if (!config.isValid())
             return ResponseEntity.badRequest().body("Invalid configuration");
 
 
         boolean updateSuccess = LevelAgentConfig.putSingletonEntity(model, config);
 
 
-        if(!updateSuccess)
+        if (!updateSuccess)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating configuration");
 
         return ResponseEntity.ok().body("Configuration updated successfully");
     }
 
+    private static final double PASS_THRESHOLD = 0.8;
+
+    public enum SimulationType
+    {
+        adaptive,
+        incremental
+    }
+
 
     @RequestMapping(value = "/nextlevel", method = {RequestMethod.GET, RequestMethod.POST})
     public HttpEntity<String> simulateStep(
-            @RequestParam(required = false, defaultValue = "threshold") String simulatedAgent,
-            @RequestParam(required = true) int currentLevel,
-            @RequestParam(required = true) int maxLevel,
-            @RequestParam(required = true) Optional<String> performanceData
+            @RequestParam SimulationType simulatedAgent,
+            @RequestParam int maxLevel,
+            @RequestParam String performanceData
     )
     {
-        List<Tuple<Integer, Double>> levels = performanceData.map(json -> dataDeserializer.deserialize(json))
-                .orElse(new ArrayList<>())
-                .stream()
-                .map(data -> Tuple.of(
-                                Integer.valueOf(String.valueOf(data.get("level"))),
-                                Double.valueOf(String.valueOf(data.get("performance")))
-                        )
-                )
-                .collect(Collectors.toList());
-        NextLevelAgent agent;
-        if(Objects.equals(simulatedAgent, "level"))
-            agent = createLevelAgent(maxLevel, levels);
-        else if(Objects.equals(simulatedAgent, "threshold"))
-            agent = createThresholdAgent(maxLevel, levels);
-        else
-            agent = createIncrementalAgent(maxLevel, levels);
 
-        int nextLevel = agent.getNextLevel(currentLevel);
+        List<Map<String, String>> data = dataDeserializer.deserialize(performanceData);
+
+        List<HistoryRecord> levels = IntStream.range(0, data.size())
+                .mapToObj(i -> {
+                    Map<String, String> d = data.get(i);
+                    return new HistoryRecord(
+                            Integer.parseInt(String.valueOf(d.get("level"))),
+                            Double.parseDouble(String.valueOf(d.get("performance"))),
+                            Double.parseDouble(String.valueOf(d.get("threshold"))),
+                            i
+                    );
+                })
+                .collect(Collectors.toList());
+
+        NextLevelStrategy strategies = new NextLevelStrategy();
+
+        LevelThreshold levelThreshold;
+        switch (simulatedAgent)
+        {
+            case adaptive:
+                ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
+                levelThreshold = strategies.getNextLevelAdaptively(
+                        config.getLowerThreshold(),
+                        config.getStartThreshold(),
+                        config.getThresholdDeltaPassed(),
+                        config.getThresholdDeltaNotPassed(),
+                        levels
+                );
+                break;
+            default: // incremental
+                levelThreshold = strategies.getNextLevelIncrementally(
+                        PASS_THRESHOLD,
+                        levels
+                );
+
+        }
+
+        levelThreshold = new LevelThreshold(
+                Math.min(maxLevel, levelThreshold.getLevel()),
+                Math.max(0, Math.min(1, levelThreshold.getThreshold()))
+        );
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("nextLevel", levelThreshold.getLevel());
+        body.put("nextThreshold", levelThreshold.getThreshold());
 
         return ResponseEntity.ok().body(
-                serializer.deepSerialize(
-                        Maps.of(
-                                "nextLevel", nextLevel,
-                                "stateValues", ValueIterationValues.getValuesString()
-                        )
-                )
+                serializer.deepSerialize(body)
         );
 
     }
 
+    /*
     private NextLevelAgent createThresholdAgent(int maxLevel, List<Tuple<Integer, Double>> performanceData)
     {
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
@@ -170,7 +195,8 @@ public class RLService
                 .setEpisodeSupplier(
                         EpisodesSupplier.createSingleEpisode(
                                 performanceData,
-                                (tp, h) -> {
+                                (tp, h) ->
+                                {
                                     int lvl = tp.first;
                                     double p = tp.second;
                                     h.setExid(123456789);
@@ -179,7 +205,7 @@ public class RLService
                                     h.setRelperformance(p);
                                     h.setLevel(lvl);
                                     h.setPassed(p >= 0.8);
-                                    h.setTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
+                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
                                 }
                         )
                 )
@@ -208,7 +234,8 @@ public class RLService
                 .setEpisodeSupplier(
                         EpisodesSupplier.createSingleEpisode(
                                 performanceData,
-                                (tp, h) -> {
+                                (tp, h) ->
+                                {
                                     int lvl = tp.first;
                                     double p = tp.second;
                                     h.setExid(123456789);
@@ -217,7 +244,7 @@ public class RLService
                                     h.setRelperformance(p);
                                     h.setLevel(lvl);
                                     h.setPassed(p >= 0.8);
-                                    h.setTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
+                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
                                 }
                         )
                 )
@@ -236,7 +263,7 @@ public class RLService
     )
     {
 
-        IModel model = JPAController.getInstance();
+        Model model = JPAModel.getInstance();
 
 
         LevelAgentConfig config = LevelAgentConfig.getSingletonEntity(model);
@@ -255,7 +282,8 @@ public class RLService
                 .setEpisodeSupplier(
                         EpisodesSupplier.createSingleEpisode(
                                 performanceData.subList(Math.max(0, performanceData.size() - 5), performanceData.size()),
-                                (tp, h) -> {
+                                (tp, h) ->
+                                {
                                     int lvl = tp.first;
                                     double p = tp.second;
                                     h.setExid(123456789);
@@ -264,7 +292,7 @@ public class RLService
                                     h.setRelperformance(p);
                                     h.setLevel(lvl);
                                     h.setPassed(p >= 0.8);
-                                    h.setTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
+                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
                                 }
                         )
                 )
@@ -283,7 +311,7 @@ public class RLService
                                                         ).clampReward(0, 1),
                                                         1 - priorWeight,
                                                         RewardModel.<Integer, Integer>createLambdaRewardModel(
-                                                                (from ,action, to ) ->
+                                                                (from, action, to) ->
                                                                         Optional.of(priorType)
                                                                                 .filter(pt -> pt == LevelAgentConfig.PriorModelType.sigmoid)
                                                                                 .map(pt -> XYFunction.sigmoid(slope, intercept * maxLevel))
@@ -300,4 +328,6 @@ public class RLService
                 )
                 ;
     }
+    */
+
 }

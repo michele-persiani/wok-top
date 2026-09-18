@@ -14,6 +14,7 @@ import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.util.CookiesManager;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -97,7 +98,7 @@ public class MSRSessionService {
                             JSONObject exJson = exsJsonArr.getJSONObject(i);
                             int exId = exJson.getInt("id");
                             exerciseNamesGroup.add(
-                                    exerciseController.getEntityOrThrow(exId).getFullName());
+                                    exerciseController.getEntity(exId).getFullName());
                         }
                         hospitalExerciseNames.add(exerciseNamesGroup);
                         hospitalActiveSessionsPerCurrentCenter.add(session);
@@ -116,7 +117,7 @@ public class MSRSessionService {
                             JSONObject exJson = exsJsonArr.getJSONObject(i);
                             int exId = exJson.getInt("id");
                             exerciseNamesGroup.add(
-                                    exerciseController.getEntityOrThrow(exId).getFullName());
+                                    exerciseController.getEntity(exId).getFullName());
                         }
                         homeExerciseNames.add(exerciseNamesGroup);
                         homeActiveSessionsPerCurrentCenter.add(session);
@@ -169,15 +170,19 @@ public class MSRSessionService {
                 int exId = exJson.getInt("id");
                 boolean visible = !exJson.has("visible") || exJson.getBoolean("visible");
                 exerciseController.findEntity(exId)
-                        .map(Exercise::getFullName)
-                        .ifPresent(name -> {
+                        .ifPresent(ex -> {
+                            String exName = exerciseController.getDisplayName(ex.getCategory());
+                            String exElCategory = ex.getExelementcat() != null ? ex.getExelementcat().getDisplayName() : "";
+
                             exJson.put("sessionid", session.getId());
-                            exJson.put("name", name);
+                            exJson.put("name", String.format("%s - %s", exName, exElCategory));
                             exJson.put("visible", visible);
                             exerciseNamesPatient.add(exJson);
                         });
 
             }
+            exerciseNamesPatient.sort(Comparator.comparing(jobj -> jobj.getString("name")));
+
             exerciseNames.add(exerciseNamesPatient);
         }
     }
@@ -229,11 +234,9 @@ public class MSRSessionService {
             boolean visible
     )
     {
-        MSRSession session = sessionController.getEntityOrThrow(sessionid);
-        boolean success = EntityUtils.setExerciseVisibilityInSession(session, exerciseid, visible);
-        if(success)
-            return ResponseEntity.ok("Success");
-        return ResponseEntity.ok("Failure");
+        MSRSession session = sessionController.getEntity(sessionid);
+        sessionController.setExerciseVisibilityInSession(session, exerciseid, visible);
+        return ResponseEntity.ok("Success");
     }
 
 
@@ -243,8 +246,8 @@ public class MSRSessionService {
             int exerciseid
     )
     {
-        MSRSession session = sessionController.getEntityOrThrow(sessionid);
-        boolean visible = EntityUtils.getExerciseVisibilityInSession(session, exerciseid);
+        MSRSession session = sessionController.getEntity(sessionid);
+        boolean visible = sessionController.getExerciseVisibilityInSession(session, exerciseid);
         return ResponseEntity.ok(visible);
     }
 
@@ -295,33 +298,55 @@ public class MSRSessionService {
         session.setUsrgrpid(msrSessionForm.getUsrgrpid());
         session.setForgroup(Boolean.FALSE);
         session.setGrpid(-1);
-        
-        JSONObject json = new JSONObject(msrSessionForm);
-        json.remove("usrgrpid");
-        json.remove("difficulty");
-        
-        JSONArray exCat = json.names();
-        if(exCat==null) {
-            return new ModelAndView("redirect:/patientsession");
+
+
+        List<Integer> exerciseIds = new ArrayList<>();
+
+        if(msrSessionForm.isAllSelected())
+        {
+            exerciseIds = exerciseController
+                    .getAllEntities()
+                    .stream()
+                    .filter(Exercise::isEnabled)
+                    .map(Exercise::getId)
+                    .collect(Collectors.toList())
+                    ;
         }
-        else {
-        JSONArray exId = json.toJSONArray(exCat);
-        
-        JSONArray jsonArr = new JSONArray();
-        for(int i=0; i<exId.length(); i++) {
-            JSONArray ids = exId.getJSONArray(i);
-            for(int j = 0; j<ids.length(); j++) {
-                JSONObject json1 = new JSONObject()
-                        .put("id", ids.getInt(j))
-                        .put("cat", exCat.getString(i))
-                        .put("visible", true)
-                        .put("done", false);
-                jsonArr.put(json1);
+        else
+        {
+            JSONObject json = new JSONObject(msrSessionForm);
+            json.remove("usrgrpid");
+            json.remove("difficulty");
+            json.remove("allSelected");
+
+            JSONArray exCat = json.names();
+            JSONArray exId = json.toJSONArray(exCat);
+
+
+            for (int i = 0; i < exId.length(); i++)
+            {
+                JSONArray ids = exId.getJSONArray(i);
+                for (int j = 0; j < ids.length(); j++)
+                    exerciseIds.add(ids.getInt(j));
             }
         }
-                
-        session.setExercises(jsonArr.toString());
-        
+            JSONArray jsonArr = new JSONArray();
+
+            exerciseIds.forEach(id -> {
+
+                        JSONObject jobj =  new JSONObject()
+                                .put("id", id)
+                                .put("cat", exerciseController.findEntity(id).map(Exercise::getCategory).orElseThrow(() -> new RuntimeException("exercise not found!")))
+                                .put("visible", true)
+                                .put("done", false);
+                        jsonArr.put(jobj);
+                    });
+
+
+
+            session.setExercises(jsonArr.toString());
+
+
         if(!sessionController.insertEntity(session)) {
             logger.error("...session addition failed");
             model.addAttribute("message", "Assegnazione sessione esercizi fallita");
@@ -331,7 +356,7 @@ public class MSRSessionService {
         }
         
         return new ModelAndView("redirect:/patientsessionmanagement");
-        }
+
     }
     
     @RequestMapping(value = "/showsessionexercises", method = RequestMethod.POST)
@@ -349,12 +374,12 @@ public class MSRSessionService {
             @RequestParam(value = "forpatient", required = true) Boolean forpatient,
             Model model) {
 
-        MSRSession session = sessionController.getEntityOrThrow(sessionid),
+        MSRSession session = sessionController.getEntity(sessionid),
                 lastHospitalSession;
         List<MSRUser> patients = new ArrayList<>();
         
         if (forpatient)
-            patients.add(userController.getEntityOrThrow(session.getUsrgrpid()));
+            patients.add(userController.getEntity(session.getUsrgrpid()));
         else
         {
             Integer grpid = session.getUsrgrpid();

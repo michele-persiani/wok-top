@@ -40,6 +40,53 @@ public class ExElement extends BaseEntity
         W_NAME_COM_F, W_NAME_ITA_F, W_NAME_FRN_F,
         W_NAME_COM_M, W_NAME_ITA_M, W_NAME_FRN_M,
         S_BEEP;
+
+
+
+        public String getDisplayName()
+        {
+            switch (this) {
+                case I_FRUIT:
+                    return "Frutta";
+                case I_VEGETABLE:
+                    return "Verdure";
+                case I_ANIMAL:
+                    return "Animali";
+                case I_CHESS:
+                    return "Scacchi";
+                case I_ARROW:
+                case I_ARROW_B:
+                    return "Frecce";
+                case I_FACE:
+                    return "Facce";
+                case I_MIXED:
+                    return "Misto";
+
+                case I_FRUIT__I_VEGETABLE:
+                    return "Frutta/Verdure";
+                case I_VEGETABLE__I_ANIMAL:
+                    return "Verdure/Animali";
+                case I_FRUIT__I_ANIMAL:
+                    return "Frutta/Animali";
+                case I_FACE__W_NAME:
+                    return "Facce/Nomi";
+                case W_NAME_COM_F:
+                case W_NAME_ITA_F:
+                case W_NAME_FRN_F:
+
+                case W_NAME_COM_M:
+                case W_NAME_ITA_M:
+                case W_NAME_FRN_M:
+                    return "Nomi";
+                case S_BEEP:
+                    return "Suono";
+                default:
+                    return "Sconosciuto";
+
+
+            }
+        }
+
     };
 
     @JSON(include = false)

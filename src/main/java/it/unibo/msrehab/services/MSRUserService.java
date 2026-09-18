@@ -204,7 +204,7 @@ public class MSRUserService
         logger.debug("patientForm() : {}", patientid);
         MSRUser patient = new MSRUser();
         if (patientid != null) {
-            patient = (MSRUser) userController.findEntity(patientid).get();
+            patient = userController.getEntity(patientid);
             //aggiunti per username
          //   username="User"+patientid.toString();
          //   model.addAttribute("username", username);
@@ -316,7 +316,7 @@ public class MSRUserService
             final RedirectAttributes redirectAttributes) {
 
         logger.info("Start to delete user " + patientid);
-        MSRUser user = userController.getEntityOrThrow(patientid);
+        MSRUser user = userController.getEntity(patientid);
         if (user == null) {
             logger.warn("User " + patientid + " not found");
             model.addAttribute("message", "Utente non trovato");
@@ -328,7 +328,7 @@ public class MSRUserService
         // Delete patient group if it contains only the patient being deleted
         if (userController.findAllPatientsInGroup(user.getGid()).size() <= 1)
         {
-            MSRGroup group = groupController.getEntityOrThrow(user.getGid());
+            MSRGroup group = groupController.getEntity(user.getGid());
             if (!groupController.removeEntity(group)) {
                 logger.error("...group update failed");
                 model.addAttribute("message", "Gruppo " + group.getId()+ ", cancellazione fallita");
@@ -383,8 +383,7 @@ public class MSRUserService
 
         List<History> histories = historyController.findAllByUser(patientid);
 
-
-        historyController.removeEntities(histories);
+        histories.forEach(historyController::removeEntity);
 
 
         // Delete photo
@@ -552,13 +551,13 @@ public class MSRUserService
             HttpServletRequest request,
             Model model)
     {
+
         if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotAdmin(request))
             return new ModelAndView("login");
         else
         {
             int cid = CookiesManager.getLoggedUserCenter(request);
             model.addAttribute("name", CookiesManager.geLoggedUserName(request));
-            model.addAttribute("rEnabled", Configuration.getInstance().isRlEnabled());
 
 
             if (userController.findAllPatientsInCenter(cid).isEmpty())
@@ -573,9 +572,7 @@ public class MSRUserService
                 model.addAttribute("existgroups", true);
 
 
-            return new ModelAndView("administrator")
-                    .addObject("rlEnabled", Configuration.getInstance().isRlEnabled())
-                    ;
+            return new ModelAndView("administrator");
         }
     }
 
@@ -646,7 +643,7 @@ public class MSRUserService
                 cat = json.getString("cat");
                        id = json.getInt("id");
                 done = json.getBoolean("done");
-                Exercise exercise = exerciseController.getEntityOrThrow(id);
+                Exercise exercise = exerciseController.getEntity(id);
                 // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
                 ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
                 exerciseCategory.getExercises().add(exercise);
@@ -732,7 +729,7 @@ public class MSRUserService
                 cat = json.getString("cat");
                 id = json.getInt("id");
                 done = json.getBoolean("done");
-                Exercise exercise = exerciseController.getEntityOrThrow(id);
+                Exercise exercise = exerciseController.getEntity(id);
                 // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
                 ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
                 exerciseCategory.getExercises().add(exercise);
@@ -776,7 +773,7 @@ public class MSRUserService
         else
         {
             Integer userId = CookiesManager.geLoggedUserId(request);
-            MSRUser user = userController.getEntityOrThrow(userId);
+            MSRUser user = userController.getEntity(userId);
             boolean demo = user.getMsrrole() == RoleValue.DEMO;
 
             model.addAttribute("name", CookiesManager.geLoggedUserName(request));
@@ -800,7 +797,7 @@ public class MSRUserService
         {
             List<MSRSession> sessionList = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request));
 
-            if (sessionList.isEmpty() || !sessionList.stream().anyMatch(EntityUtils::hasVisibleExercises))
+            if (sessionList.isEmpty() || !sessionList.stream().anyMatch(sessionController::hasVisibleExercises))
             {
                 model.addAttribute("back", "patienthome");
                 model.addAttribute("home", "patienthome");
@@ -845,11 +842,11 @@ public class MSRUserService
                     id = json.getInt("id");
                     done = json.getBoolean("done");
 
-                    if(!EntityUtils.getExerciseVisibilityInSession(session, id))
+                    if(!sessionController.getExerciseVisibilityInSession(session, id))
                         continue;
 
 
-                    Exercise exercise = exerciseController.getEntityOrThrow(id);
+                    Exercise exercise = exerciseController.getEntity(id);
                     exercise.setStatus(historyController.isExerciseInHistory(id, session.getId()), done);
                     // se l'esercizio è da iniziare, controllo se il paziente lo aveva già iniziato durante la sessione in ospedale
                     if (exercise.getStatus().equals("todo") && session.getFromSessionId() != null) {
@@ -991,7 +988,8 @@ public class MSRUserService
     public ModelAndView showPatients(
             HttpServletRequest request,
             Model model
-    ) {
+    )
+    {
         logger.debug("showCenterPatients()");
         if (WebPagesUtilities.redirectIfNotLogged(request)) {
             return new ModelAndView("login");
@@ -1001,7 +999,7 @@ public class MSRUserService
             List<MSRUser> patients = userController.findAllPatientsInCenter(cid);
             if (!patients.isEmpty()) {
                 model.addAttribute("patients", patients);
-                model.addAttribute("email", userController.getEntityOrThrow(uid).getEmail());
+                model.addAttribute("email", userController.getEntity(uid).getEmail());
                 List<MSRGroup> groups = new ArrayList<MSRGroup>();
                 for (MSRUser patient : patients) {
                     groupController.findEntity(patient.getGid()).ifPresent(groups::add);
@@ -1024,135 +1022,88 @@ public class MSRUserService
     public ModelAndView saveOrUpdatePatient(
             HttpServletRequest request,
             @Valid @ModelAttribute("patientForm") MSRUser patientForm,
-            BindingResult result,
             Model model,
-            @RequestParam("photofile") MultipartFile photoFile
-    ) {
+            @RequestParam(value = "photofile", required = false) MultipartFile photoFile
+    )
+    {
 
         logger.debug("saveOrUpdateUser() : {}", patientForm);
 
-        if (result.hasErrors() //|| !MSRUser.isEmailValid(patientForm.getEmail())
-                //|| !MSRUser.isPhoneValid(patientForm.getPhone())
-                ) {
-            model.addAttribute("patientid", patientForm.getId());
-            model.addAttribute("patientForm", patientForm);
-            return new ModelAndView("patient-form");
-        } else {
-            if (!photoFile.isEmpty()) {
-                try {
-                    byte[] bytes = photoFile.getBytes();
 
-                    String photosPath = config.getPhotosPath();
-                    String fileName = System.currentTimeMillis() + ".jpg";
-                    String filePath
-                            = photosPath + File.separator + fileName;
+        if (photoFile != null && !photoFile.isEmpty())
+        {
+            try
+            {
+                byte[] bytes = photoFile.getBytes();
 
-                    Image img = ImageIO.read(new ByteArrayInputStream(bytes));
+                Image img = ImageIO.read(new ByteArrayInputStream(bytes));
 
-                    BufferedImage bufferedImage = new BufferedImage(800, 800, BufferedImage.TYPE_INT_RGB);
-                    Graphics2D graphics2D = bufferedImage.createGraphics();
-                    graphics2D.drawImage(img, 0, 0, 800, 800, null);
-                    graphics2D.dispose();
+                BufferedImage bufferedImage = new BufferedImage(800, 800, BufferedImage.TYPE_INT_RGB);
+                Graphics2D graphics2D = bufferedImage.createGraphics();
+                graphics2D.drawImage(img, 0, 0, 800, 800, null);
+                graphics2D.dispose();
 
-                    // Create the file on server
-                    File serverFile = new File(filePath);
-                    serverFile.createNewFile();
-                    ImageIO.write(bufferedImage, "jpg", serverFile);
-                    //BufferedOutputStream stream
-                    //        = new BufferedOutputStream(
-                    //                new FileOutputStream(serverFile));
 
-                    //stream.write(((DataBufferByte) bufferedImage.getData().getDataBuffer()).getData());
-                    //stream.close();
-                    logger.info("Server File Location="
-                            + serverFile.getAbsolutePath());
-                    patientForm.setPhoto(fileName);
+                // Create the file on server
+                String photosPath = config.getPhotosPath();
+                String fileName = System.currentTimeMillis() + ".jpg";
+                String filePath = photosPath + File.separator + fileName;
+                File serverFile = new File(filePath);
+                serverFile.createNewFile();
+                ImageIO.write(bufferedImage, "jpg", serverFile);
 
-                } catch (Exception e) {
-                    return new ModelAndView("patient-form");
-                }
-            }
-            if (patientForm.isNew()) {
-                patientForm.setGid(-1);
-                patientForm.setCid(CookiesManager.getLoggedUserCenter(request));
+                logger.info("Server File Location="
+                        + serverFile.getAbsolutePath());
 
-                String pwd;
-                if (patientForm.getPassword() != null) {
-                    pwd = patientForm.getPassword();
-                } else {
-                    pwd = "pass"+RandomStringUtils.random(3, false, true);
-                }
-                
-                patientForm.setPassword(pwd);
-                
-                //aggiunto per username
-                String usr = new String();
-                
-                //model.addAttribute("message", patientForm.getId() );
-                
-     
-                //patientForm.setPassword(DigestUtils.md5DigestAsHex(pwd.getBytes()));
-                //aggiunge il record.
-                if (userController.insertEntity(patientForm))
-                {
-                    logger.info("Add of  user " + patientForm.getId() + " terminated with success");
-              //da togliere
-              usr= "User"+patientForm.getId().toString();
-              patientForm.setUsername(usr);//con l'id modifico il campo appena inserito
-             if( userController.updateEntity(patientForm))
-                 return new ModelAndView("redirect:/showpatients");
-                else{
-                     logger.error("...user addition failed");
-                    patientForm.setId(null);
-                   // model.addAttribute("message", "Inserimento paziente fallita ");
-                   model.addAttribute("message", "Inserimento partecipante fallita ");
-                     
-                   model.addAttribute("back", "showpatients");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }}
-                else {  // addRecord(patientForm) == -1
-                    logger.error("...user addition failed");
-                    patientForm.setId(null);
-                    //model.addAttribute("message", "Inserimento paziente fallita ");
-                    model.addAttribute("message", "Inserimento partecipante fallita ");
-                    
-                    model.addAttribute("back", "showpatients");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }
-            }
-            else {  // update
-                if (userController.updateEntity(patientForm)) {
-                    logger.info("Update of  user " + patientForm.getId() + " terminated with success");
-                    return new ModelAndView("redirect:/showpatients");
-                }
-                else {  // updateRecord(updatedUser) == -1
-                    logger.error("...user update failed");
-                    //model.addAttribute("message", "Aggiornamento paziente fallita");
-                    model.addAttribute("message", "Aggiornamento partecipante fallita");
-                    
-                    model.addAttribute("back", "showpatients");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }
+                patientForm.setPhoto(fileName);
+
+            } catch (Exception e)
+            {
+                return new ModelAndView("patient-form");
             }
         }
+
+
+        MSRUser user = new MSRUser();
+
+        if (patientForm.getId() != null)
+            user = userController.getEntity(patientForm.getId());
+
+        user.setMsrrole(patientForm.getMsrrole());
+        user.setName(patientForm.getName());
+        user.setSurname(patientForm.getSurname());
+        user.setEmail(patientForm.getEmail());
+        user.setPhone(patientForm.getPhone());
+
+        if (user.isNew())
+        {
+            user.setGid(-1);
+            user.setCid(CookiesManager.getLoggedUserCenter(request));
+
+            String pwd = "pass" + RandomStringUtils.random(3, false, true);
+            String usr = "User" + RandomStringUtils.random(5, false, true);
+            user.setUsername(usr);
+            user.setPassword(pwd);
+        }
+        userController.putEntity(user);
+        logger.info("Update of  user " + patientForm.getId() + " terminated with success");
+        return new ModelAndView("redirect:/showpatients");
     }
 
 
 
-    /**
-     * Retrieves user's info given user's email and password
-     *
-     * @param email the email of the user
-     * @param password the password of the user
-     *
-     * @return the user in JSON format if the user is found, -1 otherwise
-     * HttpStatus.NOT_ACCEPTABLE if email or password are not valid;
-     * HttpStatus.NO_CONTENT if the user is not present in the database;
-     * HttpStatus.OK if the user is found in the database
-     */
+
+        /**
+         * Retrieves user's info given user's email and password
+         *
+         * @param email the email of the user
+         * @param password the password of the user
+         *
+         * @return the user in JSON format if the user is found, -1 otherwise
+         * HttpStatus.NOT_ACCEPTABLE if email or password are not valid;
+         * HttpStatus.NO_CONTENT if the user is not present in the database;
+         * HttpStatus.OK if the user is found in the database
+         */
     @RequestMapping(value = "/signinuser", method = RequestMethod.POST)
     public ResponseEntity<String> signinUser(
             @RequestParam(value = "email", required = true) String email,

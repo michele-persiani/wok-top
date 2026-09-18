@@ -139,6 +139,7 @@
                                                         <c:param name="sessid" value="${sessid}" />
                                                         <c:param name="type" value="${exercise.category}" />
                                                         <c:param name="exname" value="${exercise.name}" />
+                                                        <c:param name="exdescr" value="${exercise.description}" />
                                                     </c:url>
                                                 </c:when>
                                                 <c:when test = "${category.id == 'ATT_SEL_STD' || category.id == 'ATT_SEL_STD_FAC' || category.id == 'ATT_SEL_STD_ORI'}">

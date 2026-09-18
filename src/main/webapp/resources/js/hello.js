@@ -42,7 +42,7 @@ function isMobile() {
 }
 
 
-function addBackground(parentImg, backgroundColor, opacity = 0.2)
+function addBackground(parentImg, backgroundColor, opacity = 0.35)
 {
 	if (typeof parentImg === 'string' || parentImg instanceof String)
 		parentImg = document.getElementById(parentImg);
@@ -54,9 +54,9 @@ function addBackground(parentImg, backgroundColor, opacity = 0.2)
 	const container = document.createElement('div');
 	container.style.position = 'relative';
 	container.style.display = 'inline-block';
-	parentImg.parentNode.insertBefore(container, parentImg);
-	container.appendChild(parentImg);
 	parentImg.style.backgroundColor = "transparent";
+
+	parentImg.parentNode.insertBefore(container, parentImg);
 
 	// Crea l'immagine figlia
 	const childImg = document.createElement('div');
@@ -78,6 +78,7 @@ function addBackground(parentImg, backgroundColor, opacity = 0.2)
 
 	// Aggiungi l'immagine figlia al contenitore
 	container.appendChild(childImg);
+	container.appendChild(parentImg);
 
 	return childImg;
 }

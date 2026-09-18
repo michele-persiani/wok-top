@@ -7,6 +7,8 @@ package it.unibo.msrehab.model.controller;
 
 
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 
 import java.util.Comparator;
@@ -23,13 +25,13 @@ import java.util.stream.Collectors;
  *
  * @author danger
  */
-public class ChangeDifficultyController extends BaseEntityController<ChangeDifficulty>
+public class ChangeDifficultyController extends JPAEntityController<ChangeDifficulty>
 {
     private final HistoryController historyController = new HistoryController();
 
     public ChangeDifficultyController()
     {
-        super(ChangeDifficulty.class);
+        super(ChangeDifficulty.class, JPAModel.persistenceUnit);
     }
 
 
@@ -43,8 +45,9 @@ public class ChangeDifficultyController extends BaseEntityController<ChangeDiffi
      */
     public List<ChangeDifficulty> findFromHistory(Integer historyid)
     {
-        return getAllEntities(ch -> Objects.equals(historyid, ch.getHistoryid()))
+        return getAllEntities()
                 .stream()
+                .filter(ch -> Objects.equals(historyid, ch.getHistoryid()))
                 .sorted(Comparator.comparing(ChangeDifficulty::getId).reversed())
                 .collect(Collectors.toList());
     }

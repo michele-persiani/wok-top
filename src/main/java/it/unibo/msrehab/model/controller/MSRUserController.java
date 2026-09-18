@@ -5,20 +5,22 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.MSRUser;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
-
-
-
-public class MSRUserController extends BaseEntityController<MSRUser>
+public class MSRUserController extends JPAEntityController<MSRUser>
 {
     public MSRUserController()
     {
-        super(MSRUser.class);
+        super(MSRUser.class, PersistenceUnit.DEFAULT_PU);
     }
 
 
@@ -34,35 +36,88 @@ public class MSRUserController extends BaseEntityController<MSRUser>
      */
     public MSRUser findRecordByEmail(String email, String password)
     {
-        return findEntity(usr -> Objects.equals(usr.getEmail(), email) && Objects.equals(usr.getPassword(), password))
+        return getAllEntities()
+                .stream()
+                .filter(usr -> Objects.equals(usr.getEmail(), email) && Objects.equals(usr.getPassword(), password))
+                .findFirst()
                 .orElse(null);
     }
     
 
     public MSRUser findRecordByUsername(String username, String password)
     {
-        return findEntity(usr -> Objects.equals(usr.getUsername(), username) && Objects.equals(usr.getPassword(), password))
+        return getAllEntities()
+                .stream()
+                .filter(usr -> Objects.equals(usr.getUsername(), username) && Objects.equals(usr.getPassword(), password))
+                .findFirst()
                 .orElse(null);
     }
     
     public MSRUser findRecordByEmail(String email)
     {
-        return findEntity(usr -> Objects.equals(usr.getEmail(), email))
+        return getAllEntities()
+                .stream()
+                .filter(usr -> Objects.equals(usr.getEmail(), email))
+                .findFirst()
                 .orElse(null);
     }
     
     public List<MSRUser> findAllPatientsInGroup(Integer gid)
     {
-        return getAllEntities(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT && Objects.equals(usr.getGid(), gid));
+        return getAllEntities()
+                .stream()
+                .filter(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT && Objects.equals(usr.getGid(), gid))
+                .collect(Collectors.toList());
     }
 
     public List<MSRUser> findAllPatientsNotInGroupsInCenter(Integer centerId)
     {
-        return getAllEntities(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT && Objects.equals(usr.getGid(), -1) && Objects.equals(usr.getCid(), centerId));
+        return getAllEntities()
+                .stream()
+                .filter(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT && Objects.equals(usr.getGid(), -1) && Objects.equals(usr.getCid(), centerId))
+                .collect(Collectors.toList());
     }
 
     public List<MSRUser> findAllPatientsInCenter(Integer centerId)
     {
-        return getAllEntities(usr -> Objects.equals(usr.getCid(), centerId));
+        return getAllEntities()
+                .stream()
+                .filter(usr -> Objects.equals(usr.getCid(), centerId))
+                .collect(Collectors.toList());
     }
+
+
+    /**
+     * Copies properties from one object to another
+     * @param source
+     * @destination
+     * @return
+     */
+    public void copyNonNullProperties(MSRUser source, MSRUser destination, String... ignoreProperties)
+    {
+        Set<String> ignorePropertiesSet = getNullPropertyNames(source);
+        ignorePropertiesSet.addAll(Arrays.asList(ignoreProperties));
+
+        BeanUtils.copyProperties(source, destination, (String[]) ignorePropertiesSet.toArray());
+    }
+
+    /**
+     * Returns an array of null properties of an object
+     * @param source
+     * @return
+     */
+    public Set<String> getNullPropertyNames (MSRUser source)
+    {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        Set<String> emptyNames = new HashSet<>();
+        for(java.beans.PropertyDescriptor pd : pds)
+        {
+            Object srcValue = src.getPropertyValue(pd.getName());
+            if (srcValue == null) emptyNames.add(pd.getName());
+        }
+        return emptyNames;
+    }
+
+
 }

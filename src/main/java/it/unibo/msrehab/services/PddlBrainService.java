@@ -280,7 +280,7 @@ public class PddlBrainService {
         ft = fitnessController.calculateFitness(false, history);
         history.setAbsperformance(ft);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setCreateTimestamp(t);
 
         /*
          history.setLevel(level);
@@ -437,7 +437,7 @@ public class PddlBrainService {
             history.setRelperformance(ft);
 
             Long t = LocalDateTime.now().toDateTime().getMillis();
-            history.setTimestamp(t);
+            history.setCreateTimestamp(t);
             history.setLevel(p.getDifficulty());
             history.setSessid(sessid);
 

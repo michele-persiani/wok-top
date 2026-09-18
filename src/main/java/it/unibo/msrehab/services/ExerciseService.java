@@ -1,8 +1,6 @@
 package it.unibo.msrehab.services;
 
 import com.sun.istack.Nullable;
-import it.unibo.msrehab.config.ApplicationContextLoader;
-import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.controller.*;
 import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.model.entities.ExElement.CategoryValue;
@@ -22,14 +20,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import it.unibo.msrehab.rl.impl.NextLevelAgent;
-import it.unibo.msrehab.rl.impl.ExerciseAgent;
-import it.unibo.msrehab.rl.model.IModel;
-import it.unibo.msrehab.rl.model.JPAController;
-import it.unibo.msrehab.rl.ExerciseHelper;
+import it.unibo.msrehab.model.Model;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.ThresholdAgentConfig;
-import it.unibo.msrehab.rl.utils.ParametersParser;
-import it.unibo.msrehab.rl.utils.ScoreComparator;
+import it.unibo.msrehab.model.levelselection.LevelThreshold;
+import it.unibo.msrehab.model.levelselection.NextLevelStrategy;
+import it.unibo.msrehab.model.levelselection.HistoryRecord;
+import it.unibo.msrehab.util.ParametersParser;
+import it.unibo.msrehab.util.Sampling;
+import it.unibo.msrehab.util.RandomComparator;
 import org.joda.time.LocalDateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,7 +38,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -74,13 +72,11 @@ public class ExerciseService
     private final ExElementController exElementController;
     private final HistoryController historyController;
     private final MSRSessionController sessionController;
-    private final Configuration config;
     private final FitnessWeightController fitnessController;
     private final ChangeDifficultyController changeDiffController;
     private final ExerciseController exerciseController;
     private final MSRUserController userController;
-    private final IModel model = JPAController.getInstance();
-
+    private final Model model = JPAModel.getInstance();
 
 
     public ExerciseService()
@@ -93,11 +89,6 @@ public class ExerciseService
         this.changeDiffController = new ChangeDifficultyController();
         this.exerciseController = new ExerciseController();
         this.userController = new MSRUserController();
-
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
     }
 
 
@@ -1861,12 +1852,6 @@ public class ExerciseService
 
     public static Map<String, Object> createParametersReflexes1(Integer level)
     {
-        double speed = 1;
-        int obstaclesSpawnDelay = 2000;
-        boolean decoys = true;
-        boolean changeOfLane = false;
-        double scale = 1.4;
-
         Map<String, Object[]> parameters = new HashMap<>();
 
 
@@ -1877,7 +1862,7 @@ public class ExerciseService
 
         parameters.put(
                 "speed",
-                new Double[]{1d, 1.05, 1.10, 1.15, 1.20, 1.25, 1.35, 1.4, 1.45, 1.55,1.6,1.65,1.8,1.85,1.9,2.0,2.15,2.25,2.4,2.5}
+                new Double[]{1d, 1.05, 1.10, 1.15, 1.20, 1.2, 1.3, 1.3, 1.3, 1.4,1.4,1.5,1.5,1.6,1.6,1.7,1.7,1.8,1.8,1.8}
         );
 
         parameters.put(
@@ -1929,16 +1914,6 @@ public class ExerciseService
 
     }
 
-    public static boolean isRLDriven(ExerciseNameValue exName)
-    {
-        return exName.toString().endsWith("RL");
-    }
-
-
-    /*
-     @param lastHistory accept the last history entry for this kind of exercise
-     @return newLevel if there is a different level for this entry, elsewere -1
-     */
     public static int findChangedLevel(ChangeDifficultyController changeDiffController, List<History> lastHistory)
     {
         int newLevel = -1;
@@ -1961,7 +1936,6 @@ public class ExerciseService
      * @param userId
      * @param sessionId
      * @param difficulty
-     * @param rlagent
      * @return
      */
     private History createNextAssigment(
@@ -1969,53 +1943,46 @@ public class ExerciseService
             Integer userId,
             Integer sessionId,
             String difficulty,
-            @Nullable Integer rlagent,
             @Nullable Integer currentLevel
     )
     {
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
-        MSRUser user = userController.getEntityOrThrow(userId);
+        Exercise exercise = exerciseController.getEntity(exerciseId);
 
         History history = new History();
 
         // Get next level and threshold
-        PassThreshold passThreshold;
+        LevelThreshold passThreshold;
         if ("training".equals(difficulty) || "demo".equals(difficulty))
         {
-            passThreshold = PassThreshold.create(-1, -1, 0);
+            passThreshold = new LevelThreshold(-1, 0);
+            history.setLevelStrategy(History.LevelStrategy.TRAINING);
         }
-        else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 0))
-        {
-            // Non usato al momento
-            passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.LEVEL_AGENT.createAgent(exercise, user));
-            history.setLevelStrategy(History.LevelStrategy.LEVEL);
-        }
-        else if (isRLDriven(exercise.getName()) && Objects.equals(rlagent, 1))
+        else if (exercise.isRL())
         {//adattivo
-            passThreshold = getNextAdaptiveThreshold(exerciseId, userId, sessionId, difficulty);
+            passThreshold = getNextAdaptiveThreshold2(exerciseId, userId, sessionId);
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else 
         {//incrementale
-            //passThreshold = findNextLevelFromAgent(exerciseId, userId, sessionId, difficulty, ExerciseAgent.INCREMENTAL_AGENT.createAgent(exercise, userId));
-            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId, difficulty, exercise, currentLevel);
+            passThreshold = getNextLevelIncrementally2(exerciseId, userId, sessionId);
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
 
 
+        // AL MOMENTO DISABILITATO
         // Se il livello e' impostato da admin usare quello
         // Se la vogliamo fare bisogna ragionare che conseguenze ci sono sulla soglia
         //passThreshold.setLevel(changeDiffController.findChangedLevel(userId, exerciseId, sessionId, passThreshold.getLevel()));
 
 
-        // Store history for assigned exercise
+
         history.setExid(exerciseId);
         history.setUserid(userId);
         history.setSessid(sessionId);
         history.setLevel(exercise.clampLevel(passThreshold.getLevel()));
         history.setDifficulty(exercise.getDifficulty(passThreshold.getLevel()));
         history.setPassThreshold(passThreshold.getThreshold());
-        history.setTimestamp(System.currentTimeMillis());
+        history.setCreateTimestamp(System.currentTimeMillis());
 
 
         if (!("training".equals(difficulty) || "demo".equals(difficulty)))
@@ -2050,14 +2017,14 @@ public class ExerciseService
     {
         List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL)
                 .stream()
-                .filter(h -> epochMillisToEpochDay(h.getTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
-                .sorted(Comparator.comparing(History::getTimestamp).reversed())
+                .filter(h -> epochMillisToEpochDay(h.getCreationTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
+                .sorted(Comparator.comparing(History::getCreationTimestamp).reversed())
                 .limit(2)
                 .collect(Collectors.toList())
                 ;
 
 
-        double threshold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
+        double threshold = fitnessController.getEntity(exerciseId).getThr();
 
 
         if(currentLevel == null)
@@ -2086,10 +2053,65 @@ public class ExerciseService
         }
     }
 
+    private LevelThreshold getNextLevelIncrementally2(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId
+    )
+    {
+
+        // descending order
+        List<HistoryRecord> records = model.getEntityController(History.class)
+                .getAllEntities()
+                .stream()
+                .filter(h -> h.getExid().equals(exerciseId))
+                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> h.isSolved())
+                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
+                .collect(Collectors.toList());
+
+        double threshold = fitnessController.getEntity(exerciseId).getThr();
+
+        return new NextLevelStrategy().getNextLevelIncrementally(threshold, records);
+    }
+
+    private LevelThreshold getNextAdaptiveThreshold2(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId
+    )
+    {
+
+        // descending order
+        List<HistoryRecord> records = model.getEntityController(History.class)
+                .getAllEntities()
+                .stream()
+                .filter(h -> h.getExid().equals(exerciseId))
+                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> h.isSolved())
+                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
+                .collect(Collectors.toList());
+
+        ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
+
+
+        double lowerThreshold = config.getLowerThreshold();
+        double startThreshold = config.getStartThreshold();
+        double thresholdDeltaPassed = config.getThresholdDeltaPassed();
+        double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
+
+        return new NextLevelStrategy().getNextLevelAdaptively(
+                lowerThreshold,
+                startThreshold,
+                thresholdDeltaPassed,
+                thresholdDeltaNotPassed,
+                records
+        );
+    }
 
     private PassThreshold getNextAdaptiveThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
     {
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseId);
+        Exercise exercise = exerciseController.getEntity(exerciseId);
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
 
 
@@ -2154,28 +2176,6 @@ public class ExerciseService
     }
 
 
-    private PassThreshold findNextLevelFromAgent(Integer exerciseId, Integer userId, Integer sessionId, String difficulty, NextLevelAgent agent)
-    {
-        Exercise exercise = exerciseController.findEntity(exerciseId).orElseThrow(() -> new IllegalArgumentException("Exercise not found"));
-
-        double threshold = fitnessController.getFitnessWeightOrThrow(exerciseId).getThr();
-
-        Optional<History> lastHistory = historyController.findLastByUserAndExerciseAndSessid(userId, exerciseId, sessionId);
-
-        if(lastHistory.isPresent())
-            threshold = lastHistory.get().getPassThreshold();
-
-        int level = lastHistory
-                .map(h -> agent.getNextLevel(h.getLevel()))
-                // Check if the difficulty was changed
-                .map(lvl -> changeDiffController.findChangedLevel(exerciseId, userId, sessionId, lvl))
-                .map(exercise::clampLevel)
-                .orElse(exercise.getLevel(difficulty));
-
-        return PassThreshold.create(-1, level, threshold);
-    }
-
-
 
     @RequestMapping(value = "/instructions", method = RequestMethod.GET)
     public ModelAndView instructions(HttpServletRequest request)
@@ -2194,9 +2194,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("createattention1()");
 
@@ -2215,9 +2214,9 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_1];
 
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
 
         int level = assignment.getLevel();
         
@@ -2264,7 +2263,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -2284,7 +2282,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = false) ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("attention1()");
 
@@ -2296,7 +2294,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("attention1");
     }
 
@@ -2321,13 +2318,12 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("attention1phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
-        List<ExElement> targetElementList = exElementController.sampleElements(ntargets, exElementList);
+        List<ExElement> targetElementList = Sampling.sampleElementsAllPresent(ntargets, exElementList);
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
@@ -2348,7 +2344,6 @@ public class ExerciseService
         model.addAttribute("targetElementList", targetElementList);
         model.addAttribute("exElementList", exElementList);
         model.addAttribute("assignmentid", assignmentid);
-        model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention1a");
     }
 
@@ -2374,9 +2369,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("attention1phase2()");
 
@@ -2402,7 +2396,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("assignmentid", assignmentid);
-        model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention1b");
     }
 
@@ -2430,11 +2423,10 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("attention1phase3()");
         if (patientid == -1)
@@ -2448,9 +2440,9 @@ public class ExerciseService
         if (difficulty.equals("training") || difficulty.equals("demo"))
             return new ModelAndView("redirect: patienttraining");
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
-        History history = historyController.getEntityOrThrow(assignmentid);
+        History history = historyController.getEntity(assignmentid);
 
         history.setExid(exerciseid);
         history.setPassed(passed);
@@ -2466,7 +2458,7 @@ public class ExerciseService
         history.setSessid(sessid);
         // Copiato dall'altro  Non si capisce perche qui non c'era?
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
 
 
@@ -2505,7 +2497,7 @@ public class ExerciseService
         // Forward user to the next exercise
         //siamo sicuri che la vecchia history sia sul db salvata e committata
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -2554,7 +2546,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -2574,9 +2565,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
@@ -2594,7 +2584,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_2];
 
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
@@ -2635,7 +2625,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
@@ -2653,7 +2642,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention2()");
 
@@ -2665,7 +2654,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", true);
         return new ModelAndView("attention2");
     }
 
@@ -2687,14 +2675,13 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention2phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
-        List<ExElement> targetElementList = exElementController.sampleElements(ntargets, exElementList);
+        List<ExElement> targetElementList = Sampling.sampleElementsAllPresent(ntargets, exElementList);
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
@@ -2713,7 +2700,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("assignmentid", assignmentid);
-        model.addAttribute("rlagent", rlagent);
         return new ModelAndView("attention2a");
     }
 
@@ -2737,9 +2723,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention2phase2()");
 
@@ -2762,7 +2747,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
         return new ModelAndView("attention2b");
     }
@@ -2791,11 +2775,10 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model)
+            org.springframework.ui.Model model)
     {
         if (patientid == -1)
             if (difficulty.equals("training"))
@@ -2808,8 +2791,8 @@ public class ExerciseService
             return new ModelAndView("redirect: patienttraining");
 
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
-        History history = historyController.getEntityOrThrow(assignmentid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History history = historyController.getEntity(assignmentid);
         history.setExid(exerciseid);
         history.setPassed(passed);
         history.setUserid(patientid);
@@ -2820,7 +2803,7 @@ public class ExerciseService
         history.setMaxtime((double) time * nelements);
         history.setDifficulty(difficulty);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
         // Calculate performance
         double ft;
@@ -2859,7 +2842,7 @@ public class ExerciseService
         // Forward user to the next exercise
         //siamo sicuri che la vecchia history sia sul db salvata e committata
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -2927,7 +2910,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
         ;
 
@@ -2952,9 +2934,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = true, defaultValue = "-1") String rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
@@ -2971,7 +2952,7 @@ public class ExerciseService
         if (diffVar == null)
             diffVar = new Integer[NUM_FEAT_ATT_3];
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assignment.getLevel();
 
 
@@ -2990,7 +2971,7 @@ public class ExerciseService
         Double frequenza = (Double) (parameters.get("frequenza"));
         //Integer time = (Integer) (parameters.get("time"));
         Double time = (Double) (parameters.get("time"));
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
         difficulty=exercise.getDifficulty(level);
         Integer assignmentId = Optional.ofNullable(assignment.getId()).orElse(-1);
@@ -3010,7 +2991,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -3029,7 +3009,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model
+            org.springframework.ui.Model model
     )
     {
         logger.debug("attention3()");
@@ -3041,7 +3021,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", true);
         return new ModelAndView("attention3");
     }
 
@@ -3063,9 +3042,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = true) Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention3phase1()");
 
@@ -3078,7 +3056,7 @@ public class ExerciseService
         {
             targetelement2 = exElementController.getAllRecordsByCategory(categoryValue)
                     .stream()
-                    .sorted(ScoreComparator.randomComparator())
+                    .sorted(new RandomComparator<>())
                     .filter(el -> !Objects.equals(el.getEldescr(), targetelement1.getEldescr()))
                     .findFirst()
                     .orElse(targetelement1);
@@ -3087,7 +3065,7 @@ public class ExerciseService
         {
             targetelement2 = exElementController.getAllRecordsByCategory(categoryValue)
                     .stream()
-                    .sorted(ScoreComparator.randomComparator())
+                    .sorted(new RandomComparator<>())
                     .filter(el -> !Objects.equals(el.getId(), targetelement1.getId()))
                     .findFirst()
                     .orElse(targetelement1);
@@ -3146,7 +3124,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention3phase2()");
         ExElement t0;
@@ -3242,13 +3220,13 @@ public class ExerciseService
 
         if (ATT_ALT_CMP.toString().equals(exname))
         {
-            model.addAttribute("targetelement1img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement1)).getEldescr());
-            model.addAttribute("targetelement2img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement2)).getEldescr());
+            model.addAttribute("targetelement1img", exElementController.getEntity(Integer.parseInt(targetelement1)).getEldescr());
+            model.addAttribute("targetelement2img", exElementController.getEntity(Integer.parseInt(targetelement2)).getEldescr());
         }
         else
         {
-            model.addAttribute("targetelement1img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement1)).getUrl());
-            model.addAttribute("targetelement2img", exElementController.getEntityOrThrow(Integer.parseInt(targetelement2)).getUrl());
+            model.addAttribute("targetelement1img", exElementController.getEntity(Integer.parseInt(targetelement1)).getUrl());
+            model.addAttribute("targetelement2img", exElementController.getEntity(Integer.parseInt(targetelement2)).getUrl());
         }
 
         model.addAttribute("firsttarget", !firsttarget);
@@ -3310,9 +3288,8 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         if (patientid == -1)
@@ -3327,8 +3304,8 @@ public class ExerciseService
                 return new ModelAndView("redirect: patientrehabilitation");
             else
             {
-                Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
-                History history = historyController.getEntityOrThrow(assignmentid);
+                Exercise exercise = exerciseController.getEntity(exerciseid);
+                History history = historyController.getEntity(assignmentid);
 
 
                 history.setExid(exerciseid);
@@ -3349,21 +3326,14 @@ public class ExerciseService
                 history.setRelperformance(ft);
 
                 history.setPassed(passed);
-                history.setPassThreshold(fitnessController.getFitnessWeightOrThrow(exerciseid).getThr());
+                history.setPassThreshold(fitnessController.getEntity(exerciseid).getThr());
                 history.setLevel(level);
                 history.setSessid(sessid);
                 history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
 
                 Long t = LocalDateTime.now().toDateTime().getMillis();
-                history.setTimestamp(t);
-                
-               /* if (historyController.addRecord(history)==-1) {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");                    
-                }*/
+                history.setFinishTimestamp(t);
+
 
                 String url;
                 HttpSession httpSess = request.getSession();
@@ -3411,7 +3381,7 @@ public class ExerciseService
 
 
                 // Forward patient to next level
-                History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+                History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
                 level = assignment.getLevel();
                 difficulty = exercise.getDifficulty(level);
 
@@ -3458,7 +3428,6 @@ public class ExerciseService
                         + "&sessid=" + sessid
                         + "&type=" + type
                         + "&exname=" + exname
-                        + "&rlagent=" + rlagent
                         + "&assignmentid=" + assignmentId
                         ;
 
@@ -3488,9 +3457,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
         Integer[] diffVar;
         HttpSession httpSess = request.getSession();
@@ -3515,11 +3483,11 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_4];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assignment.getLevel();
 
         // Uguale a creationattention1 viene individuato il livello di difficolta dato il livello dell'esercizio
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
         difficulty=exercise.getDifficulty(level);
 
 
@@ -3561,7 +3529,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
@@ -3579,7 +3546,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = false) ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention4()");
 
@@ -3591,7 +3558,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("attention4");
     }
 
@@ -3614,14 +3580,13 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//modificato required=false prer far funzionare gli esercizi di prova
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention4phase1()");
 
         List<ExElement> exElementList = exElementController.getRandomRecordsByCategory(CategoryValue.valueOf(category), nelements);
-        List<ExElement> targetElementList = exElementController.sampleElements(ntargets, exElementList);
+        List<ExElement> targetElementList = Sampling.sampleElementsAllPresent(ntargets, exElementList);
 
 
         exElementController.increaseFrequencyOfElements(exElementList, targetElementList, 0.2);
@@ -3644,7 +3609,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
 
         return new ModelAndView("attention4a");
@@ -3671,9 +3635,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//per esercizio training
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("attention4phase2()");
 
@@ -3697,7 +3660,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
         return new ModelAndView("attention4b");
     }
@@ -3730,9 +3692,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         if (patientid == -1)
@@ -3744,8 +3705,8 @@ public class ExerciseService
         if (difficulty.equals("training") || difficulty.equals("demo"))
             return new ModelAndView("redirect: patienttraining");
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
-        History history = historyController.getEntityOrThrow(assignmentid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History history = historyController.getEntity(assignmentid);
 
         history.setExid(exerciseid);
         history.setPassed(passed);
@@ -3759,7 +3720,7 @@ public class ExerciseService
         history.setLevel(level);
         history.setSessid(sessid);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
 
         // Calculate performance, if needed
@@ -3795,7 +3756,7 @@ public class ExerciseService
 
 
         // Forward patient to next level
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         level = assignment.getLevel();
         difficulty = exercise.getDifficulty(level);
 
@@ -3842,7 +3803,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -3865,12 +3825,11 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
         level = assignment.getLevel();
 
@@ -3883,7 +3842,6 @@ public class ExerciseService
         parameters.put("sessid", sessid);
         parameters.put("type", type);
         parameters.put("lastexercisepassed", lastexercisepassed);
-        parameters.put("rlagent", rlagent);
         parameters.put("assignmentid", assignment.getId());
 
         return new ModelAndView("reflexes1a")
@@ -3902,7 +3860,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("reflexes1()");
 
@@ -3914,7 +3872,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("reflexes1");
     }
 
@@ -3930,10 +3887,9 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("level", level);
@@ -3944,7 +3900,6 @@ public class ExerciseService
         parameters.put("sessid", sessid);
         parameters.put("type", type);
         parameters.put("lastexercisepassed", lastexercisepassed);
-        parameters.put("rlagent", rlagent);
         parameters.put("assignmentid", assignmentid);
 
         return new ModelAndView("reflexes1a")
@@ -3962,15 +3917,13 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
-        ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
         if (difficulty == null)
-            difficulty = helper.getDifficultyString(level);
+            difficulty = exerciseController.findEntity(exerciseid).map(ex -> ex.getDifficulty(level)).orElse("training");
 
 
         Map<String, Object> parameters = new HashMap<>();
@@ -3982,7 +3935,6 @@ public class ExerciseService
         parameters.put("sessid", sessid);
         parameters.put("type", type);
         parameters.put("lastexercisepassed", lastexercisepassed);
-        parameters.put("rlagent", rlagent);
         parameters.put("assignmentid", assignmentid);
         parameters.putAll(createParametersReflexes1(level));
 
@@ -4008,11 +3960,10 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.info("reflexes1phase3()");
         if (patientid == -1)
@@ -4025,8 +3976,8 @@ public class ExerciseService
         if (difficulty.equals("training") || difficulty.equals("demo"))
             return new ModelAndView("redirect: patienttraining");
 
-
-        History history = historyController.getEntityOrThrow(assignmentid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History history = historyController.getEntity(assignmentid);
 
         history.setExid(exerciseid);
         history.setPassed(passed);
@@ -4051,7 +4002,7 @@ public class ExerciseService
 
 
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
 
         if (!historyController.putEntity(history))
@@ -4064,11 +4015,9 @@ public class ExerciseService
         }
 
 
-        ExerciseHelper helper = ExerciseHelper.create(exerciseid);
 
 
-
-        if (level == helper.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level == exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -4084,11 +4033,11 @@ public class ExerciseService
 
         // Forward user to next exercise
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
 
         level = assignment.getLevel();
 
-        difficulty = helper.getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
         String url = "/reflexes1phase1"
                 + "?difficulty=" + difficulty
@@ -4100,7 +4049,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignment.getId()
                 ;
 
@@ -4121,7 +4069,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -4143,11 +4091,12 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_1];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
         int level = assignment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
         Map<String, Object> parameters = createParametersMemory1(level, diffVar);
         if (MEM_VIS_1.toString().equals(type))
@@ -4195,7 +4144,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory1()");
@@ -4229,7 +4178,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("memory1phase1()");
 
@@ -4270,7 +4219,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("memory1phase2()");
 
@@ -4279,9 +4228,9 @@ public class ExerciseService
 
 
         if (exname.equals(ExerciseNameValue.MEM_VIS_1_CMP.toString()))
-            targetElementList = exElementController.sampleElements(ntargets, exElementList, ExElement::getEldescr);
+            targetElementList = Sampling.sampleElementsAllPresent(ntargets, exElementList, ExElement::getEldescr);
         else
-            targetElementList = exElementController.sampleElements(ntargets, exElementList, ExElement::getElname);
+            targetElementList = Sampling.sampleElementsAllPresent(ntargets, exElementList, ExElement::getElname);
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
@@ -4324,7 +4273,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            Model model)
+            org.springframework.ui.Model model)
     {
         List<ExElement> l  = buildExElementListFromIds(exElementIds);
         List<ExElement> l1 = buildExElementListFromIds(targetElementIds);
@@ -4371,7 +4320,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
@@ -4416,7 +4365,7 @@ public class ExerciseService
             history.setRelperformance(ft);
 
             Long t = LocalDateTime.now().toDateTime().getMillis();
-            history.setTimestamp(t);
+            history.setFinishTimestamp(t);
             history.setLevel(level);
             history.setSessid(sessid);
 
@@ -4698,16 +4647,15 @@ public class ExerciseService
             @RequestParam(value = "category", required = true) String category,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model
+            org.springframework.ui.Model model
     )
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
-
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
         int level = assignment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
         HttpSession httpSess = request.getSession();
         Integer[] diffVar;
@@ -4744,7 +4692,6 @@ public class ExerciseService
                 + "&time=" + time
                 + "&sessid=" + sessid
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -4762,7 +4709,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("memory2()");
 
@@ -4774,7 +4721,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rl", isRLDriven(exname));
         return new ModelAndView("memory2");
     }
 
@@ -4795,9 +4741,8 @@ public class ExerciseService
             @RequestParam(value = "time", required = true) Integer time,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("memory2phase1()");
 
@@ -4814,7 +4759,6 @@ public class ExerciseService
         model.addAttribute("time", time);
         model.addAttribute("sessid", sessid);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
 
 
@@ -4837,9 +4781,8 @@ public class ExerciseService
             @RequestParam(value = "time", required = true) Integer time,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = true) String assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("memory2phase2()");
 
@@ -4879,7 +4822,6 @@ public class ExerciseService
         model.addAttribute("time", time);
         model.addAttribute("sessid", sessid);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
 
         return new ModelAndView("memory2b");
@@ -4907,9 +4849,8 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request,
             HttpServletResponse response
     )
@@ -4924,9 +4865,9 @@ public class ExerciseService
         if (difficulty.equals("training") || difficulty.equals("demo"))
             return new ModelAndView("redirect: patienttraining");
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
-        History history = historyController.getEntityOrThrow(assignmentid);
+        History history = historyController.getEntity(assignmentid);
 
         history.setExid(exerciseid);
         history.setPassed(passed);
@@ -4941,7 +4882,7 @@ public class ExerciseService
         history.setSessid(sessid);
 
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
         // Calculate performance
         double ft = Double.NaN;
@@ -4982,7 +4923,7 @@ public class ExerciseService
         HttpSession httpSess = request.getSession();
         Integer[] diffVar = (Integer[]) (httpSess.getAttribute("diffVar6"));
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -5014,7 +4955,6 @@ public class ExerciseService
                 + "&time=" + time
                 + "&sessid=" + sessid
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
@@ -5034,9 +4974,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -5054,11 +4993,11 @@ public class ExerciseService
         if (diffVar == null)
             diffVar = new Integer[NUM_FEAT_NBACK];
 
-
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assignment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
 
         Map<String, Object> parameters = createParametersNback(level, diffVar, exname);
@@ -5092,7 +5031,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
         return new ModelAndView("redirect:" + url);
@@ -5108,8 +5046,7 @@ public class ExerciseService
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("nback()");
 
@@ -5121,8 +5058,6 @@ public class ExerciseService
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
         model.addAttribute("exdescr", exdescr);
-        model.addAttribute("rlagent", rlagent);
-        model.addAttribute("rl", true);
         return new ModelAndView("nback");
     }
 
@@ -5141,9 +5076,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("nbackphase1()");
@@ -5164,7 +5098,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
         return new ModelAndView("nbacka");
     }
@@ -5186,9 +5119,8 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("nbackphase2()");
 
@@ -5208,7 +5140,6 @@ public class ExerciseService
         model.addAttribute("sessid", sessid);
         model.addAttribute("type", type);
         model.addAttribute("exname", exname);
-        model.addAttribute("rlagent", rlagent);
         model.addAttribute("assignmentid", assignmentid);
         return new ModelAndView("nbackb");
     }
@@ -5234,9 +5165,8 @@ public class ExerciseService
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "type", required = true) String type,
             @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "rlagent", required = false, defaultValue = "-1") Integer rlagent,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response)
     {
         if (patientid == -1)
@@ -5248,8 +5178,8 @@ public class ExerciseService
         if (difficulty.equals("training") || difficulty.equals("demo"))
             return new ModelAndView("redirect: patienttraining");
 
-        Exercise exercise = exerciseController.getEntityOrThrow(exerciseid);
-        History history = historyController.getEntityOrThrow(assignmentid);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History history = historyController.getEntity(assignmentid);
 
 
         history.setExid(exerciseid);
@@ -5264,7 +5194,7 @@ public class ExerciseService
         history.setLevel(level);
         history.setSessid(sessid);
         Long t = LocalDateTime.now().toDateTime().getMillis();
-        history.setTimestamp(t);
+        history.setFinishTimestamp(t);
 
         // Calculate performance
         double ft = Double.NaN;
@@ -5297,7 +5227,7 @@ public class ExerciseService
             return new ModelAndView("redirect:patienthome");
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, rlagent, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
         level = assignment.getLevel();
 
 
@@ -5343,7 +5273,6 @@ public class ExerciseService
                 + "&sessid=" + sessid
                 + "&type=" + type
                 + "&exname=" + exname
-                + "&rlagent=" + rlagent
                 + "&assignmentid=" + assignmentId
                 ;
 
@@ -5359,7 +5288,7 @@ public class ExerciseService
             @RequestParam(value = "category", required = true) String category,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -5368,11 +5297,11 @@ public class ExerciseService
         if (diffVar == null)
             diffVar = new Integer[NUM_FEAT_MEM_LONG_1];
 
-
-        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assigment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
         Map<String, Object> parameters = createParametersMemory4(level, diffVar);
         httpSess.setAttribute("diffVar8", diffVar);
@@ -5405,7 +5334,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory4()");
@@ -5433,7 +5362,7 @@ public class ExerciseService
             @RequestParam(value = "name", required = true) String name,
             @RequestParam(value = "namediff", required = true) String namediff,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory4phase1()");
@@ -5465,7 +5394,7 @@ public class ExerciseService
             @RequestParam(value = "name", required = true) String name,
             @RequestParam(value = "namediff", required = true) String namediff,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory4phase2()");
@@ -5553,7 +5482,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "facelist", required = true) String facelist,
             @RequestParam(value = "namelist", required = true) String namelist,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory4phase3()");
@@ -5612,7 +5541,7 @@ public class ExerciseService
             @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
             @RequestParam(value = "pMissed", required = true) Integer pMissed,
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 
@@ -5656,7 +5585,7 @@ public class ExerciseService
                 history.setRelperformance(ft);
 
                 Long t = LocalDateTime.now().toDateTime().getMillis();
-                history.setTimestamp(t);
+                history.setFinishTimestamp(t);
 
                 history.setLevel(level);
                 history.setSessid(sessid);
@@ -5908,7 +5837,7 @@ public class ExerciseService
             @RequestParam(value = "category", required = true) String category,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -5918,11 +5847,11 @@ public class ExerciseService
         {
             diffVar = new Integer[NUM_FEAT_MEM_5];
         }
-
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
         int level = assignment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
         Map<String, Object> parameters = createParametersMemory5(level, diffVar);
         httpSess.setAttribute("diffVar10", diffVar);
@@ -5959,7 +5888,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory5()");
@@ -5988,7 +5917,7 @@ public class ExerciseService
             @RequestParam(value = "nRigheCol", required = true) Integer nRigheCol,
             @RequestParam(value = "time", required = true) Integer time,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory5phase1()");
@@ -6024,7 +5953,7 @@ public class ExerciseService
             @RequestParam(value = "nRigheCol", required = true) Integer nRigheCol,
             @RequestParam(value = "time", required = true) Integer time,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         logger.debug("memory5phase2()");
@@ -6096,7 +6025,7 @@ public class ExerciseService
             @RequestParam(value = "pMissed", required = true) Integer pMissed,
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
 
@@ -6141,7 +6070,7 @@ public class ExerciseService
                 history.setRelperformance(ft);
 
                 Long t = LocalDateTime.now().toDateTime().getMillis();
-                history.setTimestamp(t);
+                history.setFinishTimestamp(t);
 
                 history.setLevel(level);
                 history.setSessid(sessid);
@@ -6390,7 +6319,7 @@ public class ExerciseService
             @RequestParam(value = "category", required = true) String category,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -6401,11 +6330,12 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null, null);
+        Exercise exercise = exerciseController.getEntity(exerciseid);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
 
         int level = assignment.getLevel();
 
-        difficulty = ExerciseHelper.create(exerciseid).getDifficultyString(level);
+        difficulty = exercise.getDifficulty(level);
 
 
         Map<String, Object> parameters = createParametersExecfunct1(level, diffVar);
@@ -6439,7 +6369,7 @@ public class ExerciseService
             @RequestParam(value = "sessid", required = true) Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("execfunct()");
 
@@ -6466,7 +6396,7 @@ public class ExerciseService
             @RequestParam(value = "color", required = true) String color,
             @RequestParam(value = "nelements", required = true) Integer nelements,
             @RequestParam(value = "sessid", required = true) Integer sessid,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("execfunct1phase1()");
 
@@ -6523,7 +6453,7 @@ public class ExerciseService
             @RequestParam(value = "cat1", required = true) String cat1,
             @RequestParam(value = "cat2", required = true) String cat2,
             @RequestParam(value = "inhElement", required = true) String inhElement,
-            Model model)
+            org.springframework.ui.Model model)
     {
         logger.debug("execfunct1phase2()");
 
@@ -6568,7 +6498,7 @@ public class ExerciseService
             @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
             @RequestParam(value = "pMissed", required = true) Integer pMissed,
             @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            Model model,
+            org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 
@@ -6616,19 +6546,10 @@ public class ExerciseService
                 history.setRelperformance(ft);
 
                 Long t = LocalDateTime.now().toDateTime().getMillis();
-                history.setTimestamp(t);
+                history.setFinishTimestamp(t);
                 history.setLevel(level);
                 history.setSessid(sessid);
 
-                /*
-                if (historyController.addRecord(history)==-1) {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");                    
-                }
-                */
 
                 String url;
                 HttpSession httpSess = request.getSession();
@@ -6752,7 +6673,7 @@ public class ExerciseService
             @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
             @RequestParam(value = "sessid", required = true) Integer sessid,
             HttpServletRequest request,
-            Model model)
+            org.springframework.ui.Model model)
     {
 
         Integer[] diffVar;
@@ -6859,28 +6780,27 @@ public class ExerciseService
 
 
         // Calculate performance
-        
-         // Calculate performance
     
         double perf = fitnessController.calculateFitness(false, history);
 
-        double thr = fitnessController.getFitnessWeightOrThrow(exerciseid).getThr();
+        double thr = fitnessController.getEntity(exerciseid).getThr();
+
         double around=0.0049;
-        if(assignmentid != null)
-            thr = historyController.getEntityOrThrow(assignmentid).getPassThreshold();
-        
-        //boolean passed = (perf >= thr || (Math.abs(perf-thr))< Double.MIN_VALUE);
-        //boolean passed = (perf >= thr);  
-        boolean passed=(perf+around-thr)>=0;
-        HttpHeaders headers = new HttpHeaders();
-        
-        
+
+        if(assignmentid != null && assignmentid > 0)
+            thr = historyController.getEntity(assignmentid).getPassThreshold();
+
+
+        boolean passed = (perf + around - thr) >= 0;
+
+
 
         JSONObject res = new JSONObject();
         res.put("perf", perf);
         res.put("passed", passed);
         res.put("thr", thr);
 
+        HttpHeaders headers = new HttpHeaders();
         return new ResponseEntity<>(res.toString(), headers, HttpStatus.OK);
     }
 
@@ -6895,7 +6815,10 @@ public class ExerciseService
         boolean allPresent = Arrays.stream(b)
                 .filter(id -> !Objects.equals(id, ""))
                 .mapToInt(Integer::parseInt)
-                .mapToObj(id -> exElementController.getAllEntities(e -> Objects.equals(e.getId(), id)))
+                .mapToObj(id -> exElementController.getAllEntities()
+                        .stream()
+                        .filter(e -> Objects.equals(e.getId(), id)).collect(Collectors.toList())
+                )
                 .mapToLong(List::size)
                 .sum() == b.length;
 

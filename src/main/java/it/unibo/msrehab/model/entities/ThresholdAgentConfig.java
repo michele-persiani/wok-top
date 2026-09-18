@@ -1,7 +1,7 @@
 package it.unibo.msrehab.model.entities;
 
-import it.unibo.msrehab.rl.model.IEntityController;
-import it.unibo.msrehab.rl.model.IModel;
+import it.unibo.msrehab.model.EntityController;
+import it.unibo.msrehab.model.Model;
 
 import javax.persistence.Entity;
 
@@ -68,7 +68,7 @@ public class ThresholdAgentConfig extends BaseEntity
     }
 
 
-    public static ThresholdAgentConfig getSingletonEntity(IModel model)
+    public static ThresholdAgentConfig getSingletonEntity(Model model)
     {
         return model.getEntityController(ThresholdAgentConfig.class)
                 .getAllEntities()
@@ -78,11 +78,12 @@ public class ThresholdAgentConfig extends BaseEntity
                 ;
     }
 
-    public static boolean putSingletonEntity(IModel model, ThresholdAgentConfig config)
+    public static boolean putSingletonEntity(Model model, ThresholdAgentConfig config)
     {
         if(!config.isValid())
             return false;
-        IEntityController<ThresholdAgentConfig> controller = model.getEntityController(ThresholdAgentConfig.class);
-        return controller.putEntity(config);
+        EntityController<ThresholdAgentConfig> controller = model.getEntityController(ThresholdAgentConfig.class);
+        controller.putEntity(config);
+        return true;
     }
 }

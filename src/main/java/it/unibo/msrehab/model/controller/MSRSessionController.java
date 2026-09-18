@@ -5,19 +5,17 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.MSRSession;
 
 import java.util.List;
 import java.util.Objects;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * TODO: add documentation
@@ -25,59 +23,77 @@ import org.slf4j.LoggerFactory;
  * @author floriano
  *
  */
-public class MSRSessionController extends BaseEntityController<MSRSession>
+public class MSRSessionController extends JPAEntityController<MSRSession>
 {
 
     public MSRSessionController()
     {
-        super(MSRSession.class);
+        super(MSRSession.class, PersistenceUnit.DEFAULT_PU);
     }
 
-
-    @Override
-    public List<MSRSession> getAllEntities()
-    {
-        return super.getAllEntities();
-    }
 
     public List<MSRSession> findAllByUserOrGroup(Integer usrgrpid)
     {
-        return getAllEntities(s -> Objects.equals(s.getUsrgrpid(), usrgrpid));
+        return getAllEntities()
+                .stream()
+                .filter(s -> Objects.equals(s.getUsrgrpid(), usrgrpid))
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllActiveByUserOrGroup(Integer usrgrpid)
     {
-        return getAllEntities(s -> Objects.equals(s.getUsrgrpid(), usrgrpid) && s.getActive());
+        return getAllEntities()
+                .stream()
+                .filter(s -> Objects.equals(s.getUsrgrpid(), usrgrpid) && s.getActive())
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllHospitalByUserOrGroup(Integer usrgrpid)
     {
-        return getAllEntities(s -> s.getHospital() && Objects.equals(s.getUsrgrpid(), usrgrpid));
+        return getAllEntities()
+                .stream()
+                .filter(s -> s.getHospital() && Objects.equals(s.getUsrgrpid(), usrgrpid))
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllHospitalActiveForGroups()
     {
-        return getAllEntities(s -> s.getHospital() && s.getActive() && s.getForgroup());
+        return getAllEntities()
+                .stream()
+                .filter(s -> s.getHospital() && s.getActive() && s.getForgroup())
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllHomeActiveForGroups()
     {
-        return getAllEntities(s -> !s.getHospital() && s.getActive() && s.getForgroup());
+        return getAllEntities()
+                .stream()
+                .filter(s -> !s.getHospital() && s.getActive() && s.getForgroup())
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllForPatientsInGroup(Integer grpid)
     {
-        return getAllEntities(s -> !s.getForgroup() && Objects.equals(s.getGrpid(), grpid));
+        return getAllEntities()
+                .stream()
+                .filter(s -> !s.getForgroup() && Objects.equals(s.getGrpid(), grpid))
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllHospitalActiveForPatients()
     {
-        return getAllEntities(s -> s.getHospital() && s.getActive() && !s.getForgroup());
+        return getAllEntities()
+                .stream()
+                .filter(s -> s.getHospital() && s.getActive() && !s.getForgroup())
+                .collect(Collectors.toList());
     }
 
     public List<MSRSession> findAllHomeActiveForPatients()
     {
-        return getAllEntities(s -> !s.getHospital() && s.getActive() && !s.getForgroup());
+        return getAllEntities()
+                .stream()
+                .filter(s -> !s.getHospital() && s.getActive() && !s.getForgroup())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -90,7 +106,7 @@ public class MSRSessionController extends BaseEntityController<MSRSession>
      */
     public boolean updateExerciseDone(int sessid, int exerciseId, boolean done)
     {
-        MSRSession sess = getEntityOrThrow(sessid);
+        MSRSession sess = getEntity(sessid);
         JSONArray jsonArr = new JSONArray(sess.getExercises());
         JSONObject json;
         boolean sessionEnded = true;
@@ -107,6 +123,46 @@ public class MSRSessionController extends BaseEntityController<MSRSession>
         sess.setExercises(jsonArr.toString());
         sess.setActive(!sessionEnded);
         return updateEntity(sess);
+    }
+
+
+
+    public boolean hasVisibleExercises(MSRSession session)
+    {
+        JSONArray jsonArray = new JSONArray(session.getExercises());
+        return IntStream.range(0, jsonArray.length())
+                .mapToObj(jsonArray::getJSONObject)
+                .map(jobj -> jobj.getInt("id"))
+                .anyMatch(id -> getExerciseVisibilityInSession(session, id))
+                ;
+    }
+
+    public void setExerciseVisibilityInSession(MSRSession session, int exerciseId, boolean visible)
+    {
+        JSONArray jsonArray = new JSONArray(session.getExercises());
+        IntStream.range(0, jsonArray.length())
+                .mapToObj(jsonArray::getJSONObject)
+                .filter(obj -> obj.getInt("id") == exerciseId)
+                .findFirst()
+                .ifPresent(obj -> obj.put("visible", visible));
+        session.setExercises(jsonArray.toString());
+        MSRSessionController controller = new MSRSessionController();
+        controller.putEntity(session);
+    }
+
+    public boolean getExerciseVisibilityInSession(MSRSession session, int exerciseId)
+    {
+        JSONArray jsonArray = new JSONArray(session.getExercises());
+        return IntStream.range(0, jsonArray.length())
+                .mapToObj(jsonArray::getJSONObject)
+                .filter(obj -> obj.getInt("id") == exerciseId)
+                .findFirst()
+                .map(obj -> {
+                    if(obj.has("visible"))
+                        return obj.getBoolean("visible");
+                    return true;
+                })
+                .orElse(true);
     }
 
 }

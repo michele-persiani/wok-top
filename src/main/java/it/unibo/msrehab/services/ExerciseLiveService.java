@@ -95,16 +95,6 @@ public class ExerciseLiveService
         return kind.substring(0, 1).toUpperCase() + kind.substring(1, kind.length()).toLowerCase();
     }
 
-    private String findName(int id, List<Exercise> es) {
-        for (Exercise e : es) {
-            if (id == e.getId()) {
-                //return getItaNameKind("" + e.getCategory());
-                return e.getFullName();
-            }
-        }
-        return "";
-    }
-
     private int findExid(int id, List<Exercise> es) {
         for (Exercise e : es) {
             if (id == e.getId()) {
@@ -210,7 +200,6 @@ public class ExerciseLiveService
         for (int i = 0; i < js.length(); i++)
         {
             JSONObject o = js.getJSONObject(i);
-            if (!o.getBoolean("done")) {
                 // TODO: Attualmente restituisce solo l'agente reattivo
                 List<History> lhe = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, o.getInt("id"), session.getId(), null);
                 if (!lhe.isEmpty()) {
@@ -222,9 +211,9 @@ public class ExerciseLiveService
                     ob.put("historyid", lhe.get(0).getId());
                     ob.put("performance", lhe.get(0).getRelperformance());
                     ob.put("difficulty", lhe.get(0).getDifficulty());
-                    ob.put("name", findName(lhe.get(0).getExid(), es));
+                    ob.put("name", exerciseController.getDisplayName(lhe.get(0).getExid()));
                     ob.put("username", patient.getName() + " " + patient.getSurname());
-                    ob.put("time", lhe.get(0).getTimestamp());
+                    ob.put("time", lhe.get(0).getCreationTimestamp());
                     if ((cdlist != null) && (!cdlist.isEmpty())) {
                         ob.put("level", cdlist.get(0).getLevel());
                         ob.put("changed", true);
@@ -269,7 +258,7 @@ public class ExerciseLiveService
                     myRecord.setRelperformance(0.0);
                     myRecord.setPassed(false);
                     long tmstmp=0;
-                    myRecord.setTimestamp(tmstmp);
+                    myRecord.setCreateTimestamp(tmstmp);
                     myRecord.setpTime(0.0);
                     myRecord.setpCorrect(0);
                     myRecord.setpWrong(0);
@@ -286,7 +275,7 @@ public class ExerciseLiveService
                     ob.put("historyid", myRecord.getId());
                     ob.put("performance", myRecord.getRelperformance());
                     ob.put("difficulty", myRecord.getDifficulty());
-                    ob.put("name", findName(myRecord.getExid(), es));
+                    ob.put("name", exerciseController.getDisplayName(myRecord.getExid()));
                     ob.put("username", patient.getName() + " " + patient.getSurname());
                     ob.put("time", myRecord.getpTime());
                     ob.put("level", 1);
@@ -319,7 +308,6 @@ public class ExerciseLiveService
                     //}
                     jhistory.put(ob);
                 }
-            }
         }
         return jhistory;
     }

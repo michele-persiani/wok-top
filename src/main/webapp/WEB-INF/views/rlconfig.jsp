@@ -96,40 +96,15 @@
   </div>
 
 
-  <div class="row">
-
-    <div><h3>Simula Agente</h3></div>
-    <table>
-      <tr>
-        <th><label for="currentLevel">Livello</label></th>
-        <th><label for="currentPerformance">Performance</label></th>
-        <th><label for="simulatedAgent">Agente</label></th>
-        <th></th>
-      </tr>
-      <tr>
-        <th><input id="currentLevel" type="number" placeholder="1" min="1" max="${maxLevel}" value="1" step="1"></th>
-        <th><input id="currentPerformance" type="number" placeholder="${maxLevel}" min="0.0" max="1.0" step="0.01" value="1.0"></th>
-        <th>
-          <select name="simulatedAgent" id="simulatedAgent">
-            <option value="threshold" selected>Soglie</option>
-            <option value="level">Livelli</option>
-            <option value="incremental">Incrementale</option>
-          </select>
-        </th>
-        <th><button onclick="simulateAgent()">Livello successivo</button></th>
-      </tr>
-    </table>
-    <div id="stateValuesDiv"></div>
-  </div>
 
 
   <!-- Configurazione agente a soglie -->
 
   <div class="row">
-    <form id="thresholdAgentConfigForm">
+    <form id="adaptiveAgentConfigForm">
       <!-- Campi del form -->
       <div class="form-group">
-        <div><h3>Configurazione Agente a Soglie</h3></div>
+        <div><h3>Configurazione Agente Adattivo</h3></div>
         <div class="row">
           <div class="col-sm-12">
             <label for="startThreshold">Soglia iniziale</label>
@@ -166,95 +141,35 @@
     </form>
 
     <div class="row">
-      <button onclick="postThresholdAgentParameters()">Aggiorna parametri</button>
+      <button onclick="postAdaptiveAgentParameters()">Aggiorna parametri</button>
     </div>
   </div>
 
 
-  <!-- Configurazione agente a livelli -->
+
+  <!-- Simulazione agente -->
+
 
   <div class="row">
-    <form id="levelAgentConfigForm">
-      <!-- Campi del form -->
-      <div class="form-group">
-        <div><h3>Configurazione Agente a Livelli</h3></div>
-        <div class="row">
-          <div class="col-sm-12">
-            <label for="targetPerformance">Performance Obiettivo (tra 0 e 1)</label>
-          </div>
-          <div class="col-sm-12">
-            <input type="number" id="targetPerformance" name="targetPerformance" required min="0" max="1" step="any" value="${levelAgentConfig.targetPerformance}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12">
-            <label for="discountFactor">Discount</label>
-          </div>
-          <div class="col-sm-12">
-            <input type="number" id="discountFactor" name="discountFactor" required min="0" max="1" step="any" value="${levelAgentConfig.discountFactor}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12">
-            <label for="policyEpsilon">Policy Epsilon</label>
-          </div>
-          <div class="col-sm-12">
-            <input type="number" id="policyEpsilon" name="policyEpsilon" required min="0" max="1" step="any" value="${levelAgentConfig.policyEpsilon}">
-          </div>
-        </div>
-      </div>
 
-      <div class="form-group">
-        <div><h3>Modello a priori dei pazienti</h3></div>
-        <div class="row">
-
-          <div class="col-sm-12">
-            <label for="priorWeight">Peso modello a priori (tra 0 e 1)</label>
-          </div>
-
-          <div class="col-sm-12">
-            <input type="number" id="priorWeight" name="priorWeight" required min="0" max="1" step="any" value="${levelAgentConfig.priorWeight}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12">
-            <label for="priorType">Tipo modello</label>
-          </div>
-          <div class="col-sm-12">
-            <select name="priorType" id="priorType">
-              <option value="linear" ${priorType == "linear" ? 'selected' : ''}>Funzione Lineare</option>
-              <option value="sigmoid" ${priorType == "sigmoid" ? 'selected' : ''}>Funzione Sigmoidale</option>
-            </select>
-          </div>
-        </div>
-        <div class="row">
-
-          <div class="col-sm-12">
-            <label for="priorModelSlope">Slope coefficient (tra -1 e 1)</label>
-          </div>
-
-          <div class="col-sm-12">
-            <input type="number" id="priorModelSlope" name="priorModelSlope" required min="-1" max="1" step="any" value="${levelAgentConfig.priorSlope}">
-          </div>
-        </div>
-        <div class="row">
-
-          <div class="col-sm-12">
-            <label for="priorModelIntercept">Intercept coefficient (tra 0 e 1)</label>
-          </div>
-
-          <div class="col-sm-12">
-            <input type="number" id="priorModelIntercept" name="priorModelIntercept" required min="-1" max="1" step="any" value="${levelAgentConfig.priorIntercept}">
-          </div>
-        </div>
-      </div>
-    </form>
-
-    <div class="row">
-      <button onclick="postLevelAgentParameters()">Aggiorna parametri</button>
-    </div>
-
-
+    <div><h3>Simula Agente</h3></div>
+    <table>
+      <tr>
+        <th><label for="performance">Performance</label></th>
+        <th><label for="simulatedAgent">Agente</label></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th><input id="performance" type="number" placeholder="1" min="1" max="${maxLevel}" value="1" step="1"></th>
+        <th>
+          <select name="simulatedAgent" id="simulatedAgent">
+            <option value="adaptive">Adattivo</option>
+            <option value="incremental">Incrementale</option>
+          </select>
+        </th>
+        <th><button onclick="simulateAgent()">Livello successivo</button></th>
+      </tr>
+    </table>
   </div>
 
 
@@ -265,15 +180,19 @@
       <tr>
         <th><label for="newRowLevel">Livello</label></th>
         <th><label for="newRowPerformance">Performance</label></th>
+        <th><label for="newRowThreshold">Threshold</label></th>
         <th></th>
       </tr>
       <tr>
         <th><input id="newRowLevel" type="number" placeholder="1" min="1" max="${maxLevel}" value="1"></th>
         <th><input id="newRowPerformance" type="number" placeholder="1.0" min="0.0" max="1.0" step="0.1" value="1.0"></th>
+        <th><input id="newRowThreshold" type="number" placeholder="1.0" min="0.0" max="1.0" step="0.1" value="1.0"></th>
         <th><button id="addRowToTable" onclick="addRowToTable()">Aggiungi livello</button></th>
       </tr>
     </table>
   </div>
+
+
 
 
 
@@ -326,11 +245,76 @@
           max:1,
           step:0.01
         }
+      },
+      {
+        title:"Threshold",
+        field:"threshold",
+        sorter:"number",
+        validator:["float", "min:0", "max:1"],
+        editor:"number", editorParams:{
+          min:0,
+          max:1,
+          step:0.01
+        }
       }
     ],
   });
 
-  function postLevelAgentParameters()
+  function addRowToTable()
+  {
+    let newRowLevel = document.getElementById("newRowLevel");
+    let newRowPerformance = document.getElementById("newRowPerformance");
+    let newRowThreshold = document.getElementById("newRowThreshold");
+
+    if(!newRowLevel.checkValidity() || !newRowPerformance.checkValidity() || !newRowThreshold.checkValidity())
+    {
+      alert("Inserire un valore valido per tutti i campi");
+      return;
+    }
+    table.addRow({
+      level: newRowLevel.value,
+      performance: newRowPerformance.value,
+      threshold : newRowThreshold.value
+    });
+  }
+
+  function simulateAgent()
+  {
+    let performance = document.getElementById("performance");
+    let simulatedAgent = document.getElementById("simulatedAgent");
+
+    let data = table.getData();
+
+    if(data.length > 0)
+    {
+      data[data.length - 1].performance = performance.value;
+      table.replaceData(data);
+    }
+
+
+    let request = {
+      "performanceData" : JSON.stringify(data),
+      "simulatedAgent" : simulatedAgent.value,
+      "maxLevel" : ${maxLevel}
+    }
+    $.ajax({
+      type: "POST",
+      url: "nextlevel",
+      data: request,
+      dataType: "json"
+    }).always(function(response) {
+
+      table.addRow({
+        level: response.nextLevel,
+        performance: NaN,
+        threshold : response.nextThreshold
+      });
+
+    });
+
+  }
+
+  function postRlAgentParameters()
   {
     let form = document.getElementById("levelAgentConfigForm");
     let formData = new FormData(form);
@@ -342,7 +326,7 @@
 
     $.ajax({
       type: "POST",
-      url: "rl-level-agent-config",
+      url: "rl-agent-config",
       data: data,
       dataType: "json"
     }).always(function(response) {
@@ -351,9 +335,9 @@
 
   }
 
-  function postThresholdAgentParameters()
+  function postAdaptiveAgentParameters()
   {
-    let form = document.getElementById("thresholdAgentConfigForm");
+    let form = document.getElementById("adaptiveAgentConfigForm");
     let formData = new FormData(form);
 
     let data = {};
@@ -361,7 +345,7 @@
 
     $.ajax({
       type: "POST",
-      url: "rl-threshold-agent-config",
+      url: "adaptive-agent-config",
       data: data,
       dataType: "json"
     }).always(function(response) {
@@ -370,56 +354,6 @@
 
   }
 
-  function simulateAgent()
-  {
-    let currentLevel = document.getElementById("currentLevel");
-    let currentPerformance = document.getElementById("currentPerformance");
-    let stateValuesDiv = document.getElementById("stateValuesDiv");
-    let simulatedAgent = document.getElementById("simulatedAgent");
-
-    if(!currentPerformance.checkValidity() || !currentLevel.checkValidity() || parseInt(currentLevel.value) > ${maxLevel})
-    {
-      alert("Inserire un valore valido per entrambi i campi di livello e livello massimo");
-      return;
-    }
-
-    table.addRow({
-      level: parseInt(currentLevel.value),
-      performance: parseFloat(currentPerformance.value)
-    });
-
-    let data = {
-      "performanceData" : JSON.stringify(table.getData()),
-      "currentLevel" : parseInt(currentLevel.value),
-      "simulatedAgent" : simulatedAgent.value,
-      "maxLevel" : ${maxLevel}
-    }
-    $.ajax({
-      type: "POST",
-      url: "nextlevel",
-      data: data,
-      dataType: "json"
-    }).always(function(response) {
-      currentLevel.value = response.nextLevel;
-      stateValuesDiv.innerHTML = response.stateValues;
-    });
-
-  }
-
-  function addRowToTable()
-  {
-    let newRowLevel = document.getElementById("newRowLevel");
-    let newRowPerformance = document.getElementById("newRowPerformance");
-    if(!newRowLevel.checkValidity() || !newRowPerformance.checkValidity())
-    {
-      alert("Inserire un valore valido per entrambi i campi");
-      return;
-    }
-    table.addRow({
-      level: newRowLevel.value,
-      performance: newRowPerformance.value
-    });
-  }
 
 </script>
 

@@ -119,6 +119,7 @@
                         </div>
                     
                     </div>
+                    <!--
                     <c:if test="${difficulty!='training' && difficulty!='demo'}">
                         <div class="col-sm-6">
                             <button id="tryexercise" class="btn btn-lg btn-warning pull-right"
@@ -138,6 +139,7 @@
                             </button>                        
                         </div>
                     </c:if>
+                    -->
                     <c:if test="${difficulty=='training' || difficulty=='demo'}">
                         <div class="col-sm-2"></div>
                         <div class="col-sm-4"><h3 style='color:red'>Esercizio di prova</h3></div>

@@ -5,22 +5,27 @@
  */
 package it.unibo.msrehab.model.controller;
 
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.Problem;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
-
-public class PDDLProblemController extends BaseEntityController<Problem>
+public class PDDLProblemController extends JPAEntityController<Problem>
 {
     
     public PDDLProblemController(){
-        super(Problem.class);
+        super(Problem.class, PersistenceUnit.DEFAULT_PU);
     }
     
     public List<Problem> getRecordFromDifficulty(int difficulty)
     {
-        return getAllEntities(pr -> Objects.equals(pr.getDifficulty(), difficulty));
+        return getAllEntities()
+                .stream()
+                .filter(pr -> Objects.equals(pr.getDifficulty(), difficulty))
+                .collect(Collectors.toList());
     }
 }

@@ -5,6 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 import com.sun.istack.Nullable;
+import it.unibo.msrehab.model.JPAEntityController;
+import it.unibo.msrehab.model.PersistenceUnit;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 
@@ -18,135 +20,34 @@ import java.util.stream.Collectors;
  * @author floriano
  *
  */
-public class HistoryController extends BaseEntityController<History>
+public class HistoryController extends JPAEntityController<History>
 {
 
     public HistoryController()
     {
-        super(History.class);
-    }
-
-    public List<Object[]> findAllByType(Integer userid, String type, String difficulty, Integer group, Long start, Long end)
-    {
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByType", q -> {
-                            q.setParameter("userid", userid)
-                            .setParameter("type", type)
-                            .setParameter("difficulty", difficulty)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>());
-
+        super(History.class, PersistenceUnit.DEFAULT_PU);
     }
 
 
-    public List<Object[]> findAllByCategory(Integer userid, Exercise.ExerciseCategoryValue category, String difficulty, Integer group, Long start, Long end)
-    {
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByCategory", q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("category", category)
-                            .setParameter("difficulty", difficulty)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>());
-    }
-
-    public List<Object[]> findAllByExIdRangeNoDifficulty(Integer userid, Integer exIdInit, Integer exIdFinish, Integer group, Long start, Long end)
-    {
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByExIdRangeNoDifficulty", q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("exIdInit", exIdInit)
-                            .setParameter("exIdFinish", exIdFinish)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>());
-    }
-
-    public List<Object[]> findAllByTypeNoDifficulty(Integer userid, String type, Integer group, Long start, Long end)
-    {
-
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByTypeNoDifficulty", q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("type", type)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>())
-                .stream()
-                .filter(arr -> Arrays.stream(arr).allMatch(Objects::nonNull))
-                .collect(Collectors.toList());
-
-    }
-
-    public List<Object[]> findAllByCategoryNoDifficulty(Integer userid, Exercise.ExerciseCategoryValue category, Integer group, Long start, Long end)
-    {
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByCategoryNoDifficulty", q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("category", category)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>());
-    }
-
-    public List<Object[]> findAllByExIdSessIdRangeNoDifficulty(Integer userid, Integer sessid, Integer exIdInit, Integer exIdFinish, Integer group, Long start, Long end)
-    {
-        return getTransactionManager()
-                .<Object[]>executeResultListNamedQuery("History.findAllByExIdSessIdRangeNoDifficulty", q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("sessid", sessid)
-                            .setParameter("exIdInit", exIdInit)
-                            .setParameter("exIdFinish", exIdFinish)
-                            .setParameter("group", group)
-                            .setParameter("start", start)
-                            .setParameter("end", end);
-                })
-                .orElse(new ArrayList<>());
-    }
-
-    public List<History> findAllByUserAndExercise(Integer userid, Integer exid)
-    {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByUserAndExercise", History.class,q -> {
-                    q.setParameter("userid", userid)
-                            .setParameter("exid", exid);
-                })
-                .orElse(new ArrayList<>());
-    }
 
     public Optional<History> findLastSolvedByUserAndExerciseAndSessionAndAgent(Integer userid, Integer exid, Integer sessid, History.LevelStrategy agentStrategy)
     {
         return findAllSolvedByUserAndExerciseAndSessidAndAgent(userid, exid, sessid, agentStrategy)
                 .stream()
-                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
-                ;
+                .max(Comparator.nullsLast(Comparator.comparing(History::getCreationTimestamp)));
     }
 
 
-    // La funziona va sistemata con l'interfaccia
-    // TODO: restituisce solo l'agente adattivo
+
     public List<History> findAllSolvedByUserAndExerciseAndSessidAndAgent(Integer userid, Integer exid, Integer sessid, @Nullable History.LevelStrategy agentStrategy)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessidSolvedAgent", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessidSolvedAgent", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid)
                             .setParameter("rlagent", agentStrategy)
                     ;
-                }).get();
+                });
     }
 
 
@@ -155,94 +56,85 @@ public class HistoryController extends BaseEntityController<History>
     {
         return findAllUnsolvedByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
-                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
-                ;
+                .max(Comparator.nullsLast(Comparator.comparing(History::getCreationTimestamp)));
     }
 
     public List<History> findAllUnsolvedByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllUnsolvedByUserAndExerciseAndSessid", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllUnsolvedByUserAndExerciseAndSessid", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid);
-                }).get();
+                });
     }
 
     public Optional<History> findLastByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
         return findAllByUserAndExerciseAndSessid(userid, exid, sessid)
                 .stream()
-                .max(Comparator.nullsLast(Comparator.comparing(History::getTimestamp)))
+                .max(Comparator.nullsLast(Comparator.comparing(History::getCreationTimestamp)))
                 ;
     }
 
 
     public List<History> findAllByUserAndExerciseAndSessid(Integer userid, Integer exid, Integer sessid)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllSolvedByUserAndExerciseAndSessid", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllSolvedByUserAndExerciseAndSessid", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid);
-                }).get();
+                });
     }
 
 
     @Override
-    public History getEntityOrThrow(Object id)
+    public History getEntity(Object id)
     {
-        return getTransactionManager()
-                .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
+        return executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
                 {
                     q.setParameter("id", id);
-                }).orElseThrow(() -> new IllegalArgumentException("History not found"));
+                });
     }
 
     public History findAssignmentById(Integer assignmentId)
     {
-        return getTransactionManager()
-                .executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
+        return executeSingleResultNamedQuery("History.findAssignmentById", History.class, q ->
                 {
                     q.setParameter("id", assignmentId);
-                }).orElse(null);
+                });
     }
 
     public List<History> findAllByUserAndExerciseAndSessidUnsolved(Integer userid, Integer exid, Integer sessid)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessid", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllByUserAndExerciseAndSessid", History.class,q -> {
                     q.setParameter("userid", userid)
                             .setParameter("exid", exid)
                             .setParameter("sessid", sessid);
-                }).get();
+                });
     }
 
     public List<History> findAllByExerciseAndSessid(Integer exid, Integer sessid)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByExerciseAndSessid", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllByExerciseAndSessid", History.class,q -> {
                     q.setParameter("exid", exid)
                             .setParameter("sessid", sessid);
-                })
-                .orElse(new ArrayList<>());
+                });
     }
 
 
     public List<History> findAllByUser(Integer userid)
     {
-        return getTransactionManager()
-                .executeResultListNamedQuery("History.findAllByUser", History.class,q -> {
+        return executeResultListNamedQuery("History.findAllByUser", History.class,q -> {
                     q.setParameter("userid", userid);
-                })
-                .orElse(new ArrayList<>());
+                });
     }
 
 
     public boolean isExerciseInHistory(Integer exid, Integer sessid)
     {
-        return !getAllEntities(h -> Objects.equals(h.getExid(), exid) && Objects.equals(h.getSessid(), sessid))
-                .isEmpty();
+        return getAllEntities()
+                .stream()
+                .anyMatch(h -> Objects.equals(h.getExid(), exid) && Objects.equals(h.getSessid(), sessid));
     }
 
     /**
@@ -258,21 +150,17 @@ public class HistoryController extends BaseEntityController<History>
         List<Integer> resultList;
         List<Integer> hospitalSessResultList;
         Integer lastInterruptedEx = 0;
-        resultList = getTransactionManager()
-                .<Integer>executeResultListNamedQuery("History.findLastInterruptedExercise", q ->
+        resultList = executeResultListNamedQuery("History.findLastInterruptedExercise", q ->
                         q.setParameter("interruptedExs", interruptedExs)
-                                .setParameter("sessid", sessid))
-                .orElse(new ArrayList<>());
+                                .setParameter("sessid", sessid));
 
         if (resultList.isEmpty())
         {
-            hospitalSessResultList = getTransactionManager()
-                    .<Integer>executeResultListNamedQuery("History.findLastInterruptedExercise", q ->
+            hospitalSessResultList = executeResultListNamedQuery("History.findLastInterruptedExercise", q ->
                     {
                         q.setParameter("interruptedExs", interruptedExs)
                                 .setParameter("sessid", fromSessionId);
-                    })
-                    .orElse(new ArrayList<>());
+                    });
             if (hospitalSessResultList.isEmpty())
                 lastInterruptedEx = 0;
             else

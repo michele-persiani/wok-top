@@ -1,7 +1,7 @@
 package it.unibo.msrehab.model.entities;
 
-import it.unibo.msrehab.rl.model.IEntityController;
-import it.unibo.msrehab.rl.model.IModel;
+import it.unibo.msrehab.model.EntityController;
+import it.unibo.msrehab.model.Model;
 
 import javax.persistence.Entity;
 
@@ -117,7 +117,7 @@ public class LevelAgentConfig extends BaseEntity
         this.policyEpsilon = policyEpsilon;
     }
 
-    public static LevelAgentConfig getSingletonEntity(IModel model)
+    public static LevelAgentConfig getSingletonEntity(Model model)
     {
         return model.getEntityController(LevelAgentConfig.class)
                 .getAllEntities()
@@ -127,11 +127,12 @@ public class LevelAgentConfig extends BaseEntity
                 ;
     }
 
-    public static boolean putSingletonEntity(IModel model, LevelAgentConfig config)
+    public static boolean putSingletonEntity(Model model, LevelAgentConfig config)
     {
         if(!config.isValid())
             return false;
-        IEntityController<LevelAgentConfig> controller = model.getEntityController(LevelAgentConfig.class);
-        return controller.putEntity(config);
+        EntityController<LevelAgentConfig> controller = model.getEntityController(LevelAgentConfig.class);
+        controller.putEntity(config);
+        return true;
     }
 }

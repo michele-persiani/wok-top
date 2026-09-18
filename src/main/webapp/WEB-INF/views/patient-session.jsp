@@ -127,8 +127,16 @@
 
                         </div>
                         -->
+
+                        <div class="col-sm-8">
+                            <div class="form-group">
+                                <!--<label>Seleziona tutti gli esercizi</label>-->
+                                <form:checkbox path="allSelected" value="true" label="Seleziona tutti gli esercizi"/>
+                            </div>
+
+                        </div>
                     </div>
-                    <hr>
+                <hr>
 
 
                 <c:if test="${not empty ATT_SEL_STD or not empty ATT_SEL_FLW or not empty ATT_ALT or not empty ATT_DIV}">

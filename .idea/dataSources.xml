@@ -83,11 +83,11 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="MS-rehab-wok-top" uuid="249949b5-1398-4e29-b25a-dc0859277b7a">
+    <data-source source="LOCAL" name="MS-rehab-wok-top-perf" uuid="ff3871f5-cfda-49fd-b290-d6d3ff50f0f7">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top-perf.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>

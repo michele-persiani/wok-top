@@ -1,10 +1,6 @@
 package it.unibo.msrehab.config;
 
 
-import it.unibo.msrehab.model.entities.Exercise;
-import it.unibo.msrehab.rl.ExerciseHelper;
-import it.unibo.msrehab.rl.model.JPAController;
-
 public class Configuration
 {
 
@@ -126,8 +122,10 @@ public class Configuration
     public void setDbPath(String dbPath) {
         this.dbPath = dbPath;
     }
-    
-    
+
+
+
+
     @Override
     public String toString() {
         String nl = System.getProperty("line.separator");
@@ -153,17 +151,7 @@ public class Configuration
         res += "DB PATH: " + nl;
         res += "PATH: " + this.dbPath + nl;
         res += "-----------------------------------------------------" + nl;
-        
-        return res;
-    }
 
-    public boolean isRlEnabled()
-    {
-        return JPAController.getInstance()
-                .getEntityController(Exercise.class)
-                .getAllEntities(ex -> ex.isEnabled() && ExerciseHelper.create(ex).isRLDriven())
-                .stream()
-                .findAny()
-                .isPresent();
+        return res;
     }
 }

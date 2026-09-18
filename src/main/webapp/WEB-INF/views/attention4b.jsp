@@ -205,8 +205,10 @@
                 <div class="well well-sm">
 
                     <div class="row">
-                        <div class="col-sm-12 pull-left">
-                            <h3>Faccia attenzione a queste figure e alla comparsa del suono.</h3>
+                        <div id="instructions" class="col-sm-12 pull-left">
+                            <h3>Prema <b>Spazio</b> quando vede queste figure.<br>
+                                Prema <b>Invio”</b> quando sente il suono.
+                            Oppure clicchi sui rispettivi bottoni.</h3>
                         </div>
                         <div id="targets">
                             <c:forEach var="target" items="${targetElementList}">
@@ -304,6 +306,25 @@
 
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
             <script src="resources/assets/js/ie10-viewport-bug-workaround.js"></script>
+
+
+            <script type="application/javascript">
+                if(isMobile())
+                {
+                    document.getElementById("instructions").innerHTML = "" +
+                        "Quando vedrà queste figure sullo schermo, tocchi su <b>Figura</b>.<br>" +
+                        "Quando sentirà un suono, tocchi su <b>Suono</b>.<br>" +
+                        "Se figura e suono compariranno contemporaneamente, tocchi sia su <b>Figura</b> che su <b>Suono</b>.";
+
+                }
+                else
+                {
+                    document.getElementById("instructions").innerHTML = "<h3>Prema <b>Spazio</b> quando vede queste figure.<br>" +
+                    "Prema <b>Invio</b> quando sente il suono.<br>" +
+                    "Oppure clicchi sui rispettivi bottoni.</h3>";
+                }
+
+            </script>
 
             <script>
                 var time = ${time};

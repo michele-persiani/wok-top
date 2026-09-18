@@ -162,7 +162,7 @@
                     </div>
                     <div id="continue-row" class="row hidden">
                         <div class="col-sm-20">
-                            <h3>In <span style="background-color:green">verde</span> le risposte corrette, in <span style="background-color:red">rosso</span> le risposte sbagliate, in <span style="background-color:yellow">giallo</span> le risposte omesse</h3>
+                            <h3>In <span style="background-color:green">verde</span> le risposte corrette, in <span style="color:white; background-color:red">rosso</span> le risposte sbagliate, in <span style="background-color:yellow">giallo</span> le risposte omesse</h3>
                         </div>                        
                         <div class="col-sm-4">
                             <input type="button" class="btn btn-lg btn-success center-block" value="Continua"
@@ -390,9 +390,6 @@
                     return
                 id.checked = true;
                 id.disabled = true;
-                //document.getElementById('img-i'+(i)).style.filter="blur(5px)";
-                //document.getElementById('img-i' + (i)).style.backgroundColor = "orange";
-                //addChildImage(document.getElementById('img-i'+(i)), "orange");
                 addBackground('img-i'+i, "orange");
             }
         </script>

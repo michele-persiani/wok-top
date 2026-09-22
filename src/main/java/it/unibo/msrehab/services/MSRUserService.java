@@ -762,6 +762,13 @@ public class MSRUserService
     }
 
 
+    @RequestMapping(value = "/instructions", method = RequestMethod.GET)
+    public ModelAndView instructions(HttpServletRequest request)
+    {
+        return new ModelAndView("instructions");
+    }
+
+
     @RequestMapping(value = "/patienthome", method = RequestMethod.GET)
     @ResponseBody
     public ModelAndView patienthome(HttpServletRequest request, Model model)

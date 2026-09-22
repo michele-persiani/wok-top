@@ -198,13 +198,6 @@
                             </div>
                         </div>
                     </div>
-                    <!--
-                    <div class="row">
-                        <div class="col-md-8">
-                            <button id="reloadDataButton" class="btn btn-lg btn-default center-block update">Ricarica</button>
-                        </div>
-                    </div>
-                    -->
                 </div>
                     
                     
@@ -265,15 +258,15 @@
                 )
             }
 
+            function isDisplayed(row, fromMoment, toMoment)
+            {
+                let date = moment(row.date, 'DD-MM-YYYY')
+                    .set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0});
+                return date >= fromMoment && date <= toMoment;
+            }
 
             function createGraphDatasets(response, fromMoment, toMoment, fields)
             {
-                function isDisplayed(row)
-                {
-                    let date = moment(row.date, 'DD-MM-YYYY')
-                        .set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0});
-                    return date >= fromMoment && date <= toMoment;
-                }
 
                 return Array.from(response.fields)
                     .filter(field => field !== "date")
@@ -281,7 +274,7 @@
                     .map(field => {
                         return {
                             label: response.displayNames[field],
-                            data: response.data.filter(el => isDisplayed(el)).map(el => el[field]),
+                            data: response.data.filter(el => isDisplayed(el, fromMoment, toMoment)).map(el => el[field]),
                             borderWidth: 1
                         }
                     })
@@ -301,6 +294,8 @@
                 language: "it",
                 keyboardNavigation: false
             });
+            $('#datainiziale').datepicker('setDate', startDate.format('DD-MM-YYYY'));
+            $('#datafinale').datepicker('setDate', endDate.format('DD-MM-YYYY'));
             $('.datainiziale').datepicker().on('changeDate', function(e) {
                 startDate = moment(e.date)
                     .set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0});
@@ -340,7 +335,9 @@
                 $.get("metrics/history",
                     queryParams,
                     function(response, status) {
-                        let labels = Array.from(response.data).map(el => el["date"]);
+                        let labels = Array.from(response.data)
+                            .filter(el => isDisplayed(el, startDate, endDate))
+                            .map(el => el["date"]);
 
                         timeChart.data = {
                             labels : labels,
@@ -374,12 +371,7 @@
                     },
                     "json");
             }
-
-            $("#reloadDataButton").click(function(){
-                reloadData();
-            });
             $(document).ready(function(){
-
                 reloadData();
             });
         </script>

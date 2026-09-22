@@ -109,7 +109,7 @@ public class Exercise extends BaseEntity
         MEM_LONG_1_FAC,
         // nback
         NBACK_ANM, NBACK_ARR, NBACK_CHS, NBACK_FAC, NBACK_FRT, NBACK_VEG,
-        NBACK_FAC_RL, NBACK_ORI_RL,                                                         // Names for RL versions
+        NBACK_CHS_RL, NBACK_FAC_RL, NBACK_ORI_RL,                                           // Names for RL versions
         NBACK_FRT_RL, NBACK_VEG_RL, NBACK_ANM_RL,                                           // Names for RL versions
         // fun exec
         RES_INH_1, RES_INH_2, RES_INH_3,

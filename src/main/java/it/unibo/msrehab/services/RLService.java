@@ -153,12 +153,14 @@ public class RLService
                         config.getStartThreshold(),
                         config.getThresholdDeltaPassed(),
                         config.getThresholdDeltaNotPassed(),
+                        maxLevel,
                         levels
                 );
                 break;
             default: // incremental
                 levelThreshold = strategies.getNextLevelIncrementally(
                         PASS_THRESHOLD,
+                        maxLevel,
                         levels
                 );
 

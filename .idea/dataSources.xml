@@ -83,11 +83,29 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="MS-rehab-wok-top-perf" uuid="ff3871f5-cfda-49fd-b290-d6d3ff50f0f7">
+    <data-source source="LOCAL" name="MS-rehab-wok-top" uuid="44cafce7-28de-4bbe-8995-77c3d7c09c90">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top-perf.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top.db</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="MS-rehab-wok-top-performance" uuid="b03656d0-3b76-46cd-9423-eead8e789522">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\persi\Documents\MS-rehab\MS-rehab-main_0\MS-rehab-wok-top-performance.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>

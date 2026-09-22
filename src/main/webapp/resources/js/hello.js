@@ -50,6 +50,12 @@ function addBackground(parentImg, backgroundColor, opacity = 0.35)
 	if(parentImg == null)
 		console.log("parentImg is null");
 
+	let colors = {
+		'green' : "#27F52A",
+		'yellow' : "#FFFB00"
+	}
+
+
 	// Crea un contenitore relativo per gestire il posizionamento
 	const container = document.createElement('div');
 	container.style.position = 'relative';
@@ -72,13 +78,15 @@ function addBackground(parentImg, backgroundColor, opacity = 0.35)
 	childImg.style.left = '0';
 	childImg.style.width = '100%';
 	childImg.style.height = '100%';
+	if(backgroundColor in colors)
+		backgroundColor = colors[backgroundColor];
 	childImg.style.backgroundColor = backgroundColor;
 	childImg.style.opacity = opacity;
 	childImg.style.pointerEvents = 'none'; // Permette di cliccare attraverso l'immagine figlia
 
 	// Aggiungi l'immagine figlia al contenitore
-	container.appendChild(childImg);
 	container.appendChild(parentImg);
+	container.appendChild(childImg);
 
 	return childImg;
 }

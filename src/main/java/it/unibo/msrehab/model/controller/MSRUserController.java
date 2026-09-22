@@ -74,7 +74,9 @@ public class MSRUserController extends JPAEntityController<MSRUser>
     {
         return getAllEntities()
                 .stream()
-                .filter(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT && Objects.equals(usr.getGid(), -1) && Objects.equals(usr.getCid(), centerId))
+                .filter(usr -> usr.getMsrrole() == MSRUser.RoleValue.PATIENT)
+                .filter(usr -> Objects.equals(usr.getGid(), -1) || usr.getGid() == null)
+                .filter(usr -> Objects.equals(usr.getCid(), centerId))
                 .collect(Collectors.toList());
     }
 

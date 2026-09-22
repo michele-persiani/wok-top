@@ -2006,6 +2006,70 @@ public class ExerciseService
 
 
 
+
+    private LevelThreshold getNextLevelIncrementally2(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId
+    )
+    {
+
+        // descending order
+        List<HistoryRecord> records = model.getEntityController(History.class)
+                .getAllEntities()
+                .stream()
+                .filter(h -> h.getExid().equals(exerciseId))
+                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> h.isSolved())
+                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
+                .collect(Collectors.toList());
+
+        double threshold = fitnessController.getEntity(exerciseId).getThr();
+
+        int maxLevel = exerciseController.getEntity(exerciseId).getMaxLevel();
+
+        return new NextLevelStrategy().getNextLevelIncrementally(threshold, maxLevel, records);
+    }
+
+    private LevelThreshold getNextAdaptiveThreshold2(
+            Integer exerciseId,
+            Integer userId,
+            Integer sessionId
+    )
+    {
+
+        // descending order
+        List<HistoryRecord> records = model.getEntityController(History.class)
+                .getAllEntities()
+                .stream()
+                .filter(h -> h.getExid().equals(exerciseId))
+                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> h.isSolved())
+                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
+                .collect(Collectors.toList());
+        int maxLevel = exerciseController.getEntity(exerciseId).getMaxLevel();
+
+        ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
+
+
+        double lowerThreshold = config.getLowerThreshold();
+        double startThreshold = config.getStartThreshold();
+        double thresholdDeltaPassed = config.getThresholdDeltaPassed();
+        double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
+
+        return new NextLevelStrategy().getNextLevelAdaptively(
+                lowerThreshold,
+                startThreshold,
+                thresholdDeltaPassed,
+                thresholdDeltaNotPassed,
+                maxLevel,
+                records
+        );
+    }
+
+
+    /*
+
     private PassThreshold getNextLevelIncrementally(
             Integer exerciseId,
             Integer userId,
@@ -2052,63 +2116,6 @@ public class ExerciseService
             }
         }
     }
-
-    private LevelThreshold getNextLevelIncrementally2(
-            Integer exerciseId,
-            Integer userId,
-            Integer sessionId
-    )
-    {
-
-        // descending order
-        List<HistoryRecord> records = model.getEntityController(History.class)
-                .getAllEntities()
-                .stream()
-                .filter(h -> h.getExid().equals(exerciseId))
-                .filter(h -> h.getUserid().equals(userId))
-                .filter(h -> h.isSolved())
-                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
-                .collect(Collectors.toList());
-
-        double threshold = fitnessController.getEntity(exerciseId).getThr();
-
-        return new NextLevelStrategy().getNextLevelIncrementally(threshold, records);
-    }
-
-    private LevelThreshold getNextAdaptiveThreshold2(
-            Integer exerciseId,
-            Integer userId,
-            Integer sessionId
-    )
-    {
-
-        // descending order
-        List<HistoryRecord> records = model.getEntityController(History.class)
-                .getAllEntities()
-                .stream()
-                .filter(h -> h.getExid().equals(exerciseId))
-                .filter(h -> h.getUserid().equals(userId))
-                .filter(h -> h.isSolved())
-                .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
-                .collect(Collectors.toList());
-
-        ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
-
-
-        double lowerThreshold = config.getLowerThreshold();
-        double startThreshold = config.getStartThreshold();
-        double thresholdDeltaPassed = config.getThresholdDeltaPassed();
-        double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
-
-        return new NextLevelStrategy().getNextLevelAdaptively(
-                lowerThreshold,
-                startThreshold,
-                thresholdDeltaPassed,
-                thresholdDeltaNotPassed,
-                records
-        );
-    }
-
     private PassThreshold getNextAdaptiveThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
     {
         Exercise exercise = exerciseController.getEntity(exerciseId);
@@ -2175,13 +2182,9 @@ public class ExerciseService
         return PassThreshold.create(-1, nextLevel, nextThreshold);
     }
 
+     */
 
 
-    @RequestMapping(value = "/instructions", method = RequestMethod.GET)
-    public ModelAndView instructions(HttpServletRequest request)
-    {
-        return new ModelAndView("instructions");
-    }
 
 
     // RL Exercise

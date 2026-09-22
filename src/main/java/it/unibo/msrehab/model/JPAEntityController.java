@@ -49,6 +49,11 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
             logger.log(Level.SEVERE, "Attempting to insert an invalid entity");
             return false;
         }
+        if (!entity.isNew())
+        {
+            logger.log(Level.SEVERE, "Entity is not new");
+            return false;
+        }
         EntityManager em = getEntityManager();
 
         try
@@ -126,6 +131,11 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
     @Override
     public boolean updateEntity(T entity)
     {
+        if (entity.isNew())
+        {
+            logger.log(Level.SEVERE, "Attempting to update an entity but is new");
+            return false;
+        }
         if (!entity.isValid())
         {
             logger.log(Level.SEVERE, "Attempting to update an invalid entity");
@@ -157,12 +167,17 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
 
     public boolean removeEntity(T entity)
     {
+        if (entity.isNew())
+        {
+            logger.log(Level.SEVERE, "Attempting to remove an invalid entity");
+            return false;
+        }
         EntityManager em = getEntityManager();
         try
         {
             em.getTransaction().begin();
             if (!em.contains(entity))
-                entity = em.merge(entity);
+                entity = em.merge(entity); // For detached entities
             em.remove(entity);
 
             em.getTransaction().commit();

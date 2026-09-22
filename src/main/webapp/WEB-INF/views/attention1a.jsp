@@ -144,9 +144,11 @@
                                     </c:if>
                                     
                                     <c:if test="${exname!='ATT_SEL_STD_CMP'}">
-                                        <c:if test="${exname!='ATT_SEL_STD_FAC'}">
+
+                                        <c:if test="${exname!='ATT_SEL_STD_FAC' && exname != 'ATT_SEL_STD_FAC_RL'}">
                                         <h3 style="color: red">${target.eldescr}</h3>
                                         </c:if>
+
                                         <img class="img-responsive pull-left" src="${target.url}" alt="${target.url}">
                                     </c:if>
                                 </div>
@@ -155,9 +157,7 @@
                         </div>
 
                         <div class="col-sm-8">
-                            <h3 class="pull-left">tra gli elementi che appariranno.<br> Cerchi di farlo entro il tempo massimo indicato dal contatore in alto a sinistra:</h3>
-
-                                <h2 class="pull-right" style="color:red;border: 1px solid red;border-radius: 50%;padding: 10px;" id="timer">60</h2>
+                            <h3 class="pull-left">tra gli elementi che appariranno.<br> Cerchi di farlo entro il tempo massimo indicato dal contatore in alto a sinistra.</h3>
                         </div>
                     </div>
                     <div class="row">

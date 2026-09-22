@@ -9,6 +9,7 @@ import it.unibo.msrehab.model.entities.History;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class NextLevelStrategy
 {
@@ -19,32 +20,45 @@ public class NextLevelStrategy
 
 
 
-    public LevelThreshold getNextLevelIncrementally(double passThreshold, List<HistoryRecord> records)
+    public LevelThreshold getNextLevelIncrementally(double passThreshold, int maxLevel, List<HistoryRecord> records)
     {
-
         if(records.size() < 2)
             return new LevelThreshold(MIN_LEVEL, passThreshold);
 
-        records.sort(Comparator.comparing(HistoryRecord::getTimestamp));
+        records = records.stream()
+                .sorted(Comparator.comparing(HistoryRecord::getTimestamp))
+                .collect(Collectors.toList());
+
         HistoryRecord h0 = records.get(records.size() - 1);
         HistoryRecord h1 = records.get(records.size() - 2);
 
+        int nextLevel;
         //If both are passed and the same level, increment the level
         if(h0.getPassed() && h1.getPassed() && Objects.equals(h0.getLevel(), h1.getLevel()))
-        {
-            int clampedLevel = h0.getLevel() + 1;
-            return new LevelThreshold(clampedLevel, passThreshold);
-        }
+            nextLevel = h0.getLevel() + 1;
+        else
+            nextLevel = h0.getLevel();
 
-        // Otherwise (one of the two is not passed or are of different levels) return the current level
-        return new LevelThreshold(h0.getLevel(), passThreshold);
+        nextLevel = Math.max(MIN_LEVEL, Math.min(maxLevel, nextLevel));
+        return new LevelThreshold(nextLevel, passThreshold);
+
     }
 
+    /**
+     * Finds the next level and threshold with the adaptive strategy
+     * @param minThreshold Minimum threshold below which level is decreased
+     * @param startThreshold Starting threshold
+     * @param thrPassedDelta Delta for the threshold when the history is passed
+     * @param thrNotPassedDelta Delta for the threshold when the history is not passed
+     * @param records History records
+     * @return
+     */
     public LevelThreshold getNextLevelAdaptively(
             double minThreshold,
-            double defaultThreshold,
+            double startThreshold,
             double thrPassedDelta,
             double thrNotPassedDelta,
+            int maxLevel,
             List<HistoryRecord> records
     )
     {
@@ -52,29 +66,29 @@ public class NextLevelStrategy
                 .max(Comparator.comparing(HistoryRecord::getTimestamp))
                 .orElse(null);
 
-        if (lastHistory == null)
-            return new LevelThreshold(MIN_LEVEL, defaultThreshold);
+        if (lastHistory == null)    // No histories, return the default threshold
+            return new LevelThreshold(MIN_LEVEL, startThreshold);
 
         int level;
         double threshold;
 
         if (lastHistory.getPassed())
         {
-            level     = lastHistory.getLevel() + 1;
+            level = lastHistory.getLevel() + 1;
             threshold = lastHistory.getThreshold() + thrPassedDelta;
-        }
-        else
+        } else
         {
-            level     = lastHistory.getLevel();
+            level = lastHistory.getLevel();
             threshold = lastHistory.getThreshold() + thrNotPassedDelta;
         }
-        if(threshold < minThreshold)
+        if (threshold < minThreshold)
         {
-            threshold = defaultThreshold;
+            threshold = startThreshold;
             level -= 1;
         }
 
         threshold = Math.min(1, Math.max(minThreshold, threshold));
+        level = Math.max(MIN_LEVEL, Math.min(maxLevel, level));
         return new LevelThreshold(level, threshold);
     }
 

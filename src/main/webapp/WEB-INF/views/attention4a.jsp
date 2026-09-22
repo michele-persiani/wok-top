@@ -206,7 +206,7 @@
                     <div id="buttonsDiv" class="col-sm-24 pull-left">
                         <!--<h3>Può usare i bottoni 'Spazio' e 'Suono' o tasti spazio e invio su tastiera intercambiabilmente</h3>-->
                         <button id="spacebtn" type="button" class="buttonsound btn-success center-block" value="Figura">Figura</button>
-                        <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono">Invio</button>
+                        <button id="sndbtn" type="button" class="buttonsound btn-danger center-block" value="Suono">Suono</button>
                     </div>
                    
                         

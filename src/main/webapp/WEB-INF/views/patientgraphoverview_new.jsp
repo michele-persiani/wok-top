@@ -100,11 +100,24 @@
             <div class="header clearfix">
                 <nav>
                     <ul class="nav nav-pills pull-right">
-                        <li role="presentation">
-                            <a id="backbutton" href="patientchosegraph?patientid=${userId}">
-                                <span class="glyphicon glyphicon-chevron-left fa-2x" data-toggle="tooltip" data-placement="bottom" title="Indietro"></span>
-                            </a>
-                        </li>
+
+                        <c:if test="${not empty userId}">
+                            <li role="presentation">
+                                <a id="backbutton" href="patientchosegraph?patientid=${userId}">
+                                    <span class="glyphicon glyphicon-chevron-left fa-2x" data-toggle="tooltip" data-placement="bottom" title="Indietro"></span>
+                                </a>
+                            </li>
+                        </c:if>
+                        <c:if test="${not empty groupId}">
+                            <li role="presentation">
+                                <a id="backbutton" href="groupstatistics">
+                                    <span class="glyphicon glyphicon-chevron-left fa-2x" data-toggle="tooltip" data-placement="bottom" title="Indietro"></span>
+                                </a>
+                            </li>
+                        </c:if>
+
+
+
                         <li role="presentation">
                             <a href="adminhome">                                
                                 <span class="glyphicon glyphicon-home fa-2x" data-toggle="tooltip" data-placement="bottom" title="Home"></span>
@@ -258,6 +271,24 @@
                 )
             }
 
+            function getMoment(dateText)
+            {
+
+            }
+
+            function sortData(response)
+            {
+                response.data = response.data.sort(
+                    (d0, d1) => {
+                        let m0 = moment(d0.date, 'DD-MM-YYYY').set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0})
+                        let m1 = moment(d1.date, 'DD-MM-YYYY').set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0})
+                        if(m0 > m1) return 1;
+                        if(m0 < m1) return -1;
+                        return 0;
+                    }
+                )
+            }
+
             function isDisplayed(row, fromMoment, toMoment)
             {
                 let date = moment(row.date, 'DD-MM-YYYY')
@@ -294,8 +325,8 @@
                 language: "it",
                 keyboardNavigation: false
             });
-            $('#datainiziale').datepicker('setDate', startDate.format('DD-MM-YYYY'));
-            $('#datafinale').datepicker('setDate', endDate.format('DD-MM-YYYY'));
+            $('#datainiziale').datepicker('setDate', startDate.set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0}).format('DD-MM-YYYY'));
+            $('#datafinale').datepicker('setDate', endDate.set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0}).format('DD-MM-YYYY'));
             $('.datainiziale').datepicker().on('changeDate', function(e) {
                 startDate = moment(e.date)
                     .set({'hour': 0, 'minute': 0, 'second' : 0, 'millisecond' : 0});
@@ -335,6 +366,8 @@
                 $.get("metrics/history",
                     queryParams,
                     function(response, status) {
+                        sortData(response);
+
                         let labels = Array.from(response.data)
                             .filter(el => isDisplayed(el, startDate, endDate))
                             .map(el => el["date"]);

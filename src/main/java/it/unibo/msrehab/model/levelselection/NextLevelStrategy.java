@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+
+
 public class NextLevelStrategy
 {
 
@@ -76,11 +78,13 @@ public class NextLevelStrategy
         {
             level = lastHistory.getLevel() + 1;
             threshold = lastHistory.getThreshold() + thrPassedDelta;
-        } else
+        }
+        else
         {
             level = lastHistory.getLevel();
             threshold = lastHistory.getThreshold() + thrNotPassedDelta;
         }
+
         if (threshold < minThreshold)
         {
             threshold = startThreshold;

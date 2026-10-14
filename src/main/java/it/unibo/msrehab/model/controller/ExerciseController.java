@@ -2,9 +2,8 @@ package it.unibo.msrehab.model.controller;
 
 
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
-import it.unibo.msrehab.model.entities.ExElement;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.Exercise;
 
 import java.util.List;
@@ -25,11 +24,11 @@ import java.util.stream.Collectors;
  * 
  */
 
-public class ExerciseController extends JPAEntityController<Exercise>
+public class ExerciseController extends DecoratorEntityController<Exercise>
 {
-    public ExerciseController()
+    public ExerciseController(Model model)
     {
-        super(Exercise.class, PersistenceUnit.DEFAULT_PU);
+        super(model, Exercise.class);
     }
 
     
@@ -98,66 +97,84 @@ public class ExerciseController extends JPAEntityController<Exercise>
                 .orElse("");
     }
 
-    public String getDisplayName(Integer exId)
+    public String getDisplayName(Integer exid)
     {
-        return findEntity(exId)
-                .map(this::getDisplayName)
-                .orElse("");
+        Exercise ex = getEntity(exid);
+        return getDisplayName(ex);
     }
 
     public String getDisplayName(Exercise ex)
     {
-        return getDisplayName(ex.getCategory()) + Optional.ofNullable(ex.getExelementcat()).map(c -> " - " + c.getDisplayName()).orElse("");
-    }
-
-    public String getDisplayName(Exercise.ExerciseCategoryValue category)
-    {
-        switch (category) {
+        String displayName;
+        switch (ex.getCategory()) {
             case ATT_SEL_STD:
             case ATT_SEL_STD_FAC:
             case ATT_SEL_STD_ORI:
-                return "Cogli gli oggetti";
+                displayName = "Cogli gli oggetti";
+                break;
             case ATT_SEL_FLW:
             case ATT_SEL_FLW_FAC:
             case ATT_SEL_FLW_ORI:
-                return "Beccali al volo!";
+                displayName = "Beccali al volo!";
+                break;
             case ATT_DIV:
             case ATT_DIV_FAC:
             case ATT_DIV_ORI:
-                return "Su 2 fronti";
+                displayName = "Su 2 fronti";
+                break;
             case ATT_ALT:
             case ATT_ALT_FAC:
             case ATT_ALT_ORI:
-                return "Prima uno e poi l'altro";
+                displayName = "Prima uno e poi l'altro";
+                break;
             case MEM_VIS_1:
             case MEM_VIS_1_FAC:
             case MEM_VIS_1_ORI:
-                return "Quali erano?";
+                displayName = "Quali erano?";
+                break;
             case MEM_VIS_2:
             case MEM_VIS_2_FAC:
-                return "Nel posto giusto";
+                displayName = "Nel posto giusto";
+                break;
             case MEM_VIS_5:
-                return "Nel posto giusto griglia";
+                displayName = "Nel posto giusto griglia";
+                break;
             case NBACK:
             case NBACK_FAC:
             case NBACK_ORI:
-                return "Un occhio alle spalle";
+                displayName = "Un occhio alle spalle";
+                break;
             case MEM_LONG_1:
-                return "Chi sarà?"; // Chi sar&agrave;?
+                displayName = "Chi sarà?"; // Chi sar&agrave;?
+                break;
             case RES_INH:
-                return "Cataloga gli oggetti";
+                displayName = "Cataloga gli oggetti";
+                break;
             case PLAN_1:
-                return "Pianificazione Giornata";
+                displayName = "Pianificazione Giornata";
+                break;
             case PLAN_2:
-                return "Pianificazione allo zoo";
+                displayName = "Pianificazione allo zoo";
+                break;
             case PLAN_3:
-                return "Pianificazione week-end a Roma";
+                displayName = "Pianificazione week-end a Roma";
+                break;
             case ATT_RFLXS:
-                return "Moto";
+                displayName = "Moto";
+                break;
             default:
-                return "";
+                displayName = "";
         }
+        displayName += ex.isRL() ? " (RL)" : "";
+
+        String[] fullNameParts = ex.getFullName().split("-");
+        String stimulusCategory = fullNameParts[fullNameParts.length - 1];
+        stimulusCategory = stimulusCategory.trim();
+
+        displayName += " - " + stimulusCategory;
+        return displayName;
     }
+
 
     public String findGlobalCategory(Exercise.ExerciseCategoryValue category)
     {
@@ -165,16 +182,16 @@ public class ExerciseController extends JPAEntityController<Exercise>
                 .stream()
                 .findFirst()
                 .map(Exercise::getGlobalCategory)
-                .orElse("");
+                .orElseThrow(() -> new IllegalArgumentException("No exercises found for category " + category));
     }
 
 
-    public String findExerciseTypeFromCategory(Exercise.ExerciseCategoryValue category)
+    public String findExerciseType(Exercise.ExerciseCategoryValue category)
     {
         return findAllExercisesByCategory(category)
                 .stream()
                 .findFirst()
                 .map(Exercise::getType)
-                .orElse("");
+                .orElseThrow(() -> new IllegalArgumentException("No exercises found for category " + category));
     }
 }

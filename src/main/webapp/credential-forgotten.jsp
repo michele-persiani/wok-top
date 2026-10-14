@@ -57,12 +57,13 @@
                 </nav>
             </div>
             <div class="well">
-                <h4 class="lead"><b>Inserisci il tuo email per ricevere le credenziali di accesso.</b></h4>
+                <h4 class="lead"><b>Inserisci il tuo email per ricevere le credenziali di accesso.
+                    NB. Funzione disabilitata contattare un amministratore.</b></h4>
                 <form role="form" method="post" action="forgottencredential">
                     <label for="email" class="sr-only">email</label>
                     <input type="text" id="email" class="form-control" placeholder="email" name="email" required autofocus>
                     <p></p>
-                    <input type="submit" class="btn btn-primary" value="Invia">
+                    <input type="submit" class="btn btn-primary" value="Invia" disabled>
                 </form>
                 <p class="text-danger"><b>${message}</b></p>
             </div>

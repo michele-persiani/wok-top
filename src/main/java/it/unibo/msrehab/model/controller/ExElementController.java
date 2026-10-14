@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.ExElement;
 import it.unibo.msrehab.model.entities.ExElement.CategoryValue;
 import it.unibo.msrehab.util.Sampling;
@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 
 
 
-public class ExElementController extends JPAEntityController<ExElement>
+public class ExElementController extends DecoratorEntityController<ExElement>
 {
-    public ExElementController()
+    public ExElementController(Model model)
     {
-        super(ExElement.class, PersistenceUnit.DEFAULT_PU);
+        super(model, ExElement.class);
     }
 
 

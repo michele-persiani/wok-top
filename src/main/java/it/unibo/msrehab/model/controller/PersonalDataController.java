@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.PersonalData;
 
 import java.util.Comparator;
@@ -15,12 +15,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 
-public class PersonalDataController extends JPAEntityController<PersonalData>
+public class PersonalDataController extends DecoratorEntityController<PersonalData>
 {
 
-    public PersonalDataController()
+    public PersonalDataController(Model model)
     {
-        super(PersonalData.class, PersistenceUnit.DEFAULT_PU);
+        super(model, PersonalData.class);
     }
 
     public List<PersonalData> findAllByUser(Integer id)

@@ -41,18 +41,18 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
     }
 
 
-    public boolean insertEntity(T entity)
+    public void insertEntity(T entity)
     {
         logger.info(String.format("insert of %s", entityClass.getSimpleName()));
         if (!entity.isValid())
         {
             logger.log(Level.SEVERE, "Attempting to insert an invalid entity");
-            return false;
+            throw new IllegalArgumentException("Entity is not valid");
         }
         if (!entity.isNew())
         {
             logger.log(Level.SEVERE, "Entity is not new");
-            return false;
+            throw new IllegalArgumentException("Entity is not new");
         }
         EntityManager em = getEntityManager();
 
@@ -62,12 +62,12 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
             em.persist(entity);
             em.getTransaction().commit();
             logger.info("success");
-            return true;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             logger.log(Level.SEVERE, "Exception: %s", e.getMessage());
             em.getTransaction().rollback();
-            return false;
+            throw new RuntimeException(e);
         } finally
         {
             em.close();
@@ -129,17 +129,17 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
 
 
     @Override
-    public boolean updateEntity(T entity)
+    public void updateEntity(T entity)
     {
         if (entity.isNew())
         {
             logger.log(Level.SEVERE, "Attempting to update an entity but is new");
-            return false;
+            throw new IllegalArgumentException("Entity is new");
         }
         if (!entity.isValid())
         {
             logger.log(Level.SEVERE, "Attempting to update an invalid entity");
-            return false;
+            throw new IllegalArgumentException("Entity is not valid");
         }
 
         EntityManager em = getEntityManager();
@@ -151,12 +151,11 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
             em.merge(entity);
 
             em.getTransaction().commit();
-            return true;
         } catch (Exception e)
         {
             logger.log(Level.SEVERE, "exception while updating an entity: %s", e.getMessage());
             em.getTransaction().rollback();
-            return false;
+            throw new RuntimeException(e);
         } finally
         {
             em.close();
@@ -165,12 +164,12 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
     }
 
 
-    public boolean removeEntity(T entity)
+    public void removeEntity(T entity)
     {
         if (entity.isNew())
         {
             logger.log(Level.SEVERE, "Attempting to remove an invalid entity");
-            return false;
+            throw new IllegalArgumentException("Entity is new");
         }
         EntityManager em = getEntityManager();
         try
@@ -182,12 +181,11 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
 
             em.getTransaction().commit();
 
-            return true;
         } catch (Exception e)
         {
             em.getTransaction().rollback();
             logger.log(Level.SEVERE, "exception %s", e.getMessage());
-            return false;
+            throw new RuntimeException(e);
         } finally
         {
             em.close();

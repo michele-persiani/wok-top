@@ -206,6 +206,7 @@
 													<c:param name="category" value="${exercise.exelementcat}" />
 													<c:param name="sessid" value="${sessid}" />
 													<c:param name="type" value="${exercise.category}" />
+													<c:param name="exname" value="${exercise.name}" />
 												</c:url>
 											</c:when>
 											<c:when test="${category.id == 'MEM_LONG_1'}">

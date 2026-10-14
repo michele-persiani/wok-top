@@ -90,3 +90,31 @@ function addBackground(parentImg, backgroundColor, opacity = 0.35)
 
 	return childImg;
 }
+
+
+function createCSV(columns, rows)
+{
+	columns = Array.from(columns);
+	rows = Array.from(rows);
+	var csv = "";
+	columns.forEach(col => {
+		csv += col + ","
+	})
+	csv += "\n";
+	rows.forEach(row => {
+		columns.forEach(col => {
+			csv += row[col] + ","
+		})
+		csv += "\n";
+	})
+	return csv;
+}
+
+function download(filename, filecontent, type="text/plain")
+{
+	let saver = document.createElement("a");
+	let file = new Blob([filecontent], {type: type});
+	saver.href = URL.createObjectURL(file);
+	saver.setAttribute('download', filename);
+	saver.dispatchEvent(new MouseEvent("click"));
+}

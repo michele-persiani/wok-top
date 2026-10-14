@@ -85,7 +85,8 @@ public class SendMail {
             logger.error("... Error while sending mail: "+ex.getMessage());        }
     }
         
-    public static void sendCredentials(String to, Integer id, String pwd) {
+    public static void sendCredentials(String to, Integer id, String pwd)
+    {
 
         // Get system properties
         Properties properties = System.getProperties();
@@ -101,7 +102,8 @@ public class SendMail {
         // Get the default Session object.
         Session session = Session.getDefaultInstance(properties);
         
-        try {
+        try
+        {
             // Create a default MimeMessage object.
             MimeMessage message = new MimeMessage(session);
 
@@ -122,11 +124,15 @@ public class SendMail {
             // Send message
             Transport.send(message);
             System.out.println("Sent message successfully....");
-        } catch (MessagingException ex) {
-            logger.error("... Error while sending mail: "+ex.getMessage());        }
+        }
+        catch (MessagingException ex)
+        {
+            logger.error("... Error while sending mail: "+ex.getMessage());
+        }
     }
 
-    public static void sendMail(String to,String subject, String mex) {
+    public static void sendMail(String to,String subject, String mex)
+    {
 
         // Get system properties
         Properties properties = System.getProperties();
@@ -136,7 +142,8 @@ public class SendMail {
         properties.setProperty("mail.smtp.port", "25");
         Session session = Session.getDefaultInstance(properties);
         
-        try {
+        try
+        {
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
@@ -144,8 +151,11 @@ public class SendMail {
             message.setText(mex);
             Transport.send(message);
             System.out.println("Sent message successfully....");
-        } catch (MessagingException ex) {
-            logger.error("... Error while sending mail: "+ex.getMessage());        }
+        }
+        catch (MessagingException ex)
+        {
+            logger.error("... Error while sending mail: "+ex.getMessage());
+        }
     }
     
     
@@ -154,7 +164,8 @@ public class SendMail {
             String to,
             String subject,
             String mex,
-            String fileName) {
+            String fileName)
+    {
 
         // Get system properties
         Properties properties = System.getProperties();

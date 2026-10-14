@@ -1,8 +1,7 @@
 package it.unibo.msrehab.services;
 
-import flexjson.JSONDeserializer;
-import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.model.entities.Exercise.ExerciseCategoryValue;
 
@@ -17,52 +16,35 @@ import it.unibo.msrehab.model.controller.NPSTestController;
 import it.unibo.msrehab.model.controller.PersonalDataController;
 import it.unibo.msrehab.model.controller.RaoTestController;
 import it.unibo.msrehab.model.controller.WhiteTestController;
-import it.unibo.msrehab.util.CategoryGroup;
-import it.unibo.msrehab.util.CookiesManager;
-import it.unibo.msrehab.util.CsvHelper;
-import it.unibo.msrehab.util.ExerciseCategory;
-import it.unibo.msrehab.util.SendMail;
-import it.unibo.msrehab.util.WebPagesUtilities;
+import it.unibo.msrehab.util.*;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-
 
 
 /**
@@ -88,129 +70,41 @@ public class MSRUserService
     private final HistoryController historyController;
     private final Configuration config;
 
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
 
 
-    public MSRUserService() {
-        super();
-        this.userController = new MSRUserController();
-        this.groupController = new MSRGroupController();
-        this.profileController = new ClinicalProfileController();
-        this.npsTestController = new NPSTestController();
-        this.personalDataController = new PersonalDataController();
-        this.raoTestController = new RaoTestController();
-        this.whiteTestController = new WhiteTestController();
-        this.sessionController = new MSRSessionController();
-        this.exerciseController = new ExerciseController();
-        this.historyController = new HistoryController();
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
-
-    }
-
-
-
-
-    /**
-     * Creates new user given email and password
-     *
-     * @param json Contains user's email, password, photo, surname, name, phone
-     * and role
-     *
-     * @return the id of the user (>0) if the user is inserted in the database,
-     * -1 otherwise; HttpStatus.NOT_ACCEPTABLE if data are not correct or the
-     * user is already registered; HttpStatus.OK if the user is inserted;
-     * HttpStatus.SERVICE_UNAVAILABLE if the user could not be inserted in the
-     * database
-     */
-    @RequestMapping(
-            value = "/newuser",
-            method = RequestMethod.POST,
-            headers = "Accept=application/json")
-    @ResponseBody
-    public ResponseEntity newUser(@RequestBody String json)
+    public MSRUserService()
     {
-        logger.info("Starting register a new user...");
+        super();
+        this.userController = new MSRUserController(model);
+        this.groupController = new MSRGroupController(model);
+        this.profileController = new ClinicalProfileController(model);
+        this.npsTestController = new NPSTestController(model);
+        this.personalDataController = new PersonalDataController(model);
+        this.raoTestController = new RaoTestController(model);
+        this.whiteTestController = new WhiteTestController(model);
+        this.sessionController = new MSRSessionController(model);
+        this.exerciseController = new ExerciseController(model);
+        this.historyController = new HistoryController(model);
 
+        this.config = Configuration.getInstance();
 
-
-
-        try
-        {
-            MSRUser user = new JSONDeserializer<MSRUser>()
-                    .deserialize(json, MSRUser.class);
-
-
-            if (!MSRUser.isEmailValid(user.getEmail())) {
-                logger.warn("...given email is not valid");
-                return new ResponseEntity("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            
-            
-            if (!MSRUser.isPasswordValid(user.getPassword())) {
-                logger.warn("...given password is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (user.getPhoto() != null && !MSRUser.isPhotoValid(user.getPhoto())) {
-                logger.warn("...given photo is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-          
-            if (user.getSurname() != null && !MSRUser.isSurnameValid(user.getSurname())) {
-                logger.warn("...given surname is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (user.getName() != null && !MSRUser.isNameValid(user.getName())) {
-                logger.warn("...given name is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (user.getPhone() != null && !MSRUser.isPhoneValid(user.getPhone())) {
-                logger.warn("...given phone is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (userController.findRecordByEmail(user.getEmail(), user.getPassword()) == null)
-            {
-                boolean success = userController.insertEntity(user);
-                
-                if (success) {
-               //     String Username="User"+id.toString();
-                 //   user.setUsername(Username);
-                    userController.updateEntity(user);
-                    logger.info("...user registered with success with id " + user.getId());
-                    return new ResponseEntity<String>(user.getId().toString(), HttpStatus.OK);
-                } else {
-                    logger.info("...user could not be registered");
-                    return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-                }
-            } else {
-                logger.warn("...user already registerd");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-        } catch (IllegalArgumentException e) {
-            logger.error("... wrong data: " + e.getMessage());
-            return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-        }
     }
 
 
-    // show patient form
+
     @RequestMapping(value = "/patientform", method = RequestMethod.POST)
     public ModelAndView patientForm(
-           // @RequestParam(value = "username", required = false) String username,//aggiunto per username
-            @RequestParam(value = "patientid", required = false) Integer patientid,
-            Model model) {
+            @RequestParam(required = false) Integer patientid,
+            Model model)
+    {
 
         logger.debug("patientForm() : {}", patientid);
         MSRUser patient = new MSRUser();
-        if (patientid != null) {
+
+        if (patientid != null)
             patient = userController.getEntity(patientid);
-            //aggiunti per username
-         //   username="User"+patientid.toString();
-         //   model.addAttribute("username", username);
-        }
-        //aggiunto per username
-      //  model.addAttribute("username", username);
+
         
         model.addAttribute("patientid", patientid); 
         model.addAttribute("patientForm", patient);
@@ -218,197 +112,65 @@ public class MSRUserService
     }
 
 
-    /**
-     * Updates a user entry
-     *
-     * @param json Contains user's id, to identify the user to be updated. It
-     * also contains user's email, password, photo, surname, name, phone and
-     * role it they are to be updated
-     *
-     * @return the success code user update (1 if user is updated, -1
-     * otherwise); HttpStatus.NOT_ACCEPTABLE if the user with the given id was
-     * not found; HttpStatus.OK if the given user is updated;
-     * HttpStatus.SERVICE_UNAVAILABLE if the update failed
-     */
-    @RequestMapping(value = "/updateuser", method = RequestMethod.POST, headers = "Accept=application/json")
-    @ResponseBody
-    public ResponseEntity<String> updateUser(@RequestBody String json) {
-
-        try {
-            MSRUser updatedUser
-                    = new JSONDeserializer<MSRUser>().deserialize(json, MSRUser.class);
-
-            int userid = updatedUser.getId();
-
-            logger.info("Start updating user " + userid);
-
-            MSRUser user = userController.findEntity(userid).get();
-            if (user == null) {
-                logger.warn("User " + userid + " not found");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-
-            // Validate updatedUser
-            if (updatedUser.getEmail() != null && !MSRUser.isEmailValid(updatedUser.getEmail())) {
-                logger.warn("...given email is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            
-             if (updatedUser.getUsername() != null) {
-                logger.warn("...given username is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (updatedUser.getEmail() != null && !MSRUser.isPasswordValid(updatedUser.getPassword())) {
-                logger.warn("...given password is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (updatedUser.getPhoto() != null && !MSRUser.isPhotoValid(updatedUser.getPhoto())) {
-                logger.warn("...given photo is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (updatedUser.getSurname() != null && !MSRUser.isSurnameValid(updatedUser.getSurname())) {
-                logger.warn("...given surname is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            
-            if (updatedUser.getName() != null && !MSRUser.isNameValid(updatedUser.getName())) {
-                logger.warn("...given name is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (updatedUser.getPhone() != null && !MSRUser.isPhoneValid(updatedUser.getPhone())) {
-                logger.warn("...given phone is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-           
-
-            logger.info("Updated user: " + json);
-
-            if (userController.updateEntity(updatedUser)) {
-                logger.info("Update of  user " + userid + " terminated with success");
-                return new ResponseEntity<String>("1", HttpStatus.OK);
-            } else {    // updateRecord(updatedUser) == -1
-                logger.error("...user update failed");
-                return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-            }
-        } catch (IllegalArgumentException e) {
-            logger.error("... wrong data: " + e.getMessage());
-            return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-        }
-    }
-
-
-    /**
-     * Deletes a user give the user's id
-     *
-     * @param patientid the id of the user
-     * @param model
-     * @param redirectAttributes
-     *
-     * @return 1 if user is deleted, -1 otherwise; HttpStatus.NOT_ACCEPTABLE if
-     * the user with the given id was not found; HttpStatus.OK if the user is
-     * deleted with success; HttpStatus.SERVICE_UNAVAILABLE if the user cannot
-     * be deleted
-     */
     @RequestMapping(value = "/deletepatient", method = RequestMethod.POST)
     public ModelAndView deletePatient(
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            Model model,
-            final RedirectAttributes redirectAttributes) {
-
+            @RequestParam Integer patientid
+    )
+    {
         logger.info("Start to delete user " + patientid);
         MSRUser user = userController.getEntity(patientid);
-        if (user == null) {
-            logger.warn("User " + patientid + " not found");
-            model.addAttribute("message", "Utente non trovato");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            return new ModelAndView("error");
-        }
+
 
         // Delete patient group if it contains only the patient being deleted
         if (userController.findAllPatientsInGroup(user.getGid()).size() <= 1)
         {
             MSRGroup group = groupController.getEntity(user.getGid());
-            if (!groupController.removeEntity(group)) {
-                logger.error("...group update failed");
-                model.addAttribute("message", "Gruppo " + group.getId()+ ", cancellazione fallita");
-                model.addAttribute("back", "showgroups");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");
-
-            }
+            groupController.removeEntity(group);
         }
+
         List<ClinicalProfile> profiles = profileController.findAllByUser(patientid);
-
         for (ClinicalProfile profile : profiles)
-        {
-            if(!profileController.removeEntity(profile)) {
-                logger.error("...clinical profile delete failed");
-                model.addAttribute("message", "Cancellazione del profilo clinico " + profile + " fallita");
-                model.addAttribute("back", "showpatients");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");
-            }
-        }
-        List<NPSTest> npsTests = npsTestController.findAllByUser(patientid);
+            profileController.removeEntity(profile);
 
-        for (NPSTest npsTest : npsTests) {
-            // TODO manage nps test deletion failure
+        List<NPSTest> npsTests = npsTestController.findAllByUser(patientid);
+        for (NPSTest npsTest : npsTests)
             npsTestController.removeEntity(npsTest);
-        }
-        List<PersonalData> personalData
-                = personalDataController.findAllByUser(patientid);
-        for (PersonalData pd : personalData) {
-            // TODO manage personal data deletion failure
+
+        List<PersonalData> personalData = personalDataController.findAllByUser(patientid);
+        for (PersonalData pd : personalData)
             personalDataController.removeEntity(pd);
-        }
-        List<RaoTest> raoTests
-                = raoTestController.findAllByUser(patientid);
-        for (RaoTest raoTest : raoTests) {
-            // TODO manage Rao test deletion failure
+
+        List<RaoTest> raoTests = raoTestController.findAllByUser(patientid);
+        for (RaoTest raoTest : raoTests)
             raoTestController.removeEntity(raoTest);
-        }
-        List<WhiteTest> whiteTests
-                = whiteTestController.findAllByUser(patientid);
-        for (WhiteTest whiteTest : whiteTests) {
-            // TODO manage White test deletion failure
+
+        List<WhiteTest> whiteTests = whiteTestController.findAllByUser(patientid);
+        for (WhiteTest whiteTest : whiteTests)
             whiteTestController.removeEntity(whiteTest);
-        }
-        List<MSRSession> sessions
-                = sessionController.findAllByUserOrGroup(patientid);
-        for (MSRSession session : sessions) {
-            // TODO: manage failure of deleteRecord
+
+        List<MSRSession> sessions = sessionController.findAllByUserOrGroup(patientid);
+        for (MSRSession session : sessions)
             sessionController.removeEntity(session);
-        }
+
 
         List<History> histories = historyController.findAllByUser(patientid);
-
-        histories.forEach(historyController::removeEntity);
+        for(History history : histories)
+            historyController.removeEntity(history);
 
 
         // Delete photo
         String photoFile = user.getPhoto();
-        if (photoFile != null) {
+        if (photoFile != null)
+        {
             String photosPath = config.getPhotosPath();
             String filePath = photosPath + File.separator + photoFile;
             File file = new File(filePath);
             file.delete();
         }
+        userController.removeEntity(user);
 
-        if (userController.removeEntity(user))
-        {
-            logger.info("User " + patientid + " deleted with success");
-            /* TODO Check the following two lines */
-            redirectAttributes.addFlashAttribute("css", "success");
-            redirectAttributes.addFlashAttribute("msg", "User is deleted!");
-            return new ModelAndView("redirect:/showpatients");
-        } else {  // deleteRecord(user) == -1
-            logger.error("...user update failed");
-            model.addAttribute("message", "Utente " + patientid + ", cancellazione fallita");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            return new ModelAndView("error");
-        }
+        logger.info("User " + patientid + " deleted with success");
+        return new ModelAndView("redirect:/showpatients");
     }
 
 
@@ -418,67 +180,49 @@ public class MSRUserService
      * @param username the username of the user
      * @param password the password of the user
      * @param response
-     * @param model
      *
      * @return the user in JSON format if the user is found, -1 otherwise
      * HttpStatus.NOT_ACCEPTABLE if email or password are not valid;
      * HttpStatus.NO_CONTENT if the user is not present in the database;
      * HttpStatus.OK if the user is found in the database
-     */  
+     */
    @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ResponseBody
-    public ModelAndView login(
-           // @RequestParam(value = "id", required = true) String id,
-            //aggiunto per usermane
-            @RequestParam(value = "username", required = true) String username,
-            @RequestParam(value = "password", required = true) String password,
-            HttpServletResponse response,
-            Model model)
+   public ModelAndView login(
+           HttpServletResponse response,
+           @RequestParam String username,
+           @RequestParam String password
+   )
    {
-              logger.info("Look for the user username: "
-                + username  + " password: " + password);
+       logger.info("Look for the user username: " + username  + " password: " + password);
 
-     
-     MSRUser user = userController.findRecordByUsername(username, password);
-       
+
+     MSRUser user = userController.findByUsernameAndPassword(username, password);
+
       if (user == null)
       {
-            logger.info("...no user found in the database");
-            return new ModelAndView("login", "message", "Credenziali non valide");
+          logger.info("...no user found in the database");
+          return new ModelAndView("login", "message", "Credenziali non valide");
       }
-      else if (user.getMsrrole() == RoleValue.ADMIN)
-      {
-            //aggiunto per useranme
-            Cookie ck = new Cookie("username", user.getUsername());
-            Cookie ck1 = new Cookie("name", user.getName());
-            Cookie ck2 = new Cookie("id", user.getId().toString());
-            Cookie ck3 = new Cookie("role", RoleValue.ADMIN.toString());
-            Cookie ck4 = new Cookie("cid", user.getCid().toString());
-                 //aggiunto per useranme
-            response.addCookie(ck);
-            response.addCookie(ck1);
-            response.addCookie(ck2);
-            response.addCookie(ck3);
-            response.addCookie(ck4);
-            //model.addAttribute("name", user.getName());
-            //return new ModelAndView("administrator");
-            return new ModelAndView("redirect:adminhome");
-        } else {
-            logger.info("...user found with the given email and password");
-            //aggiunto per username
-            
-            Cookie ck = new Cookie("useranme", user.getUsername());
-            Cookie ck1 = new Cookie("name", user.getName());
-            Cookie ck2 = new Cookie("id", user.getId().toString());
-            Cookie ck3 = new Cookie("role", RoleValue.PATIENT.toString());
-             //aggiunto per username
-            response.addCookie(ck);
-            response.addCookie(ck1);
-            response.addCookie(ck2);
-            response.addCookie(ck3);
-            return new ModelAndView("redirect: patienthome");
-        }
-    }
+
+       Cookie ck = new Cookie("username", user.getUsername());
+       Cookie ck1 = new Cookie("name", user.getName());
+       Cookie ck2 = new Cookie("id", user.getId().toString());
+       Cookie ck3 = new Cookie("role", user.getMsrrole().toString());
+       Cookie ck4 = new Cookie("cid", user.getCid().toString());
+
+       response.addCookie(ck);
+       response.addCookie(ck1);
+       response.addCookie(ck2);
+       response.addCookie(ck3);
+       response.addCookie(ck4);
+
+      if (user.getMsrrole() == RoleValue.ADMIN)
+          return new ModelAndView("redirect:adminhome");
+      else
+          return new ModelAndView("redirect: patienthome");
+
+   }
 
 
    
@@ -486,39 +230,27 @@ public class MSRUserService
     @ResponseBody
     public ModelAndView logout(
             HttpServletRequest request,
-            HttpServletResponse response,
-            HttpSession session)
+            HttpServletResponse response
+    )
     {
-        if (WebPagesUtilities.redirectIfNotLogged(request)) {
+        if (!CookiesManager.isUserLogged(request))
             return new ModelAndView("login");
-        } else {
-            Cookie ck = new Cookie("id", "");
-            ck.setMaxAge(0);
-            response.addCookie(ck);
-            return new ModelAndView("login");
-        }
+
+        Cookie ck = new Cookie("id", "");
+        ck.setMaxAge(0);
+        response.addCookie(ck);
+        return new ModelAndView("login");
+
     }
 
 
-
-    /**
-     * Retrieves user's info given user's email and password
-     *
-     * @param email the email of the user
-     * @param response
-     * @param model
-     *
-     * @return the user in JSON format if the user is found, -1 otherwise
-     * HttpStatus.NOT_ACCEPTABLE if email or password are not valid;
-     * HttpStatus.NO_CONTENT if the user is not present in the database;
-     * HttpStatus.OK if the user is found in the database
-     */
+    // TODO Funzione disabilitata
     @RequestMapping(value = "/forgottencredential", method = RequestMethod.POST)
     @ResponseBody
     public ModelAndView forgottencredential(
-            @RequestParam(value = "email", required = true) String email,
-            HttpServletResponse response,
-            Model model) {
+            @RequestParam String email
+    )
+    {
 
         logger.info("Look for the user with email: " + email);
 
@@ -528,19 +260,20 @@ public class MSRUserService
         }
 
         MSRUser user = userController.findRecordByEmail(email);
-        if (user == null) {
+        if (user == null)
+        {
             logger.info("...no user found in the database");
             return new ModelAndView("login", "message", "Email non valida");
-        } else {
-            logger.info("...user found with the given email");
-
-            SendMail.sendCredentials(
-                    user.getEmail(),
-                    user.getId(),
-                    user.getPassword());
-
-            return new ModelAndView("login");
         }
+        logger.info("...user found with the given email");
+
+        SendMail.sendCredentials(
+                user.getEmail(),
+                user.getId(),
+                user.getPassword());
+
+        return new ModelAndView("login");
+
     }
 
 
@@ -552,218 +285,224 @@ public class MSRUserService
             Model model)
     {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotAdmin(request))
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserAdmin(request))
             return new ModelAndView("login");
+
+        int cid = CookiesManager.getLoggedUserCenter(request);
+
+        model.addAttribute("name", CookiesManager.geLoggedUserName(request));
+        List<MSRUser> centerUsers = userController.findAllPatientsInCenter(cid);
+        List<MSRGroup> centerGroups = groupController.findAllGroupsInCenter(cid);
+
+        if (centerUsers.isEmpty())
+            model.addAttribute("existpatients", false);
         else
-        {
-            int cid = CookiesManager.getLoggedUserCenter(request);
-            model.addAttribute("name", CookiesManager.geLoggedUserName(request));
+            model.addAttribute("existpatients", true);
 
 
-            if (userController.findAllPatientsInCenter(cid).isEmpty())
-                model.addAttribute("existpatients", false);
-            else
-                model.addAttribute("existpatients", true);
+        if (centerGroups.isEmpty())
+            model.addAttribute("existgroups", false);
+        else
+            model.addAttribute("existgroups", true);
 
 
-            if (groupController.findAllGroupsInCenter(cid).isEmpty())
-                model.addAttribute("existgroups", false);
-            else
-                model.addAttribute("existgroups", true);
+        return new ModelAndView("administrator");
 
-
-            return new ModelAndView("administrator");
-        }
     }
 
-
+    /**
+    Visualizza gli esercizi di training per l'utente demo
+     */
     @RequestMapping(value = "/patienttraining", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView patienttraining(HttpServletRequest request, Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request)
-                || WebPagesUtilities.redirectIfNotPatient(request)) {
+    public ModelAndView patienttraining(HttpServletRequest request, Model model)
+    {
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserPatientOrDemo(request))
             return new ModelAndView("login");
-        } else {
-            JSONArray jArr
-                    = new JSONArray(
-                            "[{\"cat\":\"ATT_SEL_STD\",\"id\":1,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_STD_FAC\",\"id\":6,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_STD_ORI\",\"id\":47,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_FLW\",\"id\":8,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_FLW_FAC\",\"id\":12,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_FLW_ORI\",\"id\":48,\"done\":false},"
-                            + "{\"cat\":\"ATT_ALT\",\"id\":15,\"done\":false},"
-                            + "{\"cat\":\"ATT_ALT_FAC\",\"id\":18,\"done\":false},"
-                            + "{\"cat\":\"ATT_ALT_ORI\",\"id\":49,\"done\":false},"
-                            + "{\"cat\":\"ATT_DIV\",\"id\":20,\"done\":false},"
-                            + "{\"cat\":\"ATT_DIV_FAC\",\"id\":24,\"done\":false},"
-                            + "{\"cat\":\"ATT_DIV_ORI\",\"id\":46,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_1\",\"id\":25,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_1_FAC\",\"id\":30,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_1_ORI\",\"id\":50,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_2\",\"id\":34,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_5\",\"id\":55,\"done\":false},"
-                            + "{\"cat\":\"NBACK\",\"id\":38,\"done\":false},"
-                            + "{\"cat\":\"NBACK_FAC\",\"id\":40,\"done\":false},"
-                            + "{\"cat\":\"NBACK_ORI\",\"id\":41,\"done\":false},"
-                            //CHECK
-                            + "{\"cat\":\"MEM_LONG_1\",\"id\":51,\"done\":false},"
-                            + "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false},"
-                            + "{\"cat\":\"PLAN_1\",\"id\":52,\"done\":false},"
-                            + "{\"cat\":\"PLAN_2\",\"id\":53,\"done\":false},"
-                            //+ "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false},"
-                            + "{\"cat\":\"ATT_RFLXS\",\"id\":65,\"done\":false}"
-                            + "]"
-                    );
 
-            JSONObject json;
-            String cat;
-              int id;
-            boolean done;
-            
-            // HashMap (Categoria: Esercizi)
-            Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
+        JSONArray jArr = new JSONArray(
+                "[{\"cat\":\"ATT_SEL_STD\",\"id\":1,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_STD_FAC\",\"id\":6,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_STD_ORI\",\"id\":47,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_FLW\",\"id\":8,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_FLW_FAC\",\"id\":12,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_FLW_ORI\",\"id\":48,\"done\":false},"
+                        //+ "{\"cat\":\"ATT_ALT\",\"id\":15,\"done\":false},"
+                        //+ "{\"cat\":\"ATT_ALT_FAC\",\"id\":18,\"done\":false},"
+                        //+ "{\"cat\":\"ATT_ALT_ORI\",\"id\":49,\"done\":false},"
+                        + "{\"cat\":\"ATT_DIV\",\"id\":20,\"done\":false},"
+                        + "{\"cat\":\"ATT_DIV_FAC\",\"id\":24,\"done\":false},"
+                        + "{\"cat\":\"ATT_DIV_ORI\",\"id\":46,\"done\":false},"
+                        //+ "{\"cat\":\"MEM_VIS_1\",\"id\":25,\"done\":false},"
+                        //+ "{\"cat\":\"MEM_VIS_1_FAC\",\"id\":30,\"done\":false},"
+                        //+ "{\"cat\":\"MEM_VIS_1_ORI\",\"id\":50,\"done\":false},"
+                        + "{\"cat\":\"MEM_VIS_2\",\"id\":34,\"done\":false},"
+                        //+ "{\"cat\":\"MEM_VIS_5\",\"id\":55,\"done\":false},"
+                        + "{\"cat\":\"NBACK\",\"id\":38,\"done\":false},"
+                        + "{\"cat\":\"NBACK_FAC\",\"id\":40,\"done\":false},"
+                        + "{\"cat\":\"NBACK_ORI\",\"id\":41,\"done\":false},"
+                        //CHECK
+                        //+ "{\"cat\":\"MEM_LONG_1\",\"id\":51,\"done\":false},"
+                        //+ "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false},"
+                        //+ "{\"cat\":\"PLAN_1\",\"id\":52,\"done\":false},"
+                        //+ "{\"cat\":\"PLAN_2\",\"id\":53,\"done\":false},"
+                        //+ "{\"cat\":\"PLAN_3\",\"id\":58,\"done\":false},"
+                        + "{\"cat\":\"ATT_RFLXS\",\"id\":65,\"done\":false}"
+                        + "]"
+        );
 
-            for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values()) {
-                ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
-                categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
-                        tmpToDoExerciseList,
-                        tmpDoneExerciseList,
-                        tmpInterruptedExerciseList,
-                        0, exerciseCategoryValue.toString()));
-            }
+        JSONObject json;
+        String cat;
+        int id;
 
+        // HashMap (Categoria: Esercizi)
+        Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
 
-            for (int i = 0; i < jArr.length(); i++)
-            {
-                json = jArr.getJSONObject(i);
-                cat = json.getString("cat");
-                       id = json.getInt("id");
-                done = json.getBoolean("done");
-                Exercise exercise = exerciseController.getEntity(id);
-                // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
-                ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
-                exerciseCategory.getExercises().add(exercise);
-            }
-
-
-            // HashMap ( Gruppo : Categoria)
-            Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
-            // Inserisco le keys nell'ordine voluto
-            groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
-            groupMap.put("ATTENTION_FAC", new CategoryGroup("ATTENTION_FAC"));
-            groupMap.put("ATTENTION_ORI", new CategoryGroup("ATTENTION_ORI"));
-            groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
-            groupMap.put("MEMORY_FAC", new CategoryGroup("MEMORY_FAC"));
-            groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
-            groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
-            groupMap.put("ATT_RFLXS", new CategoryGroup("ATT_RFLXS"));
-
-
-            categoryExerciseMap.forEach((key, exerciseCategory) -> {
-                if (!exerciseCategory.getExercises().isEmpty()) {
-                    exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
-                    String categoryGroup = this.getGroupForCategory(key);
-                    groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
-                }
-            });
-
-
-            Integer userId = CookiesManager.geLoggedUserId(request);
-            model.addAttribute("groupMap", groupMap);
-            model.addAttribute("patientid", userId);
-            model.addAttribute("difficulty", "training");
-            model.addAttribute("name", CookiesManager.geLoggedUserName(request));
-            model.addAttribute("sessid", -1);
-
-            return new ModelAndView("patient-training");
+        for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
+        {
+            ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
+            categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
+                    tmpToDoExerciseList,
+                    tmpDoneExerciseList,
+                    tmpInterruptedExerciseList,
+                    0, exerciseCategoryValue.toString()));
         }
+
+
+        for (int i = 0; i < jArr.length(); i++)
+        {
+            json = jArr.getJSONObject(i);
+            cat = json.getString("cat");
+            id = json.getInt("id");
+            Exercise exercise = exerciseController.getEntity(id);
+            // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
+            exerciseCategory.getExercises().add(exercise);
+        }
+
+
+        // HashMap ( Gruppo : Categoria)
+        Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
+        // Inserisco le keys nell'ordine voluto
+        groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
+        groupMap.put("ATTENTION_FAC", new CategoryGroup("ATTENTION_FAC"));
+        groupMap.put("ATTENTION_ORI", new CategoryGroup("ATTENTION_ORI"));
+        groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
+        groupMap.put("MEMORY_FAC", new CategoryGroup("MEMORY_FAC"));
+        groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
+        groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
+        groupMap.put("ATT_RFLXS", new CategoryGroup("ATT_RFLXS"));
+
+        for(String category : categoryExerciseMap.keySet())
+        {
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(category);
+            if (!exerciseCategory.getExercises().isEmpty())
+            {
+                exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
+                String categoryGroup = this.getGroupForCategory(category);
+                groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
+            }
+        }
+
+
+        Integer userId = CookiesManager.geLoggedUserId(request);
+        model.addAttribute("groupMap", groupMap);
+        model.addAttribute("patientid", userId);
+        model.addAttribute("difficulty", "training");
+        model.addAttribute("name", CookiesManager.geLoggedUserName(request));
+        model.addAttribute("sessid", -1);
+
+        return new ModelAndView("patient-training");
+
     }
 
 
     @RequestMapping(value = "/patientdemo", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView patientdemo(HttpServletRequest request, Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotPatient(request)) {
+    public ModelAndView patientdemo(HttpServletRequest request, Model model)
+    {
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserPatientOrDemo(request))
             return new ModelAndView("login");
-        } else {
-            JSONArray jArr = new JSONArray(
-                            "[{\"cat\":\"ATT_SEL_STD\",\"id\":1,\"done\":false},"
-                            + "{\"cat\":\"ATT_SEL_FLW\",\"id\":8,\"done\":false},"
-                            + "{\"cat\":\"MEM_VIS_1\",\"id\":25,\"done\":false},"
-                            + "{\"cat\":\"NBACK\",\"id\":38,\"done\":false},"
-                            //CHECK
-                            //+ "{\"cat\":\"MEM_LONG_1\",\"id\":51,\"done\":false},"
-                            + "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false}]"
-                    );
 
-            JSONObject json;
-            String cat;
-     
-            int id;
-            boolean done;
-            
-            // HashMap (Categoria: Esercizi)
-            Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
+        JSONArray jArr = new JSONArray(
+                "[{\"cat\":\"ATT_SEL_STD\",\"id\":1,\"done\":false},"
+                        + "{\"cat\":\"ATT_SEL_FLW\",\"id\":8,\"done\":false},"
+                        + "{\"cat\":\"MEM_VIS_1\",\"id\":25,\"done\":false},"
+                        + "{\"cat\":\"NBACK\",\"id\":38,\"done\":false},"
+                        //CHECK
+                        //+ "{\"cat\":\"MEM_LONG_1\",\"id\":51,\"done\":false},"
+                        + "{\"cat\":\"RES_INH\",\"id\":43,\"done\":false}]"
+        );
 
-            for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
-            {
-                ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
-                ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
-                categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
-                        tmpToDoExerciseList,
-                        tmpDoneExerciseList,
-                        tmpInterruptedExerciseList,
-                        0, exerciseCategoryValue.toString()));
-            }
+        JSONObject json;
+        String cat;
+        int id;
 
+        // HashMap (Categoria: Esercizi)
+        Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
 
-            for (int i = 0; i < jArr.length(); i++)
-            {
-                json = jArr.getJSONObject(i);
-                cat = json.getString("cat");
-                id = json.getInt("id");
-                done = json.getBoolean("done");
-                Exercise exercise = exerciseController.getEntity(id);
-                // Inserisco l'esercizio nella lista degli esercizi ( inq questo cosa non serve differenziare lo stato)
-                ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
-                exerciseCategory.getExercises().add(exercise);
-            }
-
-
-            // HashMap ( Gruppo : Categoria)
-            Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
-            // Inserisco le keys nell'ordine voluto
-            groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
-            groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
-            groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
-            categoryExerciseMap.forEach((key, exerciseCategory) -> {
-                if (!exerciseCategory.getExercises().isEmpty()) {
-                    exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
-                    String categoryGroup = this.getGroupForCategory(key);
-                    groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
-                }
-            });
-
-
-            model.addAttribute("groupMap", groupMap);
-            model.addAttribute("patientid", -1);
-            model.addAttribute("difficulty", "demo");
-            model.addAttribute("name", CookiesManager.geLoggedUserName(request));
-            model.addAttribute("sessid", -1);
-
-            return new ModelAndView("patient-demo");
+        for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
+        {
+            ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
+            categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
+                    tmpToDoExerciseList,
+                    tmpDoneExerciseList,
+                    tmpInterruptedExerciseList,
+                    0, exerciseCategoryValue.toString()));
         }
+
+
+        for (int i = 0; i < jArr.length(); i++)
+        {
+            json = jArr.getJSONObject(i);
+            cat = json.getString("cat");
+            id = json.getInt("id");
+            Exercise exercise = exerciseController.getEntity(id);
+            // Inserisco l'esercizio nella lista degli esercizi (in questo cosa non serve differenziare lo stato)
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
+            exerciseCategory.getExercises().add(exercise);
+        }
+
+
+        // HashMap ( Gruppo : Categoria)
+        Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
+        // Inserisco le keys nell'ordine voluto
+        groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
+        groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
+        groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
+
+        for(String category : categoryExerciseMap.keySet())
+        {
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(category);
+            if (!exerciseCategory.getExercises().isEmpty())
+            {
+                exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
+                String categoryGroup = this.getGroupForCategory(category);
+                groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
+            }
+        }
+
+
+        model.addAttribute("groupMap", groupMap);
+        model.addAttribute("patientid", -1);
+        model.addAttribute("difficulty", "demo");
+        model.addAttribute("name", CookiesManager.geLoggedUserName(request));
+        model.addAttribute("sessid", -1);
+
+        return new ModelAndView("patient-demo");
+
     }
 
 
+
     @RequestMapping(value = "/instructions", method = RequestMethod.GET)
-    public ModelAndView instructions(HttpServletRequest request)
+    public ModelAndView instructions()
     {
         return new ModelAndView("instructions");
     }
@@ -773,185 +512,178 @@ public class MSRUserService
     @ResponseBody
     public ModelAndView patienthome(HttpServletRequest request, Model model)
     {
-        if (WebPagesUtilities.redirectIfNotLogged(request)
-                || WebPagesUtilities.redirectIfNotPatient(request)) {
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserPatientOrDemo(request))
             return new ModelAndView("login");
-        }
-        else
-        {
-            Integer userId = CookiesManager.geLoggedUserId(request);
-            MSRUser user = userController.getEntity(userId);
-            boolean demo = user.getMsrrole() == RoleValue.DEMO;
 
-            model.addAttribute("name", CookiesManager.geLoggedUserName(request));
-            
-            model.addAttribute("id", userId);
-            model.addAttribute("demo", demo);
-            //return new ModelAndView("attention-motorbike");
-            return new ModelAndView("patient");
-        }
+        Integer userId = CookiesManager.geLoggedUserId(request);
+        MSRUser user = userController.getEntity(userId);
+        boolean demo = user.getMsrrole() == RoleValue.DEMO;
+        String userName = CookiesManager.geLoggedUserName(request);
+
+        model.addAttribute("name", userName);
+        model.addAttribute("id", userId);
+        model.addAttribute("demo", demo);
+
+        return new ModelAndView("patient");
+
     }
 
 
     @RequestMapping(value = "/patientrehabilitation", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView patientrehabilitaion(HttpServletRequest request, Model model)
+    public ModelAndView patientrehabilitation(HttpServletRequest request, Model model)
     {
-        if (WebPagesUtilities.redirectIfNotLogged(request) || WebPagesUtilities.redirectIfNotPatient(request)) {
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserPatientOrDemo(request))
             return new ModelAndView("login");
-        }
-        else
+
+        List<MSRSession> sessionList = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request))
+                .stream()
+                .sorted(Comparator.comparing(sess -> -sess.getId())) // Last inserted is first (by sequence of ids)
+                .collect(Collectors.toList());
+
+        if (sessionList.isEmpty() || sessionList.stream().noneMatch(sessionController::hasVisibleExercises))
         {
-            List<MSRSession> sessionList = sessionController.findAllActiveByUserOrGroup(CookiesManager.geLoggedUserId(request));
+            model.addAttribute("back", "patienthome");
+            model.addAttribute("home", "patienthome");
+            model.addAttribute("message", "Non hai esercizi assegnati");
+            return new ModelAndView("error");
+        }
 
-            if (sessionList.isEmpty() || !sessionList.stream().anyMatch(sessionController::hasVisibleExercises))
-            {
-                model.addAttribute("back", "patienthome");
-                model.addAttribute("home", "patienthome");
-                model.addAttribute("message", "Non hai esercizi assegnati");
-                return new ModelAndView("error");
+
+        MSRSession session = sessionList.get(0);                // The first session is the most recent one
+        JSONArray jArr = new JSONArray(session.getExercises());
+
+        JSONObject json;
+        String cat;
+        int id;
+        boolean done;
+        Integer lastInterruptedExerciseId = 0;
+        List<Exercise> interruptedExercisesList = new ArrayList<>();
+        // HashMap (Categoria: Esercizi)
+        Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
+
+        for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
+        {
+            ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
+            ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
+            categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
+                    tmpToDoExerciseList,
+                    tmpDoneExerciseList,
+                    tmpInterruptedExerciseList,
+                    0, exerciseCategoryValue.toString()));
+        }
+
+
+        for (int i = 0; i < jArr.length(); i++)
+        {
+            json = jArr.getJSONObject(i);
+
+
+            cat = json.getString("cat");
+
+            id = json.getInt("id");
+            done = json.getBoolean("done");
+
+            if(!sessionController.getExerciseVisibilityInSession(session, id))
+                continue;
+
+
+            Exercise exercise = exerciseController.getEntity(id);
+            exercise.setStatus(historyController.isExerciseInHistory(id, session.getId()), done);
+            // se l'esercizio è da iniziare, controllo se il paziente lo aveva già iniziato durante la sessione in ospedale
+            if (exercise.getStatus().equals("todo") && session.getFromSessionId() != null) {
+                exercise.setStatus(historyController.isExerciseInHistory(id, session.getFromSessionId()), false);
             }
-            else
-            {
-                MSRSession session = sessionList.get(0);
-                JSONArray jArr = new JSONArray(session.getExercises());
-
-                JSONObject json;
-                String cat;
-                  int id;
-                boolean done;
-                Integer lastInterruptedExerciseId = 0;
-                List<Exercise> interruptedExercisesList = new ArrayList<>();
-                // HashMap (Categoria: Esercizi)
-                Map<String, ExerciseCategory> categoryExerciseMap = new TreeMap<>();
-
-                for (ExerciseCategoryValue exerciseCategoryValue : ExerciseCategoryValue.values())
-                {
-                    ArrayList<Exercise> tmpAllExerciseList = new ArrayList<>();
-                    ArrayList<Exercise> tmpToDoExerciseList = new ArrayList<>();
-                    ArrayList<Exercise> tmpDoneExerciseList = new ArrayList<>();
-                    ArrayList<Exercise> tmpInterruptedExerciseList = new ArrayList<>();
-                    categoryExerciseMap.put(exerciseCategoryValue.toString(), new ExerciseCategory(tmpAllExerciseList,
-                            tmpToDoExerciseList,
-                            tmpDoneExerciseList,
-                            tmpInterruptedExerciseList,
-                            0, exerciseCategoryValue.toString()));
-                }
-
-
-                for (int i = 0; i < jArr.length(); i++)
-                {
-                    json = jArr.getJSONObject(i);
-
-
-                    cat = json.getString("cat");
-               
-                    id = json.getInt("id");
-                    done = json.getBoolean("done");
-
-                    if(!sessionController.getExerciseVisibilityInSession(session, id))
-                        continue;
-
-
-                    Exercise exercise = exerciseController.getEntity(id);
-                    exercise.setStatus(historyController.isExerciseInHistory(id, session.getId()), done);
-                    // se l'esercizio è da iniziare, controllo se il paziente lo aveva già iniziato durante la sessione in ospedale
-                    if (exercise.getStatus().equals("todo") && session.getFromSessionId() != null) {
-                        exercise.setStatus(historyController.isExerciseInHistory(id, session.getFromSessionId()), false);
-                    }
-                    // Inserisco l'esercizio nella lista correspondente al suo status
-                    ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
-                    if ("interrupted".equals(exercise.getStatus())) {
-                        exerciseCategory.getInterruptedExercises().add(exercise);
-                        // Lista di tutti gli esercizi interrotti per calcolare l'ultimo interrotto
-                        interruptedExercisesList.add(exercise);
-                    } else if ("todo".equals(exercise.getStatus())) {
-                        exerciseCategory.getToDoExercises().add(exercise);
-                    } else if ("done".equals(exercise.getStatus())) {
-                        exerciseCategory.getCompletedExercises().add(exercise);
-                    }
-                }
-
-
-                if (!interruptedExercisesList.isEmpty())
-                {
-                    List<Integer> interruptedExsIds = new ArrayList<>();
-                    for (Exercise ex : interruptedExercisesList)
-                        interruptedExsIds.add(ex.getId());
-
-                    lastInterruptedExerciseId = historyController.getLastInterruptedExercise(interruptedExsIds, session.getId(), session.getFromSessionId());
-                }
-
-
-                String lastInterruptedExerciseCategory = null;
-
-                for (Exercise ex : interruptedExercisesList)
-                    if (ex.getId() == lastInterruptedExerciseId)
-                        lastInterruptedExerciseCategory = ex.getCategory().toString();
-
-
-                for (ExerciseCategory exerciseCategory : categoryExerciseMap.values()) {
-                    Exercise lastInterruptedEx = getExerciseWithId(lastInterruptedExerciseId, exerciseCategory.getInterruptedExercises());
-                    if (lastInterruptedEx != null) {
-                        Collections.swap(exerciseCategory.getInterruptedExercises(), exerciseCategory.getInterruptedExercises().indexOf(lastInterruptedEx), 0);
-                    }
-                    // Aggiungo gli esercizi alla lista completa degli esercizi ordinati a seconda del loro stato
-                    exerciseCategory.getExercises().addAll(exerciseCategory.getInterruptedExercises());
-                    exerciseCategory.getExercises().addAll(exerciseCategory.getToDoExercises());
-                    exerciseCategory.getExercises().addAll(exerciseCategory.getCompletedExercises());
-                }
-
-                // HashMap ( Gruppo : Categoria)
-                Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
-                // Inserisco le keys nell'ordine voluto
-                groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
-                groupMap.put("ATTENTION_FAC", new CategoryGroup("ATTENTION_FAC"));
-                groupMap.put("ATTENTION_ORI", new CategoryGroup("ATTENTION_ORI"));
-                groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
-                groupMap.put("MEMORY_FAC", new CategoryGroup("MEMORY_FAC"));
-                groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
-                groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
-                groupMap.put("ATTENTION_RFLXS", new CategoryGroup("ATTENTION_RFLXS"));
-
-
-                categoryExerciseMap.forEach((key, exerciseCategory) -> {
-                    if (!exerciseCategory.getExercises().isEmpty())
-                    {
-                        exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
-                        String categoryGroup = this.getGroupForCategory(key);
-                        if (!groupMap.containsKey(categoryGroup)) {
-                            groupMap.put(categoryGroup, new CategoryGroup(categoryGroup));
-                        }
-                        groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
-                    }
-                });
-
-
-                model.addAttribute("groupMap", groupMap);
-                model.addAttribute("lastInterruptedExerciseCategory", lastInterruptedExerciseCategory);
-                model.addAttribute("lastInterruptedExercise", lastInterruptedExerciseId);
-                model.addAttribute("patientid", session.getUsrgrpid());
-                model.addAttribute("difficulty", session.getDifficulty());
-                model.addAttribute("name", CookiesManager.geLoggedUserName(request));
-                model.addAttribute("sessid", session.getId());
-                model.addAttribute("inHospital", session.getHospital());
-
-                return new ModelAndView("patient-rehabilitation");
+            // Inserisco l'esercizio nella lista correspondente al suo status
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(cat);
+            if ("interrupted".equals(exercise.getStatus())) {
+                exerciseCategory.getInterruptedExercises().add(exercise);
+                // Lista di tutti gli esercizi interrotti per calcolare l'ultimo interrotto
+                interruptedExercisesList.add(exercise);
+            } else if ("todo".equals(exercise.getStatus())) {
+                exerciseCategory.getToDoExercises().add(exercise);
+            } else if ("done".equals(exercise.getStatus())) {
+                exerciseCategory.getCompletedExercises().add(exercise);
             }
         }
+
+
+        if (!interruptedExercisesList.isEmpty())
+        {
+            List<Integer> interruptedExsIds = new ArrayList<>();
+            for (Exercise ex : interruptedExercisesList)
+                interruptedExsIds.add(ex.getId());
+
+            lastInterruptedExerciseId = historyController.getLastInterruptedExercise(interruptedExsIds, session.getId(), session.getFromSessionId());
+        }
+
+
+        String lastInterruptedExerciseCategory = null;
+
+        for (Exercise ex : interruptedExercisesList)
+            if (ex.getId() == lastInterruptedExerciseId)
+                lastInterruptedExerciseCategory = ex.getCategory().toString();
+
+
+        for (ExerciseCategory exerciseCategory : categoryExerciseMap.values())
+        {
+            int interruptedId = lastInterruptedExerciseId;
+            Exercise lastInterruptedEx = exerciseCategory.getInterruptedExercises()
+                    .stream()
+                    .filter(ex -> ex.getId() == interruptedId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (lastInterruptedEx != null)
+                Collections.swap(exerciseCategory.getInterruptedExercises(), exerciseCategory.getInterruptedExercises().indexOf(lastInterruptedEx), 0);
+
+            // Aggiungo gli esercizi alla lista completa degli esercizi ordinati a seconda del loro stato
+            exerciseCategory.getExercises().addAll(exerciseCategory.getInterruptedExercises());
+            exerciseCategory.getExercises().addAll(exerciseCategory.getToDoExercises());
+            exerciseCategory.getExercises().addAll(exerciseCategory.getCompletedExercises());
+        }
+
+        // HashMap ( Gruppo : Categoria)
+        Map<String, CategoryGroup> groupMap = new LinkedHashMap<>();
+        // Inserisco le keys nell'ordine voluto
+        groupMap.put("ATTENTION_FIG", new CategoryGroup("ATTENTION_FIG"));
+        groupMap.put("ATTENTION_FAC", new CategoryGroup("ATTENTION_FAC"));
+        groupMap.put("ATTENTION_ORI", new CategoryGroup("ATTENTION_ORI"));
+        groupMap.put("MEMORY_FIG", new CategoryGroup("MEMORY_FIG"));
+        groupMap.put("MEMORY_FAC", new CategoryGroup("MEMORY_FAC"));
+        groupMap.put("MEMORY_ORI", new CategoryGroup("MEMORY_ORI"));
+        groupMap.put("EX_FUNC", new CategoryGroup("EX_FUNC"));
+        groupMap.put("ATTENTION_RFLXS", new CategoryGroup("ATTENTION_RFLXS"));
+
+        for(String category : categoryExerciseMap.keySet())
+        {
+            ExerciseCategory exerciseCategory = categoryExerciseMap.get(category);
+            if (!exerciseCategory.getExercises().isEmpty())
+            {
+                exerciseCategory.setProgress(this.getCategoryProgress(exerciseCategory.getExercises()));
+                String categoryGroup = this.getGroupForCategory(category);
+                if (!groupMap.containsKey(categoryGroup)) {
+                    groupMap.put(categoryGroup, new CategoryGroup(categoryGroup));
+                }
+                groupMap.get(categoryGroup).addExerciseCategory(exerciseCategory);
+            }
+        }
+
+
+        model.addAttribute("groupMap", groupMap);
+        model.addAttribute("lastInterruptedExerciseCategory", lastInterruptedExerciseCategory);
+        model.addAttribute("lastInterruptedExercise", lastInterruptedExerciseId);
+        model.addAttribute("patientid", session.getUsrgrpid());
+        model.addAttribute("difficulty", session.getDifficulty());
+        model.addAttribute("name", CookiesManager.geLoggedUserName(request));
+        model.addAttribute("sessid", session.getId());
+        model.addAttribute("inHospital", session.getHospital());
+
+        return new ModelAndView("patient-rehabilitation");
+
     }
-
-    
-
-    private Exercise getExerciseWithId(Integer id, List<Exercise> list)
-    {
-            for (Exercise ex : list) {
-                if (ex.getId() == id) {
-                    return ex;
-                }
-            }
-            return null;
-        }
 
 
     private String getGroupForCategory(String key)
@@ -980,14 +712,15 @@ public class MSRUserService
 
     // list page
     @RequestMapping(value = "/showpatientsold", method = RequestMethod.GET)
-    public ModelAndView showpatientsold(HttpServletRequest request) {
+    public ModelAndView showpatientsold(HttpServletRequest request)
+    {
         logger.debug("showpatients()");
-        if (WebPagesUtilities.redirectIfNotLogged(request)) {
+        if (!CookiesManager.isUserLogged(request))
             return new ModelAndView("login");
-        } else {
-            int cid = CookiesManager.getLoggedUserCenter(request);
-            return new ModelAndView("patient-management", "patients", userController.findAllPatientsInCenter(cid));
-        }
+
+        int cid = CookiesManager.getLoggedUserCenter(request);
+        return new ModelAndView("patient-management", "patients", userController.findAllPatientsInCenter(cid));
+
     }
 
 
@@ -998,29 +731,29 @@ public class MSRUserService
     )
     {
         logger.debug("showCenterPatients()");
-        if (WebPagesUtilities.redirectIfNotLogged(request)) {
+        if (!CookiesManager.isUserLogged(request))
             return new ModelAndView("login");
-        } else {
-            int uid = CookiesManager.geLoggedUserId(request);
-            int cid = CookiesManager.getLoggedUserCenter(request);
-            List<MSRUser> patients = userController.findAllPatientsInCenter(cid);
-            if (!patients.isEmpty()) {
-                model.addAttribute("patients", patients);
-                model.addAttribute("email", userController.getEntity(uid).getEmail());
-                List<MSRGroup> groups = new ArrayList<MSRGroup>();
-                for (MSRUser patient : patients) {
-                    groupController.findEntity(patient.getGid()).ifPresent(groups::add);
-                }
-                model.addAttribute("groups", groups);
-                model.addAttribute("allgroups", groupController.findAllGroupsInCenter(cid));
-            } else {
-              //  model.addAttribute("message", "Nessun paziente inserito nel sistema");
-              model.addAttribute("message", "Nessun partecipante inserito nel sistema");
-            
-            }
-            return new ModelAndView("patient-management");
 
+        int uid = CookiesManager.geLoggedUserId(request);
+        int cid = CookiesManager.getLoggedUserCenter(request);
+
+        List<MSRUser> patients = userController.findAllPatientsInCenter(cid);
+        if (!patients.isEmpty())
+        {
+            model.addAttribute("patients", patients);
+            model.addAttribute("email", userController.getEntity(uid).getEmail());
+            List<MSRGroup> groups = new ArrayList<MSRGroup>();
+            for (MSRUser patient : patients)
+                groupController.findEntity(patient.getGid()).ifPresent(groups::add);
+
+            model.addAttribute("groups", groups);
+            model.addAttribute("allgroups", groupController.findAllGroupsInCenter(cid));
         }
+        else
+            model.addAttribute("message", "Nessun partecipante inserito nel sistema");
+
+
+        return new ModelAndView("patient-management");
     }
 
 
@@ -1029,19 +762,18 @@ public class MSRUserService
     public ModelAndView saveOrUpdatePatient(
             HttpServletRequest request,
             @Valid @ModelAttribute("patientForm") MSRUser patientForm,
-            Model model,
-            @RequestParam(value = "photofile", required = false) MultipartFile photoFile
+            @RequestParam(required = false) MultipartFile photofile
     )
     {
 
         logger.debug("saveOrUpdateUser() : {}", patientForm);
 
 
-        if (photoFile != null && !photoFile.isEmpty())
+        if (photofile != null && !photofile.isEmpty() && false) // DEACTIVATED
         {
             try
             {
-                byte[] bytes = photoFile.getBytes();
+                byte[] bytes = photofile.getBytes();
 
                 Image img = ImageIO.read(new ByteArrayInputStream(bytes));
 
@@ -1052,15 +784,13 @@ public class MSRUserService
 
 
                 // Create the file on server
-                String photosPath = config.getPhotosPath();
                 String fileName = System.currentTimeMillis() + ".jpg";
-                String filePath = photosPath + File.separator + fileName;
+                String filePath = PhotoManager.getInstance().getPhotoUrl(request, fileName);
                 File serverFile = new File(filePath);
                 serverFile.createNewFile();
                 ImageIO.write(bufferedImage, "jpg", serverFile);
 
-                logger.info("Server File Location="
-                        + serverFile.getAbsolutePath());
+                logger.info("Server File Location=" + serverFile.getAbsolutePath());
 
                 patientForm.setPhoto(fileName);
 
@@ -1098,66 +828,21 @@ public class MSRUserService
     }
 
 
-
-
-        /**
-         * Retrieves user's info given user's email and password
-         *
-         * @param email the email of the user
-         * @param password the password of the user
-         *
-         * @return the user in JSON format if the user is found, -1 otherwise
-         * HttpStatus.NOT_ACCEPTABLE if email or password are not valid;
-         * HttpStatus.NO_CONTENT if the user is not present in the database;
-         * HttpStatus.OK if the user is found in the database
-         */
-    @RequestMapping(value = "/signinuser", method = RequestMethod.POST)
-    public ResponseEntity<String> signinUser(
-            @RequestParam(value = "email", required = true) String email,
-            @RequestParam(value = "password", required = true) String password) {
-
-        logger.info("Look for the user email: "
-                + email + " password: " + password);
-
-        if (!MSRUser.isEmailValid(email)) {
-            logger.warn("...given email is not valid");
-            return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!MSRUser.isPasswordValid(password)) {
-            logger.warn("...given password is not valid");
-            return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-        }
-
-        MSRUser user = userController.findRecordByEmail(email, password);
-        if (user == null) {
-            logger.info("...no user found in the database");
-            return new ResponseEntity<String>("-1", HttpStatus.NO_CONTENT);
-        } else {
-            logger.info("...user found with the given email and password");
-            return new ResponseEntity<String>(user.toJSONString(), HttpStatus.SWITCHING_PROTOCOLS);
-        }
-
-    }
-
-
-    /**
-     * Exports patients
-     *
-     * @param email
-     * @param model
-     * @return
-     */
     @RequestMapping(value = "/exportpatients", method = RequestMethod.POST)
     public ModelAndView exportpatients(
-            @RequestParam(value = "email", required = true) String email,
-            Model model) {
+            @RequestParam String email,
+            Model model)
+    {
         logger.debug("exportpatients()");
 
-        if (CsvHelper.export(config.getDbPath(), config.getCsvsPath(), "msruser", "msrrole='PATIENT'") == 0) {
+        if (CsvHelper.export(config.getDbPath(), config.getCsvsPath(), "msruser", "msrrole='PATIENT'") == 0)
+        {
             logger.debug("... export of patients succeeded");
             SendMail.sendMail(email, "Pazienti", "Dati di tutti i pazienti", config.getCsvsPath() + File.separator + "msruser.csv");
             return new ModelAndView("redirect:/showpatients");
-        } else {
+        }
+        else
+        {
             logger.debug("... export patients failed");
             model.addAttribute("message", "Esportazione pazienti fallita");
             model.addAttribute("back", "showpatients");
@@ -1178,15 +863,19 @@ public class MSRUserService
      */
     @RequestMapping(value = "/exportpatienthistory", method = RequestMethod.POST)
     public ModelAndView exportpatienthistory(
-            @RequestParam(value = "email", required = true) String email,
-            Model model) {
+            @RequestParam String email,
+            Model model)
+    {
         logger.debug("exportpatienthistory()");
 
-        if (CsvHelper.export(config.getDbPath(), config.getCsvsPath(), "history", "1") == 0) {
+        if (CsvHelper.export(config.getDbPath(), config.getCsvsPath(), "history", "1") == 0)
+        {
             logger.debug("... export of patients succeeded");
             SendMail.sendMail(email, "Pazienti", "Dati di tutti i pazienti", config.getCsvsPath() + File.separator + "msruser.csv");
             return new ModelAndView("redirect:/showpatients");
-        } else {
+        }
+        else
+        {
             logger.debug("... export patients failed");
             model.addAttribute("message", "Esportazione storia pazienti fallita");
             model.addAttribute("back", "showpatients");
@@ -1204,17 +893,16 @@ public class MSRUserService
      * @param exerciseList list of exercise to check
      * @return percentage of completed
      */
-    public int getCategoryProgress(List<Exercise> exerciseList) {
+    public int getCategoryProgress(List<Exercise> exerciseList)
+    {
         int completedCount = 0;
-        if (exerciseList.isEmpty()) {
+        if (exerciseList.isEmpty())
             return 0;
-        }
-        for(Exercise ex : exerciseList) {
-            if ("done".equals(ex.getStatus())) {
+
+        for(Exercise ex : exerciseList)
+            if ("done".equals(ex.getStatus()))
                 completedCount++;
-            }
-        }
-        int percentage = (completedCount * 100) / exerciseList.size();
-        return percentage;
+
+        return completedCount / exerciseList.size() * 100;
     }
 }

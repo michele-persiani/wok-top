@@ -173,7 +173,7 @@
                                             data-size="sm"
                                             data-placeholder="Nessuna foto"
                                             data-buttonBefore="true"
-                                            data-iconName="glyphicon glyphicon-upload" />
+                                            data-iconName="glyphicon glyphicon-upload" disabled/> <!-- Deactivated -->
 
                             </div>
                         </div>

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,6 +33,12 @@ public class RLService
     JSONDeserializer<List<Map<String, String>>> dataDeserializer = new JSONDeserializer<>();
     JSONSerializer serializer = new JSONSerializer();
 
+
+    @RequestMapping(value = "/useragent")
+    public ModelAndView userAgent(HttpServletRequest request)
+    {
+        return new ModelAndView("useragent_test");
+    }
 
     @RequestMapping(value = "/rlconfig", method = RequestMethod.GET)
     public ModelAndView rlConfigPage()
@@ -126,7 +133,6 @@ public class RLService
             @RequestParam String performanceData
     )
     {
-
         List<Map<String, String>> data = dataDeserializer.deserialize(performanceData);
 
         List<HistoryRecord> levels = IntStream.range(0, data.size())
@@ -180,156 +186,4 @@ public class RLService
         );
 
     }
-
-    /*
-    private NextLevelAgent createThresholdAgent(int maxLevel, List<Tuple<Integer, Double>> performanceData)
-    {
-        ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
-
-        double lowerThreshold = config.getLowerThreshold();
-        double startThreshold = config.getStartThreshold();
-        double thresholdDeltaPassed = config.getThresholdDeltaPassed();
-        double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
-
-        AtomicLong counter = new AtomicLong(0);
-        return new TemplateNextLevelAgent()
-                .setMinMaxLevel(1, maxLevel)
-                .setEpisodeSupplier(
-                        EpisodesSupplier.createSingleEpisode(
-                                performanceData,
-                                (tp, h) ->
-                                {
-                                    int lvl = tp.first;
-                                    double p = tp.second;
-                                    h.setExid(123456789);
-                                    h.setUserid(123456789);
-                                    h.setAbsperformance(p);
-                                    h.setRelperformance(p);
-                                    h.setLevel(lvl);
-                                    h.setPassed(p >= 0.8);
-                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
-                                }
-                        )
-                )
-                .setEpisodeTransitionAdapter(
-                        StateTransitionAdapter.onlyArrivalState(History::getAbsperformance)
-                )
-                .setAgent(
-                        NextLevelAgentFactory.thresholdAgent(
-                                lowerThreshold,
-                                startThreshold,
-                                thresholdDeltaPassed,
-                                thresholdDeltaNotPassed,
-                                1,
-                                maxLevel
-                        )
-                )
-                ;
-    }
-
-    private NextLevelAgent createIncrementalAgent(int maxLevel, List<Tuple<Integer, Double>> performanceData)
-    {
-        double passThreshold = 0.8;
-        AtomicLong counter = new AtomicLong(0);
-        return new TemplateNextLevelAgent()
-                .setMinMaxLevel(1, maxLevel)
-                .setEpisodeSupplier(
-                        EpisodesSupplier.createSingleEpisode(
-                                performanceData,
-                                (tp, h) ->
-                                {
-                                    int lvl = tp.first;
-                                    double p = tp.second;
-                                    h.setExid(123456789);
-                                    h.setUserid(123456789);
-                                    h.setAbsperformance(p);
-                                    h.setRelperformance(p);
-                                    h.setLevel(lvl);
-                                    h.setPassed(p >= 0.8);
-                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
-                                }
-                        )
-                )
-                .setEpisodeTransitionAdapter(
-                        StateTransitionAdapter.onlyArrivalState(History::getAbsperformance)
-                )
-                .setAgent(
-                        NextLevelAgentFactory.incrementalAgent(passThreshold)
-                );
-    }
-
-
-    private NextLevelAgent createLevelAgent(
-            int maxLevel,
-            List<Tuple<Integer, Double>> performanceData
-    )
-    {
-
-        Model model = JPAModel.getInstance();
-
-
-        LevelAgentConfig config = LevelAgentConfig.getSingletonEntity(model);
-        double targetPerformance = config.getTargetPerformance();
-        double slope = config.getPriorSlope();
-        double intercept = config.getPriorIntercept();
-        double priorWeight = config.getPriorWeight();
-        double discountFactor = config.getDiscountFactor();
-        double policyEpsilon = config.getPolicyEpsilon();
-        LevelAgentConfig.PriorModelType priorType = config.getPriorModelType();
-
-        AtomicLong counter = new AtomicLong(0);
-
-        return new TemplateNextLevelAgent()
-                .setMinMaxLevel(1, maxLevel)
-                .setEpisodeSupplier(
-                        EpisodesSupplier.createSingleEpisode(
-                                performanceData.subList(Math.max(0, performanceData.size() - 5), performanceData.size()),
-                                (tp, h) ->
-                                {
-                                    int lvl = tp.first;
-                                    double p = tp.second;
-                                    h.setExid(123456789);
-                                    h.setUserid(123456789);
-                                    h.setAbsperformance(p);
-                                    h.setRelperformance(p);
-                                    h.setLevel(lvl);
-                                    h.setPassed(p >= 0.8);
-                                    h.setCreateTimestamp(System.currentTimeMillis() + counter.getAndIncrement());
-                                }
-                        )
-                )
-                .setEpisodeTransitionAdapter(StateTransitionAdapter.onlyArrivalState(History::getAbsperformance))
-                .setAgent(
-                        NextLevelAgentFactory.valueIterationAgent(
-                                1,
-                                maxLevel,
-                                discountFactor,
-                                policyEpsilon,
-                                RewardModel.createMixtureRewardModel(
-                                                Maps.of(
-                                                        RewardModel.<Integer, Integer>createRegressionRewardModel(
-                                                                (from, action, to) -> to.doubleValue(),
-                                                                new LinearRegression(0, 0.5)
-                                                        ).clampReward(0, 1),
-                                                        1 - priorWeight,
-                                                        RewardModel.<Integer, Integer>createLambdaRewardModel(
-                                                                (from, action, to) ->
-                                                                        Optional.of(priorType)
-                                                                                .filter(pt -> pt == LevelAgentConfig.PriorModelType.sigmoid)
-                                                                                .map(pt -> XYFunction.sigmoid(slope, intercept * maxLevel))
-                                                                                .orElse(XYFunction.linear(slope / maxLevel, intercept))
-                                                                                .apply(to.doubleValue())
-                                                        ).clampReward(0, 1),
-                                                        priorWeight
-                                                )
-                                        )
-                                        .clampReward(0, 1)
-                                        .applyToRewards(reward -> 1 - Math.abs(targetPerformance - reward))
-
-                        )
-                )
-                ;
-    }
-    */
-
 }

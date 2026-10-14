@@ -440,7 +440,7 @@
                         },
                         function(data2, status2) {
                             var js2=JSON.parse(data2);
-                            perf2 = js2.perf;
+                            perf2 = Math.min(1, js2.perf);
                             //passed2 = js2.passed;
 
                             var perf1;
@@ -462,7 +462,7 @@
                                 },
                                 function(data, status) {
                                     var js=JSON.parse(data);
-                                    perf1 = js.perf;
+                                    perf1 = Math.min(1, js.perf);
                                     //passed = js.passed;
                                     var thr = js.thr;
 

@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.MSRGroup;
 
 import java.util.List;
@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
  * 
  */
 
-public class MSRGroupController extends JPAEntityController<MSRGroup>
+public class MSRGroupController extends DecoratorEntityController<MSRGroup>
 {
 
-    public MSRGroupController()
+    public MSRGroupController(Model model)
     {
-        super(MSRGroup.class, PersistenceUnit.DEFAULT_PU);
+        super(model, MSRGroup.class);
     }
 
     public List<MSRGroup> findAllGroupsInCenter(Integer centerId)

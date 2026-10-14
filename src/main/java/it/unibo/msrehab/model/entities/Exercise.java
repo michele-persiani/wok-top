@@ -304,8 +304,8 @@ public class Exercise extends BaseEntity
 
 
     public int clampLevel(int level)
-    {//modificato perché andava a 0 il livello
-        return Math.max(-1, Math.min(level, getMaxLevel()));
+    {
+        return Math.max(0, Math.min(level, getMaxLevel()));
     }
 
     public int getDifficultLevel()

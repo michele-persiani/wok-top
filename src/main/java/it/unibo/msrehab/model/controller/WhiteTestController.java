@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.WhiteTest;
 
 
@@ -16,12 +16,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 
-public class WhiteTestController extends JPAEntityController<WhiteTest>
+public class WhiteTestController extends DecoratorEntityController<WhiteTest>
 {
 
-    public WhiteTestController()
+    public WhiteTestController(Model model)
     {
-        super(WhiteTest.class, PersistenceUnit.DEFAULT_PU);
+        super(model, WhiteTest.class);
     }
 
 

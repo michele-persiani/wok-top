@@ -311,9 +311,9 @@
                                                             },
                                                             message: '<h4>Vuoi salvare i dati inseriti?</h4>',
                                                             callback: function (result) {
-                                                                if (result === true) {
-                                                                    document.clinicalProfile.submit();
-                                                                }
+                                                                window.alert('Non supportato.Contattare un amministratore');
+                                                                //if (result === true)
+                                                                //    document.clinicalProfile.submit();
                                                             }
                                                         });">Salva</button>
                         </div>

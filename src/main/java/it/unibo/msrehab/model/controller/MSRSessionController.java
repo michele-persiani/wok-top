@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.MSRSession;
 
 import java.util.List;
@@ -23,12 +23,12 @@ import org.json.JSONObject;
  * @author floriano
  *
  */
-public class MSRSessionController extends JPAEntityController<MSRSession>
+public class MSRSessionController extends DecoratorEntityController<MSRSession>
 {
 
-    public MSRSessionController()
+    public MSRSessionController(Model model)
     {
-        super(MSRSession.class, PersistenceUnit.DEFAULT_PU);
+        super(model, MSRSession.class);
     }
 
 
@@ -122,7 +122,8 @@ public class MSRSessionController extends JPAEntityController<MSRSession>
         }
         sess.setExercises(jsonArr.toString());
         sess.setActive(!sessionEnded);
-        return updateEntity(sess);
+        updateEntity(sess);
+        return true;
     }
 
 
@@ -146,8 +147,8 @@ public class MSRSessionController extends JPAEntityController<MSRSession>
                 .findFirst()
                 .ifPresent(obj -> obj.put("visible", visible));
         session.setExercises(jsonArray.toString());
-        MSRSessionController controller = new MSRSessionController();
-        controller.putEntity(session);
+
+        putEntity(session);
     }
 
     public boolean getExerciseVisibilityInSession(MSRSession session, int exerciseId)

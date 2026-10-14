@@ -7,8 +7,8 @@ package it.unibo.msrehab.model.controller;
 
 
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.JPAModel;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 
 import java.util.Comparator;
@@ -25,13 +25,14 @@ import java.util.stream.Collectors;
  *
  * @author danger
  */
-public class ChangeDifficultyController extends JPAEntityController<ChangeDifficulty>
+public class ChangeDifficultyController extends DecoratorEntityController<ChangeDifficulty>
 {
-    private final HistoryController historyController = new HistoryController();
+    private final HistoryController historyController;
 
-    public ChangeDifficultyController()
+    public ChangeDifficultyController(Model model)
     {
-        super(ChangeDifficulty.class, JPAModel.persistenceUnit);
+        super(model, ChangeDifficulty.class);
+        historyController = new HistoryController(model);
     }
 
 

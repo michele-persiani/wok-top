@@ -65,17 +65,15 @@ public class Sampling
      */
     public static <T> List<T> sampleElementsAllPresent(int n, Collection<T> items, Function<T, Object> uniqueKeyExtractor)
     {
-        List<T> uniqueElements = items.stream()
+        List<T> uniqueElements = new ArrayList<>(items.stream()
                 .collect(Collectors.toMap(
                         uniqueKeyExtractor,
                         item -> item,
                         (previous, replacement) -> random.nextDouble() > 0.5 ? previous : replacement
                 ))
-                .values()
-                .stream()
-                .sorted(Comparator.comparing(v -> Math.random()))
-                .limit(n)
-                .collect(Collectors.toList());
+                .values());
+
+        Collections.shuffle(uniqueElements);
 
         List<T> sampled = new ArrayList<>(uniqueElements.subList(0, Math.min(n, uniqueElements.size())));
 

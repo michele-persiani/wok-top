@@ -58,37 +58,6 @@
         
         <script src="resources/js/d3.v4.min.js" charset="utf-8"></script>
         <script src="resources/js/c3.min.js"></script>
-        
-        <script>
-            function updatePrevPage(back_link){
-                if (typeof(Storage) !== "undefined") {
-                    localStorage.setItem("back_link", back_link);
-                    
-                }
-            }
-            function getPrevPage(){
-                if (typeof(Storage) !== "undefined") {
-                    return localStorage.getItem("back_link"); 
-                } else {
-                    return "patientsstatistics";
-                }
-            }
-            $(document).ready(function(){
-                 var back_link=document.referrer;
-                 console.log(back_link);
-                 var ind=back_link.indexOf("patientchosegraph2");
-                 console.log(ind);
-                if((ind!=-1)||(back_link.indexOf("patientbuildgraphoverview")!=-1)){
-                    console.log("2");
-                    back_link=getPrevPage();
-                }else{
-                    console.log("1");
-                    updatePrevPage(back_link);                    
-                }
-
-                $("#backbutton").attr("href",back_link);
-            });
-        </script>
     </head>
     <body>
         <div class="container">
@@ -142,9 +111,11 @@
                     	 <li class="list-group-item">
                       		 <a class="btn btn-lg btn-primary" href="patientchosegraph2?patientid=${patient.id}&kind=memoria" style="min-width:300px">Memoria</a>
                     	 </li>
+                    <!--
                     	 <li class="list-group-item">
                       		 <a class="btn btn-lg btn-primary" href="patientchosegraph2?patientid=${patient.id}&kind=funzioni esecutive" style="min-width:300px">Funzioni Esecutive</a>
                     	 </li>
+                    	 -->
                 </ul>
             </div>
         </div>

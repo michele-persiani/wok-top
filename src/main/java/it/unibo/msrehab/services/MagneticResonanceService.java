@@ -3,6 +3,7 @@ package it.unibo.msrehab.services;
 import flexjson.JSONDeserializer;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.model.entities.MagneticResonance;
 import it.unibo.msrehab.model.controller.MagneticResonanceController;
@@ -36,17 +37,13 @@ public class MagneticResonanceService {
             .getLogger(MagneticResonanceService.class);
     private final MagneticResonanceController resonanceController;
     private final MSRUserController userController;
-    private final Configuration config;
+
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
     
     public MagneticResonanceService() {
         super();
-        this.resonanceController = new MagneticResonanceController();
-        this.userController = new MSRUserController();
-
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
+        this.resonanceController = new MagneticResonanceController(model);
+        this.userController = new MSRUserController(model);
     }
 
     @RequestMapping(value = "/deleteresonance", method = RequestMethod.POST)
@@ -67,16 +64,9 @@ public class MagneticResonanceService {
             model.addAttribute("home", "adminhome");
             return new ModelAndView("error");
         }
-        if (resonanceController.removeEntity(resonance)) {
-            logger.info("Resonance " + resonanceid + " deleted with success");
-            return new ModelAndView("redirect:/showpatients");
-        } else {  // deleteRecord(resonance) == -1
-            logger.error("...Resonance delete failed");
-            model.addAttribute("message", "Risonanza " + resonanceid + ", cancellazione fallita");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            return new ModelAndView("error");
-        }
+        resonanceController.removeEntity(resonance);
+        logger.info("Resonance " + resonanceid + " deleted with success");
+        return new ModelAndView("redirect:/showpatients");
     }
 
     // show resonance form
@@ -138,14 +128,10 @@ public class MagneticResonanceService {
             Long t = LocalDateTime.now().toDateTime().getMillis();
             resonance.setTimestamp(t);
 
-            boolean success = resonanceController.insertEntity(resonance);
-            if (success) {
-                logger.info("...resonance registered with success with id " + resonance.getId());
-                return new ResponseEntity<String>(resonance.getId().toString(), HttpStatus.OK);
-            } else {
-                logger.error("...resonance could not be registered");
-                return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-            }
+            resonanceController.insertEntity(resonance);
+            logger.info("...resonance registered with success with id " + resonance.getId());
+            return new ResponseEntity<>(resonance.getId().toString(), HttpStatus.OK);
+
         } catch (IllegalArgumentException e) {
             logger.error("... wrong data: " + e.getMessage());
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
@@ -185,13 +171,10 @@ public class MagneticResonanceService {
 
             newResonance.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
 
-            if (resonanceController.updateEntity(newResonance)) {
-                logger.info("Update of resonance " + profileid + " terminated with success");
-                return new ResponseEntity<String>("1", HttpStatus.OK);
-            } else {    // updateRecord(profile) == -1
-                logger.error("...resonanace update failed");
-                return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-            }
+            resonanceController.updateEntity(newResonance);
+            logger.info("Update of resonance " + profileid + " terminated with success");
+            return new ResponseEntity<String>("1", HttpStatus.OK);
+
         } catch (IllegalArgumentException e) {
             logger.error("... wrong data: " + e.getMessage());
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
@@ -223,32 +206,9 @@ public class MagneticResonanceService {
 
         resonanceForm.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
 
-        if (resonanceForm.isNew()) {
-            if (resonanceController.insertEntity(resonanceForm))
-            {
-                logger.info("Add of resonance " + resonanceForm.getId() + " terminated with success");
-                return new ModelAndView("redirect:/showpatients");
-            } else {  // addRecord(resonanceForm) == -1
-                logger.error("...resonance addition failed");
-                model.addAttribute("message", "Aggiunta risonanza fallita");
-                model.addAttribute("back", "patient-form");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");
-            }
-        } else { // update
-            if (resonanceController.updateEntity(resonanceForm)) {
-                    //redirectAttributes.addFlashAttribute("css", "success");
-                //redirectAttributes.addFlashAttribute("msg", "ClinicalProfile updated successfully!");
-                logger.info("Update of resonance " + resonanceForm.getId() + " terminated with success");
-                //return new ResponseEntity<String>("1", HttpStatus.OK);
-                return new ModelAndView("redirect:/showpatients");
-            } else {    // updateRecord(resonanceForm) == -1
-                logger.error("...magnetic resonance update failed");
-                model.addAttribute("message", "Aggiornamento risonanza magnetica fallita");
-                model.addAttribute("back", "patient-form");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");                
-            }
-        }
+        resonanceController.putEntity(resonanceForm);
+        logger.info("Add of resonance " + resonanceForm.getId() + " terminated with success");
+        return new ModelAndView("redirect:/showpatients");
+
     }
 }

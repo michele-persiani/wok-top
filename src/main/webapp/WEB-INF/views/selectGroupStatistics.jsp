@@ -49,18 +49,17 @@
             }
         </style>
         <script>
-            function udf(x){
-                return x;
-            }
-            function loadUserList(chose){
-                console.log(chose);
-                $.get("getusersfromgroup?groupid="+chose,function(data){
-                    var js=data;
-                    $("#utenti").html("");
-                    for(var i=0;i<js.length;i++){
-                        $("#utenti").append('<li class="user"><a  href="patientchosegraph?patientid='+js[i].id+'"><img class="img-responsive img-thumbnail" src="'+udf(js[i].photo)+'" /><p>'+js[i].surname+' '+js[i].name+'</p></a></li>');
-                    }
-                });
+            function loadUserList(chose)
+            {
+                $.get(
+                    "getusersfromgroup?groupid="+chose,
+                    function(data)
+                    {
+                        $("#utenti").html("");
+                        for(var i=0;i<data.length;i++){
+                            $("#utenti").append('<li class="user"><a  href="patientchosegraph?patientid='+data[i].id+'"><img class="img-responsive img-thumbnail" src="'+data[i].photo+'" /><p>'+data[i].surname+' '+data[i].name+'</p></a></li>');
+                        }
+                    });
             }
             $(document).ready(function(){
                 loadUserList(${groups[0].id});

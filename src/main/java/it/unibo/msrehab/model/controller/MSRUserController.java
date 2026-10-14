@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.MSRUser;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -16,11 +16,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class MSRUserController extends JPAEntityController<MSRUser>
+public class MSRUserController extends DecoratorEntityController<MSRUser>
 {
-    public MSRUserController()
+    public MSRUserController(Model model)
     {
-        super(MSRUser.class, PersistenceUnit.DEFAULT_PU);
+        super(model, MSRUser.class);
     }
 
 
@@ -44,7 +44,7 @@ public class MSRUserController extends JPAEntityController<MSRUser>
     }
     
 
-    public MSRUser findRecordByUsername(String username, String password)
+    public MSRUser findByUsernameAndPassword(String username, String password)
     {
         return getAllEntities()
                 .stream()

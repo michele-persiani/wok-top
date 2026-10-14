@@ -201,8 +201,8 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "History.findAllByUser", query = "SELECT l FROM History l WHERE l.userid= :userid ORDER BY l.createTimestamp DESC"),
     @NamedQuery(name = "History.findAllByUserAndExercise", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid ORDER BY l.createTimestamp DESC"),
     @NamedQuery(name = "History.findAllSolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is not NULL ORDER BY l.createTimestamp DESC"),
-    // None serve perche si usa solo quella da id
-        //@NamedQuery(name = "History.findAllUnsolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is NULL ORDER BY l.timestamp DESC"),
+    // None serve perche si usa solo quella da i
+    @NamedQuery(name = "History.findAllUnsolvedByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid AND l.passed is NULL ORDER BY l.createTimestamp DESC"),
 
         // Non serve perche si usa findAllUnsolvedByUserAndExerciseAndSessid e findAssignmentById
     //@NamedQuery(name = "History.findAllByUserAndExerciseAndSessid", query = "SELECT l FROM History l WHERE l.userid= :userid AND l.exid= :exid AND l.sessid = :sessid ORDER BY l.timestamp DESC"),
@@ -317,7 +317,7 @@ public class History extends BaseEntity
      */
     public boolean isSolved()
     {
-        return passed != null;
+        return finishTimestamp != null;
     }
 
     public Integer getUserid() {

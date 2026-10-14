@@ -23,24 +23,20 @@ import javax.servlet.http.HttpServletRequest;
  * @author danger
  */
 @Controller
-public class MailService {
+public class MailService
+{
 
-
-    @RequestMapping(value = "/useragent")
-    public ModelAndView userAgent(HttpServletRequest request)
-    {
-        return new ModelAndView("useragent_test");
-    }
 
 
     @RequestMapping(value = "/mailcontact", method = RequestMethod.POST)
     public String mailcontact(
-            @RequestParam(value = "name", required = true) String name,
-            @RequestParam(value = "surname", required = true) String surname,
-            @RequestParam(value = "phone", required = false) String phone,
-            @RequestParam(value = "email", required = true) String email,
-            @RequestParam(value = "message", required = true) String message,
-            Model model) {
+            @RequestParam String name,
+            @RequestParam String surname,
+            @RequestParam(required = false) String phone,
+            @RequestParam String email,
+            @RequestParam String message,
+            Model model)
+    {
         
         //HttpHeaders headers = new HttpHeaders();
         String me = "floriano.zini@unibo.it";
@@ -57,11 +53,12 @@ public class MailService {
 
     @RequestMapping(value = "/mailexport", method = RequestMethod.POST)
     public ResponseEntity<String> mailexport(
-            @RequestParam(value = "email", required = true) String email,
-            @RequestParam(value = "subject", required = true) String subject,
-            @RequestParam(value = "message", required = true) String message,
-            @RequestParam(value = "attachment", required = true) String attachment,
-            Model model) {
+            @RequestParam String email,
+            @RequestParam String subject,
+            @RequestParam String message,
+            @RequestParam String attachment,
+            Model model)
+    {
         
         HttpHeaders headers = new HttpHeaders();
         SendMail.sendMail(email,subject,message,attachment);

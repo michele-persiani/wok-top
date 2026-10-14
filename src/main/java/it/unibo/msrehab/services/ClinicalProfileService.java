@@ -3,6 +3,7 @@ package it.unibo.msrehab.services;
 import flexjson.JSONDeserializer;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.model.controller.ClinicalProfileController;
 import it.unibo.msrehab.model.entities.ClinicalProfile;
@@ -55,15 +56,17 @@ public class ClinicalProfileService {
     private final MSRUserController userController;
     private final MagneticResonanceController mrController;
     private final Configuration config;
+
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
     
     private final String MR_REPORT_NAME = "mr-report-";
     
     public ClinicalProfileService() {
         super();
-        this.clinicalProfileController = new ClinicalProfileController();
-        this.personalDataController = new PersonalDataController();
-        this.userController = new MSRUserController();
-        this.mrController = new MagneticResonanceController();
+        this.clinicalProfileController = new ClinicalProfileController(model);
+        this.personalDataController = new PersonalDataController(model);
+        this.userController = new MSRUserController(model);
+        this.mrController = new MagneticResonanceController(model);
 
         ApplicationContextLoader l = new ApplicationContextLoader();
         l.load(Configuration.class,
@@ -86,7 +89,7 @@ public class ClinicalProfileService {
         if (profileid == null) {
             return new ModelAndView("redirect:/showpatients");
         }
-        ClinicalProfile profile = (ClinicalProfile) clinicalProfileController.findEntity(profileid).get();
+        ClinicalProfile profile = (ClinicalProfile) clinicalProfileController.getEntity(profileid);
         
         if (profile == null) {
             logger.error("Clinical profile " + profileid + " not found");
@@ -95,17 +98,8 @@ public class ClinicalProfileService {
             model.addAttribute("home", "adminhome");
             return new ModelAndView("error");            
         }
-        if (clinicalProfileController.removeEntity(profile)) {
-            logger.info("Clinical profile " + profileid + " deleted with success");
-            return new ModelAndView("redirect:/showpatients");
-        }
-        else {  // deleteRecord(user) == -1
-            logger.error("...clinical profile delete failed");
-            model.addAttribute("message", "Cancellazione del profilo clinico " + profileid + " fallita");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            return new ModelAndView("error");
-        }
+        clinicalProfileController.removeEntity(profile);
+        return new ModelAndView("redirect:/showpatients");
     }
 
     /**
@@ -144,8 +138,8 @@ public class ClinicalProfileService {
             model.addAttribute("mrlist", mrList);
             model.addAttribute(
                     "patientname",
-                    userController.findEntity(patientid).get().getName()
-                    + " " + userController.findEntity(patientid).get().getSurname());
+                    userController.getEntity(patientid).getName()
+                    + " " + userController.getEntity(patientid).getSurname());
 
             return new ModelAndView("clinicalprofile-form");
         }
@@ -185,74 +179,15 @@ public class ClinicalProfileService {
                 logger.warn("...given dignosys year is not valid");
                 return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
             }
-//            if (profile.getMmseraw() != null
-//                    && !ClinicalProfile.isMmseValid(profile.getMmseraw())) {
-//                logger.warn("...given mmse is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getMfisc() != null
-//                    && !ClinicalProfile.isMfiscValid(profile.getMfisc())) {
-//                logger.warn("...given mfisc is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getMfisp() != null
-//                    && !ClinicalProfile.isMfispValid(profile.getMfisp())) {
-//                logger.warn("...given mfisp is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getMfisps() != null
-//                    && !ClinicalProfile.isMfispsValid(profile.getMfisps())) {
-//                logger.warn("...given mfisps is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getHadsa() != null
-//                    && !ClinicalProfile.isHadsaValid(profile.getHadsa())) {
-//                logger.warn("...given hadsa is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getHadsd() != null
-//                    && !ClinicalProfile.isHadsdValid(profile.getHadsd())) {
-//                logger.warn("...given hadsd is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getTmtaraw() != null
-//                    && !ClinicalProfile.isTmtarawValid(profile.getTmtaraw())) {
-//                logger.warn("...given tmta is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (profile.getTmtbraw() != null
-//                    && !ClinicalProfile.isTmtbrawValid(profile.getTmtbraw())) {
-//                logger.warn("...given tmtb is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
 
-            // Set derivate parameters
-//            int birthyear = personalDataController.getRecord(profile.getUserid()).getBirthyear();
-//            int educationyears = personalDataController.getRecord(profile.getUserid()).getEducationyears();
-            
-//            profile.setHadstot();
-//            profile.setMfistot();
-//            profile.setMmseadj(birthyear, educationyears);
-//            profile.setTmtaadj(birthyear, educationyears);
-//            profile.setTmtbadj(birthyear, educationyears);
-//            profile.setTmtbaraw();
-//            profile.setTmtbaadj(birthyear, educationyears);
-//            profile.setTmtaeqFromTmtaadj();
-//            profile.setTmtbeqFromTmtbadj();
-//            profile.setTmtbaeqFromTmtbaadj();
 
             //Set timestamp
             Long t = LocalDateTime.now().toDateTime().getMillis();
             profile.setTimestamp(t);
 
-            boolean success = clinicalProfileController.insertEntity(profile);
-            if (success) {
-                logger.info("...clinical profile registered with success with id " + profile.getId());
-                return new ResponseEntity<String>(profile.getId().toString(), HttpStatus.OK);
-            } else {
-                logger.error("...clinial profile could not be registered");
-                return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-            }
+            clinicalProfileController.insertEntity(profile);
+            logger.info("...clinical profile registered with success with id " + profile.getId());
+            return new ResponseEntity<String>(profile.getId().toString(), HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             logger.error("... wrong data: " + e.getMessage());
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
@@ -277,233 +212,101 @@ public class ClinicalProfileService {
 
         logger.info("Starting update clinical profile");
 
-        try {
-            ClinicalProfile newProfile
-                    = new JSONDeserializer<ClinicalProfile>().deserialize(json, ClinicalProfile.class);
+        ClinicalProfile newProfile
+                = new JSONDeserializer<ClinicalProfile>().deserialize(json, ClinicalProfile.class);
 
-            Integer profileid = newProfile.getId();
+        Integer profileid = newProfile.getId();
 
-            ClinicalProfile oldProfile = clinicalProfileController.findEntity(profileid).get();
-            if (oldProfile == null) {
-                logger.warn("Clinical profile " + profileid + " not found");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (newProfile.getDiagnosysyear() != null
-                    && !ClinicalProfile.isDignosysyearValid(newProfile.getDiagnosysyear())) {
-                logger.warn("...given dignosys year is not valid");
-                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-            }
-//            if (newProfile.getMmseraw() != null
-//                    && !ClinicalProfile.isMmseValid(newProfile.getMmseraw())) {
-//                logger.warn("...given mmse is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (newProfile.getMfisc() != null
-//                    && !ClinicalProfile.isMfiscValid(newProfile.getMfisc())) {
-//                logger.warn("...given mfisc is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (newProfile.getMfisp() != null
-//                    && !ClinicalProfile.isMfispValid(newProfile.getMfisp())) {
-//                logger.warn("...given mfisp is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (newProfile.getMfisps() != null
-//                    && !ClinicalProfile.isMfispsValid(newProfile.getMfisps())) {
-//                logger.warn("...given mfisps is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (newProfile.getTmtaraw() != null
-//                    && !ClinicalProfile.isTmtarawValid(newProfile.getTmtaraw())) {
-//                logger.warn("...given tmta is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-//            if (newProfile.getTmtbraw() != null
-//                    && !ClinicalProfile.isTmtbrawValid(newProfile.getTmtbraw())) {
-//                logger.warn("...given tmtb is not valid");
-//                return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
-//            }
-
-            logger.info("new clinical profile: " + json);
-
-            // Set derivate parameters
-//            int birthyear = personalDataController.getRecord(oldProfile.getUserid()).getBirthyear();
-//            int educationyears = personalDataController.getRecord(oldProfile.getUserid()).getEducationyears();
-            
-//            newProfile.setHadstot();
-//            newProfile.setMfistot();
-//            newProfile.setMmseadj(birthyear, educationyears);
-//            newProfile.setTmtaadj(birthyear, educationyears);
-//            newProfile.setTmtbadj(birthyear, educationyears);
-//            newProfile.setTmtbaraw();
-//            newProfile.setTmtbaadj(birthyear, educationyears);
-//            newProfile.setTmtaeqFromTmtaadj();
-//            newProfile.setTmtbeqFromTmtbadj();
-//            newProfile.setTmtbaeqFromTmtbaadj();
-            //newProfile.setTimestamp((Timestamp.valueOf(LocalDateTime.now())));
-
-            //newProfile.setTimestamp(new Timestamp(LocalDateTime.now().toDateTime().getMillis()));
-            newProfile.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
-
-            if (clinicalProfileController.updateEntity(newProfile)) {
-                logger.info("Update of clinical profile " + profileid + " terminated with success");
-                return new ResponseEntity<String>("1", HttpStatus.OK);
-            } else {    // updateRecord(profile) == -1
-                logger.error("...clinical profile update failed");
-                return new ResponseEntity<String>("-1", HttpStatus.SERVICE_UNAVAILABLE);
-            }
-        } catch (IllegalArgumentException e) {
-            logger.error("... wrong data: " + e.getMessage());
+        ClinicalProfile oldProfile = clinicalProfileController.findEntity(profileid).get();
+        if (oldProfile == null) {
+            logger.warn("Clinical profile " + profileid + " not found");
             return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
         }
+        if (newProfile.getDiagnosysyear() != null
+                && !ClinicalProfile.isDignosysyearValid(newProfile.getDiagnosysyear())) {
+            logger.warn("...given dignosys year is not valid");
+            return new ResponseEntity<String>("-1", HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        logger.info("new clinical profile: " + json);
+
+        newProfile.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
+
+        clinicalProfileController.updateEntity(newProfile);
+        return ResponseEntity.ok("Success");
     }
 
     
     /**
      * Saves or updates a patient clinical profile
-     * @param clinicalProfileForm
-     * @param result
-     * @param model
-     * @param mrlastdate
-     * @param mrlastreportfile
-     * @return 1 if profile is deleted, -1 otherwise; HttpStatus.NOT_ACCEPTABLE
-     * if the profile with the given id was not found; HttpStatus.OK if the
-     * profile is deleted with success; HttpStatus.SERVICE_UNAVAILABLE if the
-     * profile cannot be deleted
      */
     @RequestMapping(value = "/saveorupdateclinicalprofile", method = RequestMethod.POST)
     public ModelAndView saveOrUpdateClinicalProfile(
-            @Valid @ModelAttribute("clinicalprofileForm") ClinicalProfile clinicalProfileForm,
-            BindingResult result,
+            @RequestParam(required = false) ClinicalProfile clinicalProfileForm,
             Model model,
             @RequestParam(value = "mrlastdate", required = false) Date mrlastdate,
-            @RequestParam(value = "mrlastreportfile", required = false) MultipartFile mrlastreportfile) {
+            @RequestParam(value = "mrlastreportfile", required = false) MultipartFile mrlastreportfile)
+    {
 
-            logger.debug("saveOrUpdateClinicalProfile() : {}", clinicalProfileForm);
+        logger.debug("saveOrUpdateClinicalProfile() : {}", clinicalProfileForm);
 
-        if (result.hasErrors()) {
-            List<MagneticResonance> mrList = mrController.findAllByClinicalprofileid(clinicalProfileForm.getId());
-            model.addAttribute("mrlist", mrList);
-            model.addAttribute(
-                "patientname", userController.findEntity(clinicalProfileForm.getUserid()).get().getName()
-                + " " + userController.findEntity(clinicalProfileForm.getUserid()).get().getSurname());
-            return new ModelAndView("clinicalprofile-form");
-        }
-        else {
-            clinicalProfileForm.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
-            MagneticResonance mr = null;            
-            if (!mrlastreportfile.isEmpty()) {
-                try {
-                    // Upload the magnetic risonance file
-                    byte[] bytes = mrlastreportfile.getBytes();
-                    String originalFileName = mrlastreportfile.getOriginalFilename();
+        clinicalProfileForm.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
+        MagneticResonance mr = null;
+        if (!mrlastreportfile.isEmpty())
+        {
+            try
+            {
+                // Upload the magnetic risonance file
+                byte[] bytes = mrlastreportfile.getBytes();
+                String originalFileName = mrlastreportfile.getOriginalFilename();
 
-                    String mrReportsPath = config.getMrReportsPath();
+                String mrReportsPath = config.getMrReportsPath();
 
-                    DateFormat df = new SimpleDateFormat("dd.MM.yyyy-HH.mm.ss");
-                    LocalDateTime today = LocalDateTime.now();
-                    String reportDate = df.format(today.toDate());
+                DateFormat df = new SimpleDateFormat("dd.MM.yyyy-HH.mm.ss");
+                LocalDateTime today = LocalDateTime.now();
+                String reportDate = df.format(today.toDate());
 
-                    String fileName = MR_REPORT_NAME + reportDate + "." + FilenameUtils.getExtension(originalFileName);
-                    String filePath
-                            //= mrReportsPath + File.separator + mrReportsPath;
-                            = mrReportsPath + File.separator + fileName;
+                String fileName = MR_REPORT_NAME + reportDate + "." + FilenameUtils.getExtension(originalFileName);
+                String filePath
+                        //= mrReportsPath + File.separator + mrReportsPath;
+                        = mrReportsPath + File.separator + fileName;
 
-                    // Create the file on server
-                    File serverFile = new File(filePath);
-                    serverFile.createNewFile();
-                    BufferedOutputStream stream
-                            = new BufferedOutputStream(
-                                    new FileOutputStream(serverFile));
-                    stream.write(bytes);
-                    stream.close();
+                // Create the file on server
+                File serverFile = new File(filePath);
+                serverFile.createNewFile();
+                BufferedOutputStream stream
+                        = new BufferedOutputStream(
+                        new FileOutputStream(serverFile));
+                stream.write(bytes);
+                stream.close();
 
-                    logger.info("Server File Location=" + serverFile.getAbsolutePath());
+                logger.info("Server File Location=" + serverFile.getAbsolutePath());
 
-                    // Create a magnentic resonance record to be stored in the DB
-                    mr = new MagneticResonance();
-                    mr.setClinicalprofileid(clinicalProfileForm.getId());
-                    mr.setReport(fileName);
-                    mr.setDate(today);
-                    Long t = today.toDateTime().getMillis();
-                    mr.setTimestamp(t);
-                }
-                catch (IOException ex) {
-                    logger.error("Error uploading magnetic resonance file: " + ex.getMessage());
-                    model.addAttribute("message", "Caricamento file risonanza fallito");
-                    model.addAttribute("back", "patient-form");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }
-            }
-            if (clinicalProfileForm.isNew()) {
-                if (clinicalProfileController.insertEntity(clinicalProfileForm)) {
-                    if(!mrlastreportfile.isEmpty()) {
-                        if(mrController.insertEntity(mr)) {
-                            logger.info("Addition of magnetic resonance record " + mr.getId() + " terminated with success");
-                        }
-                        else {
-                            logger.error("...magnetic resonance record " + mr.getId() + " addition failed");
-                            model.addAttribute("message", "Aggiunta risonanza magnetica fallita");
-                            model.addAttribute("back", "patient-form");
-                            model.addAttribute("home", "adminhome");
-                            return new ModelAndView("error");
-                        }
-                    }
-                    logger.info("Add of clinical profile " + clinicalProfileForm.getId() + " terminated with success");
-                    return new ModelAndView("redirect:/showpatients");
-                }
-                else {  // addRecord(profile) == -1
-                    logger.error("...clinical profile addition failed");
-                    model.addAttribute("message", "Inserimento profilo clinico fallito");
-                    model.addAttribute("back", "patient-form");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }
-            }
-            else { // update
-                if (clinicalProfileController.updateEntity(clinicalProfileForm)) {
-                    //redirectAttributes.addFlashAttribute("css", "success");
-                    //redirectAttributes.addFlashAttribute("msg", "ClinicalProfile updated successfully!");
-                    if(!mrlastreportfile.isEmpty()) {
-                        if(mr.isNew()) {
-                            if(mrController.insertEntity(mr))
-                                logger.info("Add of magnetic resonance " + mr.getId() + " terminated with success");
-
-                            else {
-                                logger.error("...magnetic resonance " + mr.getId() + " addition failed");
-                                model.addAttribute("message", "Aggiunta risonanza magnetica fallita");
-                                model.addAttribute("back", "patient-form");
-                                model.addAttribute("home", "adminhome");
-                                return new ModelAndView("error");
-                            }
-                        }
-                        else {
-                            if(mrController.updateEntity(mr)) {
-                                logger.info("Update of magnetic resonance " + mr.getId() + " terminated with success");
-                            }
-                            else {
-                                logger.error("...magnetic resonance " + mr.getId() + " update failed");
-                                model.addAttribute("message", "Aggiornamento risonanza magnetica fallita");
-                                model.addAttribute("back", "patient-form");
-                                model.addAttribute("home", "adminhome");
-                                return new ModelAndView("error");
-                            }
-                        }
-                    }
-                    logger.info("Update of clinical profile " + clinicalProfileForm.getId() + " terminated with success");
-                    //return new ResponseEntity<String>("1", HttpStatus.OK);
-                    return new ModelAndView("redirect:/showpatients");
-                }
-                else {    // updateRecord(updatedUser) == -1
-                    logger.error("...clinical profile " + clinicalProfileForm.getId() + " update failed");
-                    model.addAttribute("message", "Aggiornamento profilo "+clinicalProfileForm.getId()+" clinico fallito");
-                    model.addAttribute("back", "showpatients");
-                    model.addAttribute("home", "adminhome");
-                    return new ModelAndView("error");
-                }
+                // Create a magnentic resonance record to be stored in the DB
+                mr = new MagneticResonance();
+                mr.setClinicalprofileid(clinicalProfileForm.getId());
+                mr.setReport(fileName);
+                mr.setDate(today);
+                Long t = today.toDateTime().getMillis();
+                mr.setTimestamp(t);
+            } catch (IOException ex)
+            {
+                logger.error("Error uploading magnetic resonance file: " + ex.getMessage());
+                model.addAttribute("message", "Caricamento file risonanza fallito");
+                model.addAttribute("back", "patient-form");
+                model.addAttribute("home", "adminhome");
+                return new ModelAndView("error");
             }
         }
+
+        clinicalProfileController.putEntity(clinicalProfileForm);
+        if (mr != null)
+            mrController.putEntity(mr);
+
+        logger.info("Update of clinical profile " + clinicalProfileForm.getId() + " terminated with success");
+        //return new ResponseEntity<String>("1", HttpStatus.OK);
+        return new ModelAndView("redirect:/showpatients");
+
     }
     
     /**

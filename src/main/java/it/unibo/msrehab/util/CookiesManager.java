@@ -4,9 +4,13 @@ import it.unibo.msrehab.model.entities.MSRUser;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-public class CookiesManager {
+import static it.unibo.msrehab.model.entities.MSRUser.RoleValue.DEMO;
+import static it.unibo.msrehab.model.entities.MSRUser.RoleValue.PATIENT;
 
-    public static boolean isUserLogged(HttpServletRequest request) {
+public class CookiesManager
+{
+    public static boolean isUserLogged(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
         
         if (cookies==null) {
@@ -22,7 +26,8 @@ public class CookiesManager {
 
     }
 
-    public static String geLoggedUserName(HttpServletRequest request) {
+    public static String geLoggedUserName(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
 
         if (cookies==null) {
@@ -38,7 +43,8 @@ public class CookiesManager {
 
     }
     
-    public static Integer geLoggedUserId(HttpServletRequest request) {
+    public static Integer geLoggedUserId(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
 
         if (cookies==null) {
@@ -54,7 +60,8 @@ public class CookiesManager {
 
     }
 
-    public static Integer getLoggedUserCenter(HttpServletRequest request) {
+    public static Integer getLoggedUserCenter(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
 
         if (cookies==null) {
@@ -70,7 +77,8 @@ public class CookiesManager {
 
     }
 
-    static boolean isUserAdmin(HttpServletRequest request) {
+    public static boolean isUserAdmin(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
 
         if (cookies==null) {
@@ -79,28 +87,31 @@ public class CookiesManager {
 
         for (Cookie cookie : cookies) {
             if("role".equals(cookie.getName()) &&
-                    MSRUser.RoleValue.ADMIN.toString().equals(cookie.getValue())) {
+                    MSRUser.RoleValue.ADMIN.toString().equals(cookie.getValue()))
+            {
                 return true;
             }
         }
         return false;
     }
     
-    static boolean isUserPatient(HttpServletRequest request) {
+    public static boolean isUserPatientOrDemo(HttpServletRequest request)
+    {
         Cookie[] cookies = request.getCookies();
 
-        if (cookies==null) {
+        if (cookies==null)
             return false;
-        }
 
-        for (Cookie cookie : cookies) {
-            if("role".equals(cookie.getName()) &&
-                    MSRUser.RoleValue.PATIENT.toString().equals(cookie.getValue())) {
+        for (Cookie cookie : cookies)
+        {
+            boolean match = "role".equals(cookie.getName()) &&
+                    (PATIENT.toString().equals(cookie.getValue()) || DEMO.toString().equals(cookie.getValue()));
+            if(match)
                 return true;
-            }
+
         }
         return false;
     }
-    
-    
+
+
 }

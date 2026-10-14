@@ -1,6 +1,5 @@
 package it.unibo.msrehab.services;
 
-import com.sun.istack.Nullable;
 import it.unibo.msrehab.model.controller.*;
 import it.unibo.msrehab.model.entities.*;
 import it.unibo.msrehab.model.entities.ExElement.CategoryValue;
@@ -34,7 +33,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -75,20 +73,18 @@ public class ExerciseService
     private final FitnessWeightController fitnessController;
     private final ChangeDifficultyController changeDiffController;
     private final ExerciseController exerciseController;
-    private final MSRUserController userController;
     private final Model model = JPAModel.getInstance();
 
 
     public ExerciseService()
     {
         super();
-        this.exElementController = new ExElementController();
-        this.historyController = new HistoryController();
-        this.sessionController = new MSRSessionController();
-        this.fitnessController = new FitnessWeightController();
-        this.changeDiffController = new ChangeDifficultyController();
-        this.exerciseController = new ExerciseController();
-        this.userController = new MSRUserController();
+        this.exElementController = new ExElementController(model);
+        this.historyController = new HistoryController(model);
+        this.sessionController = new MSRSessionController(model);
+        this.fitnessController = new FitnessWeightController(model);
+        this.changeDiffController = new ChangeDifficultyController(model);
+        this.exerciseController = new ExerciseController(model);
     }
 
 
@@ -103,6 +99,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 ntargets = 2;
                 diffVar[0] = 1;
                 nelements = 12;
@@ -323,6 +320,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 ntargets = 2;
                 diffVar[0] = 1;
                 nelements = 12;
@@ -528,6 +526,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 iterations = 2;
                 diffVar[0] = 1;
                 nelementspertarget = 10;//elementi totali per iterazione
@@ -705,6 +704,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: //training
+            case 0:
                 ntargets = 2;
                 diffVar[0] = 1;
                 nelements = 12;
@@ -908,6 +908,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 nelements = 4;
                 diffVar[0] = 1;
                 ntargets = 2;
@@ -1215,6 +1216,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 nfaces = 3;
                 diffVar[0] = 1;
                 time = 60;      // 1 hour = unlimited
@@ -1355,6 +1357,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 nelements = 3;
                 ntargets = 3;
                 diffVar[0] = 1;
@@ -1497,6 +1500,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 nback = 1;
                 diffVar[0] = 1;
                 time = 4;
@@ -1618,6 +1622,7 @@ public class ExerciseService
         switch (level)
         {
             case -1: // training
+            case 0:
                 answer = "fixed";
                 diffVar[0] = 1;
                 //answer = "alternate"; diffVar9[0] = 1;
@@ -1852,7 +1857,11 @@ public class ExerciseService
 
     public static Map<String, Object> createParametersReflexes1(Integer level)
     {
+        if(level < 1)
+            level = 1;
+
         Map<String, Object[]> parameters = new HashMap<>();
+
 
 
         parameters.put(
@@ -1908,9 +1917,14 @@ public class ExerciseService
                 new Double[] {1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4,1.4}
         );
 
+        Integer finalLevel = level;
         return parameters.keySet()
                 .stream()
-                .collect(Collectors.toMap(p -> p, p -> parameters.get(p)[level - 1]));
+                .collect(Collectors.toMap(
+                        p -> p,
+                        p -> parameters.get(p)[finalLevel - 1]
+                        )
+                );
 
     }
 
@@ -1932,6 +1946,7 @@ public class ExerciseService
      * Creates and stores in the db the next assignment for the given exercise, user, session, difficulty and agent.
      * Level and pass threshold of the assignment are decided using the agent, or the incremental strategy (two passes in a row)
      * if not supplied.
+     *
      * @param exerciseId
      * @param userId
      * @param sessionId
@@ -1942,8 +1957,7 @@ public class ExerciseService
             Integer exerciseId,
             Integer userId,
             Integer sessionId,
-            String difficulty,
-            @Nullable Integer currentLevel
+            String difficulty
     )
     {
         Exercise exercise = exerciseController.getEntity(exerciseId);
@@ -1959,12 +1973,12 @@ public class ExerciseService
         }
         else if (exercise.isRL())
         {//adattivo
-            passThreshold = getNextAdaptiveThreshold2(exerciseId, userId, sessionId);
+            passThreshold = getNextAdaptiveThreshold(exerciseId, userId, sessionId);
             history.setLevelStrategy(History.LevelStrategy.ADAPTIVE);
         }
         else 
         {//incrementale
-            passThreshold = getNextLevelIncrementally2(exerciseId, userId, sessionId);
+            passThreshold = getNextLevelIncrementally(exerciseId, userId, sessionId);
             history.setLevelStrategy(History.LevelStrategy.INCREMENTAL);
         }
 
@@ -1987,27 +2001,15 @@ public class ExerciseService
 
         if (!("training".equals(difficulty) || "demo".equals(difficulty)))
         {
-            if (!historyController.insertEntity(history))
-            {
-                logger.error("Error inserting assignment");
-                throw new RuntimeException("Error inserting assignment");
-            }
-        logger.info("Next level/threshold: " + history.getLevel() + "/" + history.getPassThreshold());
-    }
+            historyController.insertEntity(history);
+            logger.info("Next level/threshold: " + history.getLevel() + "/" + history.getPassThreshold());
+        }
 
         return history;
     }
 
 
-    private static long epochMillisToEpochDay(long epochMillis)
-    {
-        return epochMillis / (24L * 60L * 60L * 1000L);
-    }
-
-
-
-
-    private LevelThreshold getNextLevelIncrementally2(
+    private LevelThreshold getNextLevelIncrementally(
             Integer exerciseId,
             Integer userId,
             Integer sessionId
@@ -2018,8 +2020,9 @@ public class ExerciseService
         List<HistoryRecord> records = model.getEntityController(History.class)
                 .getAllEntities()
                 .stream()
-                .filter(h -> h.getExid().equals(exerciseId))
-                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> Objects.equals(h.getExid(), exerciseId))
+                .filter(h -> Objects.equals(h.getUserid(), userId))
+                .filter(h -> Objects.equals(h.getSessid(), sessionId))
                 .filter(h -> h.isSolved())
                 .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
                 .collect(Collectors.toList());
@@ -2031,8 +2034,8 @@ public class ExerciseService
         return new NextLevelStrategy().getNextLevelIncrementally(threshold, maxLevel, records);
     }
 
-    private LevelThreshold getNextAdaptiveThreshold2(
-            Integer exerciseId,
+    private LevelThreshold getNextAdaptiveThreshold(
+                    Integer exerciseId,
             Integer userId,
             Integer sessionId
     )
@@ -2042,11 +2045,13 @@ public class ExerciseService
         List<HistoryRecord> records = model.getEntityController(History.class)
                 .getAllEntities()
                 .stream()
-                .filter(h -> h.getExid().equals(exerciseId))
-                .filter(h -> h.getUserid().equals(userId))
+                .filter(h -> Objects.equals(h.getExid(), exerciseId))
+                .filter(h -> Objects.equals(h.getUserid(), userId))
+                .filter(h -> Objects.equals(h.getSessid(), sessionId))
                 .filter(h -> h.isSolved())
                 .map(h -> new HistoryRecord(h.getLevel(), h.getAbsperformance(), h.getPassThreshold(), h.getCreationTimestamp()))
                 .collect(Collectors.toList());
+
         int maxLevel = exerciseController.getEntity(exerciseId).getMaxLevel();
 
         ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
@@ -2068,137 +2073,19 @@ public class ExerciseService
     }
 
 
-    /*
 
-    private PassThreshold getNextLevelIncrementally(
-            Integer exerciseId,
-            Integer userId,
-            Integer sessionId,
-            String difficulty,
-            Exercise exercise,
-            @Nullable Integer currentLevel
-    )
-    {
-        List<History> lastHistory = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.INCREMENTAL)
-                .stream()
-                .filter(h -> epochMillisToEpochDay(h.getCreationTimestamp()) == epochMillisToEpochDay(System.currentTimeMillis()))
-                .sorted(Comparator.comparing(History::getCreationTimestamp).reversed())
-                .limit(2)
-                .collect(Collectors.toList())
-                ;
-
-
-        double threshold = fitnessController.getEntity(exerciseId).getThr();
-
-
-        if(currentLevel == null)
-        {
-            // currentLevel == null -> siamo in create
-            if (lastHistory.isEmpty())
-                return PassThreshold.create(-1, exercise.getLevel(difficulty), threshold);
-            else
-                return PassThreshold.create(-1, lastHistory.get(0).getLevel(), threshold);
-        }
-        else
-        {
-            // currentLevel != null -> siamo in phase3
-            if (lastHistory.size() <= 1)
-                return PassThreshold.create(-1, currentLevel, threshold);
-            else
-            {
-                History h0 = lastHistory.get(0);
-                History h1 = lastHistory.get(1);
-
-                int level = currentLevel;
-                if(h0.getPassed() && h1.getPassed() && h0.getLevel() == currentLevel && h1.getLevel() == currentLevel)
-                    level += 1;
-                return PassThreshold.create(-1, level, threshold);
-            }
-        }
-    }
-    private PassThreshold getNextAdaptiveThreshold(Integer exerciseId, Integer userId, Integer sessionId, String difficulty)
-    {
-        Exercise exercise = exerciseController.getEntity(exerciseId);
-        ThresholdAgentConfig config = ThresholdAgentConfig.getSingletonEntity(model);
-
-
-        double lowerThreshold = config.getLowerThreshold();
-        double startThreshold = config.getStartThreshold();//da modificare con una differenza dal massimo
-        double thresholdDeltaPassed = config.getThresholdDeltaPassed();
-        double thresholdDeltaNotPassed = config.getThresholdDeltaNotPassed();
-
-        Optional<History> history = historyController.findLastSolvedByUserAndExerciseAndSessionAndAgent(userId, exerciseId, sessionId, History.LevelStrategy.ADAPTIVE);
-
-        int nextLevel = exercise.getLevel(difficulty);
-        double nextThreshold = startThreshold;
-
-
-        if(!history.isPresent())                                // Previously no exercises were assigned
-            return PassThreshold.create(-1, nextLevel, startThreshold);
-
-        History lastHistory = history.get();
-
-        // Non serve in quanto si prendono solo gli esercizi gia risolti
-        if (!lastHistory.isSolved())                            // Exercises were assigned but none solved
-            return PassThreshold.create(-1, lastHistory.getLevel(), lastHistory.getPassThreshold());
-
-
-        // Here we know last history was solved so it has performance, threshold, etc.
-
-
-        // Il campo is passed ha gia considerato l'esito dell'esercizio (performance >= threshold)
-        //double performance = lastHistory.getAbsperformance();
-
-
-        nextLevel = lastHistory.getLevel();
-        nextThreshold = lastHistory.getPassThreshold();
-
-
-        if (lastHistory.getPassed()) // ie. exercise is passed
-        {
-            nextThreshold = Math.min(nextThreshold + thresholdDeltaPassed, 1);
-            nextLevel += 1;
-        }
-        else
-        {
-            nextThreshold += thresholdDeltaNotPassed;
-            if (nextThreshold < lowerThreshold)
-            {
-                if (nextLevel>1)
-                {
-                    nextThreshold = startThreshold; //il livello poteva scendere a 0
-                    nextLevel -= 1;
-                }else //se si raggiunge il livello minimo non si può decrementare il livello
-                {
-                    nextThreshold =  lowerThreshold;
-                    nextLevel = 1;
-                }
-
-            }
-        }
-
-        nextLevel = exercise.clampLevel(nextLevel);
-
-        return PassThreshold.create(-1, nextLevel, nextThreshold);
-    }
-
-     */
-
-
-
-
-    // RL Exercise
     @RequestMapping(value = "/createattention1", method = RequestMethod.GET)
     public ModelAndView createattention1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam String difficulty,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam String category,
+            @RequestParam Integer sessid,
+            @RequestParam String type,
+            @RequestParam ExerciseNameValue exname,
             HttpServletRequest request,
-            org.springframework.ui.Model model)
+            org.springframework.ui.Model model
+    )
     {
         logger.info("createattention1()");
 
@@ -2219,7 +2106,7 @@ public class ExerciseService
 
         Exercise exercise = exerciseController.getEntity(exerciseid);
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
 
         int level = assignment.getLevel();
         
@@ -2277,14 +2164,14 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention1", method = RequestMethod.GET)
     public ModelAndView attention1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = false) ExerciseNameValue exname,
-            @RequestParam(value = "exdescr", required = false) String exdescr,
+            @RequestParam String difficulty,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam String category,
+            @RequestParam Integer sessid,
+            @RequestParam String type,
+            @RequestParam(required = false) ExerciseNameValue exname,
+            @RequestParam(required = false) String exdescr,
             org.springframework.ui.Model model)
     {
         logger.info("attention1()");
@@ -2304,23 +2191,23 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention1phase1", method = RequestMethod.GET)
     public ModelAndView attention1phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "alignment", required = true) String alignment,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "ncols", required = true) Integer ncols,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam String category,
+            @RequestParam Boolean lastexercisepassed,
+            @RequestParam Integer ntargets,
+            @RequestParam Integer nelements,
+            @RequestParam String alignment,
+            @RequestParam String color,
+            @RequestParam String distractor,
+            @RequestParam Integer time,
+            @RequestParam Integer ncols,
+            @RequestParam Integer sessid,
+            @RequestParam String type,
+            @RequestParam ExerciseNameValue exname,
+            @RequestParam(required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
         logger.info("attention1phase1()");
@@ -2354,31 +2241,31 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention1phase2", method = RequestMethod.GET)
     public ModelAndView attention1phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "alignment", required = true) String alignment,
-            @RequestParam(value = "targetElementList", required = true) String targetElementIds,
-            @RequestParam(value = "exElementList", required = true) String exElementIds,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "ncols", required = true) Integer ncols,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam String category,
+            @RequestParam Boolean lastexercisepassed,
+            @RequestParam Integer nelements,
+            @RequestParam Integer ntargets,
+            @RequestParam String alignment,
+            @RequestParam String targetElementList,
+            @RequestParam String exElementList,
+            @RequestParam String color,
+            @RequestParam String distractor,
+            @RequestParam Integer time,
+            @RequestParam Integer ncols,
+            @RequestParam Integer sessid,
+            @RequestParam String type,
+            @RequestParam String exname,
+            @RequestParam(required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
         logger.info("attention1phase2()");
 
-        List<ExElement> l  = buildExElementListFromIds(exElementIds);
-        List<ExElement> l1 = buildExElementListFromIds(targetElementIds);
+        List<ExElement> l  = buildExElementListFromIds(exElementList);
+        List<ExElement> l1 = buildExElementListFromIds(targetElementList);
 
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
@@ -2405,28 +2292,28 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention1phase3", method = RequestMethod.GET)
     public ModelAndView attention1phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "alignment", required = true) String alignment,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "ncols", required = true) Integer ncols,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
-            @RequestParam(value = "assignmentid", required = false) Integer assignmentid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "alignment") String alignment,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "ncols") Integer ncols,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam Integer pWrong,
+            @RequestParam Integer sessid,
+            @RequestParam String type,
+            @RequestParam Exercise.ExerciseNameValue exname,
+            @RequestParam(required = false) Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
             org.springframework.ui.Model model)
@@ -2474,14 +2361,7 @@ public class ExerciseService
         ft = fitnessController.calculateFitness(true, history);
         history.setRelperformance(ft);
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
         if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
         {
@@ -2498,9 +2378,8 @@ public class ExerciseService
 
 
         // Forward user to the next exercise
-        //siamo sicuri che la vecchia history sia sul db salvata e committata
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -2561,13 +2440,13 @@ public class ExerciseService
 
     @RequestMapping(value = "/createattention2", method = RequestMethod.GET)
     public ModelAndView createattention2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -2587,7 +2466,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_2];
 
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assignment.getLevel();
 
         Map<String, Object> parameters = createParametersAttention2(level, diffVar);
@@ -2637,12 +2516,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention2", method = RequestMethod.GET)
     public ModelAndView attention2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -2663,21 +2542,21 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention2phase1", method = RequestMethod.GET)
     public ModelAndView attention2phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            //@RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            //@RequestParam(value = "time") Integer time,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -2709,23 +2588,23 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention2phase2", method = RequestMethod.GET)
     public ModelAndView attention2phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "targetElementList", required = true) String targetElementIds,
-            @RequestParam(value = "exElementList", required = true) String exElementIds,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            //@RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "targetElementList") String targetElementIds,
+            @RequestParam(value = "exElementList") String exElementIds,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            //@RequestParam(value = "time") Integer time,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -2758,26 +2637,25 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention2phase3", method = RequestMethod.GET)
     public ModelAndView attention2phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            //@RequestParam(value = "time", required = true) Integer time,  // Cambiato da versine di Sara
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -2817,14 +2695,7 @@ public class ExerciseService
         ft = fitnessController.calculateFitness(true, history);
         history.setRelperformance(ft);
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
 
         if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
@@ -2845,7 +2716,7 @@ public class ExerciseService
         // Forward user to the next exercise
         //siamo sicuri che la vecchia history sia sul db salvata e committata
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -2930,13 +2801,13 @@ public class ExerciseService
 
     @RequestMapping(value = "/createattention3", method = RequestMethod.GET)
     public ModelAndView createattention3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -2955,7 +2826,7 @@ public class ExerciseService
         if (diffVar == null)
             diffVar = new Integer[NUM_FEAT_ATT_3];
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assignment.getLevel();
 
 
@@ -3004,12 +2875,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention3", method = RequestMethod.GET)
     public ModelAndView attention3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model
@@ -3030,21 +2901,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention3phase1", method = RequestMethod.GET)
     public ModelAndView attention3phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "iterations", required = true) Integer iterations,
-            @RequestParam(value = "nelementspertarget", required = true) Integer nelementspertarget,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "frequenza", required = true) Double frequenza,
-            //@RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "iterations") Integer iterations,
+            @RequestParam(value = "nelementspertarget") Integer nelementspertarget,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "frequenza") Double frequenza,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -3102,31 +2972,29 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention3phase2", method = RequestMethod.GET)
     public ModelAndView attention3phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "leftiterations", required = true) Integer leftiterations,
-            @RequestParam(value = "iterations", required = true) Integer iterations,
-            @RequestParam(value = "targetelement1", required = true) String targetelement1,
-            @RequestParam(value = "targetelement2", required = true) String targetelement2,
-            @RequestParam(value = "firsttarget", required = true) Boolean firsttarget,
-            @RequestParam(value = "nelementspertarget", required = true) Integer nelementspertarget,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "frequenza", required = true) Double frequenza,
-            //@RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "time", required = true) Double time,
-            //@RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "leftiterations") Integer leftiterations,
+            @RequestParam(value = "iterations") Integer iterations,
+            @RequestParam(value = "targetelement1") String targetelement1,
+            @RequestParam(value = "targetelement2") String targetelement2,
+            @RequestParam(value = "firsttarget") Boolean firsttarget,
+            @RequestParam(value = "nelementspertarget") Integer nelementspertarget,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "frequenza") Double frequenza,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "sessid") Integer sessid,
             @RequestParam(value = "pTime", required = false, defaultValue = "0") Double pTime,
             @RequestParam(value = "pCorrect", required = false, defaultValue = "0") Integer pCorrect,
             @RequestParam(value = "pMissed", required = false, defaultValue = "0") Integer pMissed,
             @RequestParam(value = "pWrong", required = false, defaultValue = "0") Integer pWrong,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
+            @RequestParam(value = "assignmentid") Integer assignmentid,
             org.springframework.ui.Model model)
     {
         logger.debug("attention3phase2()");
@@ -3271,27 +3139,27 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention3phase3", method = RequestMethod.GET)
     public ModelAndView attention3phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelementspertarget", required = true) Integer nelementspertarget,
-            @RequestParam(value = "iterations", required = true) Integer iterations,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "frequenza", required = true) Double frequenza,
-            //@RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
-            @RequestParam(value = "assignmentid", required = true) Integer assignmentid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelementspertarget") Integer nelementspertarget,
+            @RequestParam(value = "iterations") Integer iterations,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "frequenza") Double frequenza,
+            //@RequestParam(value = "time") Integer time,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
+            @RequestParam(value = "assignmentid") Integer assignmentid,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -3359,14 +3227,7 @@ public class ExerciseService
                 double relFt = fitnessController.calculateRelativePerformance(difficulty, ft);
                 history.setRelperformance(relFt);
 
-                if (!historyController.putEntity(history))
-                {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");
-                }
+                historyController.putEntity(history);
 
 
                 if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
@@ -3384,7 +3245,7 @@ public class ExerciseService
 
 
                 // Forward patient to next level
-                History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+                History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
                 level = assignment.getLevel();
                 difficulty = exercise.getDifficulty(level);
 
@@ -3453,13 +3314,13 @@ public class ExerciseService
     // RL Exercise
     @RequestMapping(value = "/createattention4", method = RequestMethod.GET)
     public ModelAndView createattention4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -3486,7 +3347,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_ATT_4];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assignment.getLevel();
 
         // Uguale a creationattention1 viene individuato il livello di difficolta dato il livello dell'esercizio
@@ -3541,12 +3402,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention4", method = RequestMethod.GET)
     public ModelAndView attention4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
             @RequestParam(value = "exname", required = false) ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -3568,21 +3429,21 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention4phase1", method = RequestMethod.GET)
     public ModelAndView attention4phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "soundinterval", required = true) String soundinterval,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "soundinterval") String soundinterval,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//modificato required=false prer far funzionare gli esercizi di prova
             org.springframework.ui.Model model)
     {
@@ -3621,23 +3482,23 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention4phase2", method = RequestMethod.GET)
     public ModelAndView attention4phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "targetElementIds", required = true) String targetElementIds,
-            @RequestParam(value = "exElementIds", required = true) String exElementIds,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "soundinterval", required = true) String soundinterval,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "targetElementIds") String targetElementIds,
+            @RequestParam(value = "exElementIds") String exElementIds,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "soundinterval") String soundinterval,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,//per esercizio training
             org.springframework.ui.Model model)
     {
@@ -3670,31 +3531,31 @@ public class ExerciseService
 
     @RequestMapping(value = "/attention4phase3", method = RequestMethod.GET)
     public ModelAndView attention4phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "soundinterval", required = true) String soundinterval,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "pSoundTime", required = true) Double pSoundTime,
-            @RequestParam(value = "pSoundCorrect", required = true) Integer pSoundCorrect,
-            @RequestParam(value = "pSoundMissed", required = true) Integer pSoundMissed,
-            @RequestParam(value = "pSoundWrong", required = true) Integer pSoundWrong,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "soundinterval") String soundinterval,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "pSoundTime") Double pSoundTime,
+            @RequestParam(value = "pSoundCorrect") Integer pSoundCorrect,
+            @RequestParam(value = "pSoundMissed") Integer pSoundMissed,
+            @RequestParam(value = "pSoundWrong") Integer pSoundWrong,
             @RequestParam(value = "perf", required = false) Double perf,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -3733,14 +3594,7 @@ public class ExerciseService
         double relFt = fitnessController.calculateRelativePerformance(difficulty, ft);
         history.setRelperformance(relFt);
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
 
 
@@ -3759,7 +3613,7 @@ public class ExerciseService
 
 
         // Forward patient to next level
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         level = assignment.getLevel();
         difficulty = exercise.getDifficulty(level);
 
@@ -3821,17 +3675,17 @@ public class ExerciseService
     @RequestMapping(value = "/createreflexes1", method = RequestMethod.GET)
     public ModelAndView createreflexes1(
             @RequestParam(value = "level", required = false, defaultValue = "1") Integer level,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         Exercise exercise = exerciseController.getEntity(exerciseid);
 
         level = assignment.getLevel();
@@ -3855,12 +3709,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/reflexes1", method = RequestMethod.GET)
     public ModelAndView reflexes1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
             @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -3883,12 +3737,12 @@ public class ExerciseService
     @RequestMapping(value = "/reflexes1phase1", method = RequestMethod.GET)
     public ModelAndView reflexes1phase1(
             @RequestParam(value = "level", required = false, defaultValue = "1") Integer level,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
@@ -3913,20 +3767,21 @@ public class ExerciseService
     @RequestMapping(value = "/reflexes1phase2", method = RequestMethod.GET)
     public ModelAndView reflexes1phase2(
             @RequestParam(value = "level", required = false, defaultValue = "0") Integer level,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "lastexercisepassed", required = false, defaultValue = "false") boolean lastexercisepassed,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
+        Exercise exercise = exerciseController.getEntity(exerciseid);
 
         if (difficulty == null)
-            difficulty = exerciseController.findEntity(exerciseid).map(ex -> ex.getDifficulty(level)).orElse("training");
+            difficulty = exercise.getDifficulty(level);
 
 
         Map<String, Object> parameters = new HashMap<>();
@@ -3939,7 +3794,7 @@ public class ExerciseService
         parameters.put("type", type);
         parameters.put("lastexercisepassed", lastexercisepassed);
         parameters.put("assignmentid", assignmentid);
-        parameters.putAll(createParametersReflexes1(level));
+        parameters.putAll(createParametersReflexes1(exercise.clampLevel(level)));
 
 
         return new ModelAndView("reflexes1b")
@@ -3949,20 +3804,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/reflexes1phase3", method = RequestMethod.GET)
     public ModelAndView reflexes1phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "time", required = true) Double time,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) Exercise.ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "time") Double time,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") Exercise.ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -4008,14 +3863,7 @@ public class ExerciseService
         history.setFinishTimestamp(t);
 
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
 
 
@@ -4036,7 +3884,7 @@ public class ExerciseService
 
         // Forward user to next exercise
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
 
         level = assignment.getLevel();
 
@@ -4064,13 +3912,13 @@ public class ExerciseService
 
     @RequestMapping(value = "/creatememory1", method = RequestMethod.GET)
     public ModelAndView creatememory1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -4094,7 +3942,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_1];
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         Exercise exercise = exerciseController.getEntity(exerciseid);
 
         int level = assignment.getLevel();
@@ -4139,12 +3987,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory1", method = RequestMethod.GET)
     public ModelAndView memory1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -4167,20 +4015,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory1phase1", method = RequestMethod.GET)
     public ModelAndView memory1phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) String level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") String level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             org.springframework.ui.Model model)
     {
         logger.debug("memory1phase1()");
@@ -4208,20 +4056,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory1phase2", method = RequestMethod.GET)
     public ModelAndView memory1phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) String level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") String level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             org.springframework.ui.Model model)
     {
         logger.debug("memory1phase2()");
@@ -4260,22 +4108,22 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory1phase3", method = RequestMethod.GET)
     public ModelAndView memory1phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "exElementIds", required = true) String exElementIds,
-            @RequestParam(value = "targetElementIds", required = true) String targetElementIds,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "exElementIds") String exElementIds,
+            @RequestParam(value = "targetElementIds") String targetElementIds,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             org.springframework.ui.Model model)
     {
         List<ExElement> l  = buildExElementListFromIds(exElementIds);
@@ -4304,25 +4152,25 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory1phase4", method = RequestMethod.GET)
     public ModelAndView memory1phase4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
@@ -4556,14 +4404,7 @@ public class ExerciseService
                     }
                     sess.setExercises(jsonArr.toString());
                     sess.setActive(!sessionEnded);
-                    if (!sessionController.updateEntity(sess))
-                    {
-                        logger.error("Error updating MSRSession to DB");
-                        model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                        model.addAttribute("back", "patienthome");
-                        model.addAttribute("home", "patienthome");
-                        return new ModelAndView("error");
-                    }
+                    sessionController.updateEntity(sess);
                     url = "patienthome";
                 } else
                 {
@@ -4608,14 +4449,7 @@ public class ExerciseService
             }
 
 
-            if (!historyController.putEntity(history))
-            {
-                logger.error("Error adding History to DB");
-                model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                model.addAttribute("back", "patienthome");
-                model.addAttribute("home", "patienthome");
-                return new ModelAndView("error");
-            }
+            historyController.putEntity(history);
 
             if (MEM_VIS_1.toString().equals(type))
             {
@@ -4644,17 +4478,17 @@ public class ExerciseService
 
     @RequestMapping(value = "/creatememory2", method = RequestMethod.GET)
     public ModelAndView creatememory2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             HttpServletRequest request,
             org.springframework.ui.Model model
     )
     {
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         Exercise exercise = exerciseController.getEntity(exerciseid);
         int level = assignment.getLevel();
 
@@ -4705,12 +4539,12 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory2", method = RequestMethod.GET)
     public ModelAndView memory2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
     {
@@ -4731,19 +4565,19 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory2phase1", method = RequestMethod.GET)
     public ModelAndView memory2phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -4771,20 +4605,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory2phase2", method = RequestMethod.GET)
     public ModelAndView memory2phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "assignmentid", required = true) String assignmentid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
+            @RequestParam(value = "assignmentid") String assignmentid,
             org.springframework.ui.Model model)
     {
         logger.debug("memory2phase2()");
@@ -4834,24 +4668,24 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory2phase3", method = RequestMethod.GET)
     public ModelAndView memory2phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "distractor", required = true) String distractor,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "distractor") String distractor,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model,
             HttpServletRequest request,
@@ -4896,14 +4730,7 @@ public class ExerciseService
         history.setRelperformance(ft);
 
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
 
         if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
@@ -4926,7 +4753,7 @@ public class ExerciseService
         HttpSession httpSess = request.getSession();
         Integer[] diffVar = (Integer[]) (httpSess.getAttribute("diffVar6"));
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -4970,13 +4797,13 @@ public class ExerciseService
 
     @RequestMapping(value = "/createnback", method = RequestMethod.GET)
     public ModelAndView createnback(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
-            @RequestParam(value = "type", required = true) String type,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
+            @RequestParam(value = "type") String type,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -4997,7 +4824,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_NBACK];
 
         Exercise exercise = exerciseController.getEntity(exerciseid);
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -5041,13 +4868,13 @@ public class ExerciseService
 
     @RequestMapping(value = "/nback", method = RequestMethod.GET)
     public ModelAndView nback(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
     {
@@ -5066,19 +4893,19 @@ public class ExerciseService
 
     @RequestMapping(value = "/nbackphase1", method = RequestMethod.GET)
     public ModelAndView nbackphase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nback", required = true) Integer nback,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nback") Integer nback,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -5108,20 +4935,20 @@ public class ExerciseService
 
     @RequestMapping(value = "/nbackphase2", method = RequestMethod.GET)
     public ModelAndView nbackphase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nback", required = true) Integer nback,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "exElementList", required = true) String exElementIds,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) String exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nback") Integer nback,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "exElementList") String exElementIds,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") String exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model)
     {
@@ -5150,24 +4977,24 @@ public class ExerciseService
 
     @RequestMapping(value = "/nbackphase3", method = RequestMethod.GET)
     public ModelAndView nbackphase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nback", required = true) Integer nback,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "type", required = true) String type,
-            @RequestParam(value = "exname", required = true) ExerciseNameValue exname,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nback") Integer nback,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "type") String type,
+            @RequestParam(value = "exname") ExerciseNameValue exname,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response)
@@ -5207,14 +5034,7 @@ public class ExerciseService
         ft = fitnessController.calculateFitness(true, history);
         history.setRelperformance(ft);
 
-        if (!historyController.putEntity(history))
-        {
-            logger.error("Error adding History to DB");
-            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-            model.addAttribute("back", "patienthome");
-            model.addAttribute("home", "patienthome");
-            return new ModelAndView("error");
-        }
+        historyController.putEntity(history);
 
 
         if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
@@ -5230,7 +5050,7 @@ public class ExerciseService
             return new ModelAndView("redirect:patienthome");
         }
 
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, level);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         level = assignment.getLevel();
 
 
@@ -5285,11 +5105,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/creatememory4", method = RequestMethod.GET)
     public ModelAndView creatememory4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -5301,7 +5121,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_LONG_1];
 
         Exercise exercise = exerciseController.getEntity(exerciseid);
-        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assigment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assigment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -5330,11 +5150,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory4", method = RequestMethod.GET)
     public ModelAndView memory4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -5354,17 +5174,17 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory4phase1", method = RequestMethod.GET)
     public ModelAndView memory4phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nfaces", required = true) Integer nfaces,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "name", required = true) String name,
-            @RequestParam(value = "namediff", required = true) String namediff,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nfaces") Integer nfaces,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "namediff") String namediff,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model)
     {
 
@@ -5386,17 +5206,17 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory4phase2", method = RequestMethod.GET)
     public ModelAndView memory4phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nfaces", required = true) Integer nfaces,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "name", required = true) String name,
-            @RequestParam(value = "namediff", required = true) String namediff,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nfaces") Integer nfaces,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "namediff") String namediff,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model)
     {
 
@@ -5472,19 +5292,19 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory4phase3", method = RequestMethod.GET)
     public ModelAndView memory4phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nfaces", required = true) Integer nfaces,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "name", required = true) String name,
-            @RequestParam(value = "namediff", required = true) String namediff,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "facelist", required = true) String facelist,
-            @RequestParam(value = "namelist", required = true) String namelist,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nfaces") Integer nfaces,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "namediff") String namediff,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "facelist") String facelist,
+            @RequestParam(value = "namelist") String namelist,
             org.springframework.ui.Model model)
     {
 
@@ -5528,22 +5348,22 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory4phase4", method = RequestMethod.GET)
     public ModelAndView memory4phase4(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nfaces", required = true) Integer nfaces,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "name", required = true) String name,
-            @RequestParam(value = "namediff", required = true) String namediff,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nfaces") Integer nfaces,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "namediff") String namediff,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -5755,14 +5575,7 @@ public class ExerciseService
                         }
                         sess.setExercises(jsonArr.toString());
                         sess.setActive(!sessionEnded);
-                        if (!sessionController.updateEntity(sess))
-                        {
-                            logger.error("Error updating MSRSession to DB");
-                            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                            model.addAttribute("back", "patienthome");
-                            model.addAttribute("home", "patienthome");
-                            return new ModelAndView("error");
-                        }
+                        sessionController.updateEntity(sess);
                         url = "patienthome";
                     } else
                     {
@@ -5817,14 +5630,7 @@ public class ExerciseService
 
                     //lastExerciseMem4Passed = passed;
                 }
-                if (!historyController.putEntity(history))
-                {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");
-                }
+                historyController.putEntity(history);
                 httpSess.setAttribute("diffVar8", diffVar);
                 return new ModelAndView("redirect:" + url);
             }
@@ -5834,11 +5640,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/creatememory5", method = RequestMethod.GET)
     public ModelAndView creatememory5(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -5851,7 +5657,7 @@ public class ExerciseService
             diffVar = new Integer[NUM_FEAT_MEM_5];
         }
         Exercise exercise = exerciseController.getEntity(exerciseid);
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
         int level = assignment.getLevel();
 
         difficulty = exercise.getDifficulty(level);
@@ -5884,11 +5690,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory5", method = RequestMethod.GET)
     public ModelAndView memory5(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -5908,18 +5714,18 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory5phase1", method = RequestMethod.GET)
     public ModelAndView memory5phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nRigheCol", required = true) Integer nRigheCol,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nRigheCol") Integer nRigheCol,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model)
     {
 
@@ -5944,18 +5750,18 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory5phase2", method = RequestMethod.GET)
     public ModelAndView memory5phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nRigheCol", required = true) Integer nRigheCol,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nRigheCol") Integer nRigheCol,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model)
     {
 
@@ -6011,23 +5817,23 @@ public class ExerciseService
 
     @RequestMapping(value = "/memory5phase3", method = RequestMethod.GET)
     public ModelAndView memory5phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "ntargets", required = true) Integer ntargets,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nRigheCol", required = true) Integer nRigheCol,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "ntargets") Integer ntargets,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nRigheCol") Integer nRigheCol,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
@@ -6253,14 +6059,7 @@ public class ExerciseService
                         }
                         sess.setExercises(jsonArr.toString());
                         sess.setActive(!sessionEnded);
-                        if (!sessionController.updateEntity(sess))
-                        {
-                            logger.error("Error updating MSRSession to DB");
-                            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                            model.addAttribute("back", "patienthome");
-                            model.addAttribute("home", "patienthome");
-                            return new ModelAndView("error");
-                        }
+                        sessionController.updateEntity(sess);
                         url = "patienthome";
                     } else
                     {
@@ -6299,14 +6098,7 @@ public class ExerciseService
 
                     //lastExerciseMem2Passed = passed;
                 }
-                if (!historyController.putEntity(history))
-                {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");
-                }
+                historyController.putEntity(history);
                 httpSess.setAttribute("diffVar10", diffVar);
                 return new ModelAndView("redirect:" + url);
             }
@@ -6316,11 +6108,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/createexecfunct1", method = RequestMethod.GET)
     public ModelAndView createexecfunct1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -6334,7 +6126,7 @@ public class ExerciseService
         }
 
         Exercise exercise = exerciseController.getEntity(exerciseid);
-        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty, null);
+        History assignment = createNextAssigment(exerciseid, patientid, sessid, difficulty);
 
         int level = assignment.getLevel();
 
@@ -6365,11 +6157,11 @@ public class ExerciseService
 
     @RequestMapping(value = "/execfunct1", method = RequestMethod.GET)
     public ModelAndView execfunct1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "sessid") Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
             org.springframework.ui.Model model)
@@ -6388,17 +6180,17 @@ public class ExerciseService
 
     @RequestMapping(value = "/execfunct1phase1", method = RequestMethod.GET)
     public ModelAndView execfunct1phase1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "answer", required = true) String answer,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "answer") String answer,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "sessid") Integer sessid,
             org.springframework.ui.Model model)
     {
         logger.debug("execfunct1phase1()");
@@ -6441,21 +6233,21 @@ public class ExerciseService
 
     @RequestMapping(value = "/execfunct1phase2", method = RequestMethod.GET)
     public ModelAndView execfunct1phase2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "answer", required = true) String answer,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "exElementList", required = true) String exElementIds,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "cat1", required = true) String cat1,
-            @RequestParam(value = "cat2", required = true) String cat2,
-            @RequestParam(value = "inhElement", required = true) String inhElement,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "answer") String answer,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "exElementList") String exElementIds,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "cat1") String cat1,
+            @RequestParam(value = "cat2") String cat2,
+            @RequestParam(value = "inhElement") String inhElement,
             org.springframework.ui.Model model)
     {
         logger.debug("execfunct1phase2()");
@@ -6482,25 +6274,25 @@ public class ExerciseService
 
     @RequestMapping(value = "/execfunct1phase3", method = RequestMethod.GET)
     public ModelAndView execfunct1phase3(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "category", required = true) String category,
-            @RequestParam(value = "lastexercisepassed", required = true) Boolean lastexercisepassed,
-            @RequestParam(value = "cat1", required = true) String cat1,
-            @RequestParam(value = "cat2", required = true) String cat2,
-            @RequestParam(value = "inhElement", required = true) String inhElement,
-            @RequestParam(value = "answer", required = true) String answer,
-            @RequestParam(value = "time", required = true) Integer time,
-            @RequestParam(value = "color", required = true) String color,
-            @RequestParam(value = "nelements", required = true) Integer nelements,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "pCorrect", required = true) Integer pCorrect,
-            @RequestParam(value = "pMissed", required = true) Integer pMissed,
-            @RequestParam(value = "pWrong", required = true) Integer pWrong,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "category") String category,
+            @RequestParam(value = "lastexercisepassed") Boolean lastexercisepassed,
+            @RequestParam(value = "cat1") String cat1,
+            @RequestParam(value = "cat2") String cat2,
+            @RequestParam(value = "inhElement") String inhElement,
+            @RequestParam(value = "answer") String answer,
+            @RequestParam(value = "time") Integer time,
+            @RequestParam(value = "color") String color,
+            @RequestParam(value = "nelements") Integer nelements,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "passed") Boolean passed,
+            @RequestParam(value = "pTime") Double pTime,
+            @RequestParam(value = "pCorrect") Integer pCorrect,
+            @RequestParam(value = "pMissed") Integer pMissed,
+            @RequestParam(value = "pWrong") Integer pWrong,
             org.springframework.ui.Model model,
             HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
@@ -6588,14 +6380,7 @@ public class ExerciseService
                         }
                         sess.setExercises(jsonArr.toString());
                         sess.setActive(!sessionEnded);
-                        if (!sessionController.updateEntity(sess))
-                        {
-                            logger.error("Error updating MSRSession to DB");
-                            model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                            model.addAttribute("back", "patienthome");
-                            model.addAttribute("home", "patienthome");
-                            return new ModelAndView("error");
-                        }
+                        sessionController.updateEntity(sess);
                         url = "patienthome";
                     } else
                     {
@@ -6654,14 +6439,7 @@ public class ExerciseService
 
                     //lastExerciseFunEx1Passed = passed;
                 }
-                if (!historyController.putEntity(history))
-                {
-                    logger.error("Error adding History to DB");
-                    model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                    model.addAttribute("back", "patienthome");
-                    model.addAttribute("home", "patienthome");
-                    return new ModelAndView("error");
-                }
+                historyController.putEntity(history);
                 httpSess.setAttribute("diffVar7", diffVar);
                 return new ModelAndView("redirect:" + url);
             }
@@ -6671,10 +6449,10 @@ public class ExerciseService
 
     @RequestMapping(value = "/createexecfunct2", method = RequestMethod.GET)
     public ModelAndView createexecfunct2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "sessid") Integer sessid,
             HttpServletRequest request,
             org.springframework.ui.Model model)
     {
@@ -6756,16 +6534,16 @@ public class ExerciseService
 
     @RequestMapping(value = "/getperformance", method = RequestMethod.GET)
     public ResponseEntity<String> getperformance(
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "ptime", required = true) Double ptime,
-            @RequestParam(value = "pcorrect", required = true) Integer pcorrect,
-            @RequestParam(value = "pwrong", required = true) Integer pwrong,
-            @RequestParam(value = "pmissed", required = true) Integer pmissed,
-            @RequestParam(value = "maxtime", required = true) Double maxtime,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
+            @RequestParam(value = "exerciseid") Integer exerciseid,
+            @RequestParam(value = "patientid") Integer patientid,
+            @RequestParam(value = "ptime") Double ptime,
+            @RequestParam(value = "pcorrect") Integer pcorrect,
+            @RequestParam(value = "pwrong") Integer pwrong,
+            @RequestParam(value = "pmissed") Integer pmissed,
+            @RequestParam(value = "maxtime") Double maxtime,
+            @RequestParam(value = "sessid") Integer sessid,
+            @RequestParam(value = "difficulty") String difficulty,
+            @RequestParam(value = "level") Integer level,
             @RequestParam(value = "assignmentid", required = false, defaultValue = "-1") Integer assignmentid,
             HttpServletRequest request)
     {
@@ -6787,15 +6565,13 @@ public class ExerciseService
         double perf = fitnessController.calculateFitness(false, history);
 
         double thr = fitnessController.getEntity(exerciseid).getThr();
-
-        double around=0.0049;
-
         if(assignmentid != null && assignmentid > 0)
             thr = historyController.getEntity(assignmentid).getPassThreshold();
 
 
-        boolean passed = (perf + around - thr) >= 0;
-
+        //double around=0.0049;
+        //boolean passed = (perf + around - thr) >= 0;
+        boolean passed = perf >= thr;
 
 
         JSONObject res = new JSONObject();
@@ -6803,8 +6579,7 @@ public class ExerciseService
         res.put("passed", passed);
         res.put("thr", thr);
 
-        HttpHeaders headers = new HttpHeaders();
-        return new ResponseEntity<>(res.toString(), headers, HttpStatus.OK);
+        return new ResponseEntity<>(res.toString(), HttpStatus.OK);
     }
 
 

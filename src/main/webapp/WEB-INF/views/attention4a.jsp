@@ -281,20 +281,20 @@
 
             if(isMobile())
             {
-                document.getElementById("suono").innerHTML="Quando sentirà un suono, tocchi il tasto “Invio”.";
+                document.getElementById("suono").innerHTML="Quando sentirà un suono, tocchi il tasto “Suono”.";
                 if(${type=='ATT_DIV_FAC'}){
-                    document.getElementById("im1").innerHTML ="Quando vedrà questi volti sullo schermo, tocchi il tasto “Spazio”.";
-                    document.getElementById("im2").innerHTML = "Se volto e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
+                    document.getElementById("im1").innerHTML ="Quando vedrà questi volti sullo schermo, tocchi il tasto “Figura”.";
+                    document.getElementById("im2").innerHTML = "Se volto e suono compariranno contemporaneamente, tocchi su “Suono” e “Figura” il più velocemente possibile."
                 }
                 if(${type=='ATT_DIV_ORI'})
                 {
-                    document.getElementById("im1").innerHTML="Quando vedrà queste frecce sullo schermo, tocchi il tasto “Spazio”.";
-                    document.getElementById("im2").innerHTML="Se freccia e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
+                    document.getElementById("im1").innerHTML="Quando vedrà queste frecce sullo schermo, tocchi il tasto “Figura”.";
+                    document.getElementById("im2").innerHTML="Se freccia e suono compariranno contemporaneamente, tocchi su “Suono” e “Figura” il più velocemente possibile."
 
                 }
                 if(${type=='ATT_DIV'}){
-                    document.getElementById("im1").innerHTML="Quando vedrà queste figure sullo schermo, tocchi il tasto “Spazio”.";
-                    document.getElementById("im2").innerHTML="Se figura e suono compariranno contemporaneamente, tocchi su “Spazio” e “Invio” il più velocemente possibile."
+                    document.getElementById("im1").innerHTML="Quando vedrà queste figure sullo schermo, tocchi il tasto “Figura”.";
+                    document.getElementById("im2").innerHTML="Se figura e suono compariranno contemporaneamente, tocchi su “Suono” e “Figura” il più velocemente possibile."
                 }
             }
             else

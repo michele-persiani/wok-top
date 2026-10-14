@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.NPSTest;
 
 import java.util.Comparator;
@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
  *
  * @author floriano
  */
-public class NPSTestController extends JPAEntityController<NPSTest>
+public class NPSTestController extends DecoratorEntityController<NPSTest>
 {
-    public NPSTestController()
+    public NPSTestController(Model model)
     {
-        super(NPSTest.class, PersistenceUnit.DEFAULT_PU);
+        super(model, NPSTest.class);
     }
 
     public List<NPSTest> findAllByUser(Integer id)

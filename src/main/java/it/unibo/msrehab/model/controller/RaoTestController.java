@@ -5,8 +5,8 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.RaoTest;
 
 import java.util.Comparator;
@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 /**
  * @author floriano
  */
-public class RaoTestController extends JPAEntityController<RaoTest>
+public class RaoTestController extends DecoratorEntityController<RaoTest>
 {
 
-    public RaoTestController()
+    public RaoTestController(Model model)
     {
-        super(RaoTest.class, PersistenceUnit.DEFAULT_PU);
+        super(model, RaoTest.class);
     }
 
     public List<RaoTest> findAllByUser(Integer id)

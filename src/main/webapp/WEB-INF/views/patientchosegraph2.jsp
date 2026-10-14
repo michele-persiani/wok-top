@@ -94,13 +94,15 @@
                 </nav>
             </div>
             
-            <h1>Grafici ${tipo} di ${patient.surname} ${patient.name}</h1>
+            <h1>Grafici ${kind} di ${patient.surname} ${patient.name}</h1>
             <div class="well">
                 <h2>Seleziona uno dei grafici disponibili</h2>                
                 <ul class="list-group">
+                    <!--
                     <li class="list-group-item">
-                       <a class="btn btn-lg btn-primary" href="patientbuildgraph?patientid=${patient.id}&kind=${kind}" style="min-width:300px">${tipo} generale</a>
+                       <a class="btn btn-lg btn-primary" href="patientbuildgraph?patientid=${patient.id}&kind=${kind}" style="min-width:300px">${kind} generale</a>
                     </li>
+                    -->
                     <hr />
                 <c:forEach begin="0" end="${fn:length(category) - 1}" var="index">
                     <c:choose>

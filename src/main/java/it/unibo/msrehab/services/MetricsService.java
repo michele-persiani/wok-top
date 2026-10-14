@@ -7,6 +7,10 @@ import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 import it.unibo.msrehab.model.entities.MSRUser;
 import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -17,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
 
 
 /**
@@ -56,39 +62,20 @@ public class MetricsService
     private static final String REL_WRONG_RESPONSES = "rel_wrong_responses";
     private static final String REL_MISSING_RESPONSES = "rel_missing_responses";
 
+    private static final String USER_NAME = "user_name";
+    private static final String USER_ID = "user_id";
+
     public static final Map<String, String> displayNames = new HashMap<>();
     public static final List<String> fields = new ArrayList<>();
 
 
-    static {
-
-
-        displayNames.put(DATE, "Data");
-
-        displayNames.put(TOTAL_TIME, "Tempo di connessione totale (mins)");
-        displayNames.put(EFFECTIVE_TIME, "Tempo di attivita' effettiva (mins)");
-        displayNames.put(TOTAL_ATTEMPTS, "Tentativi totali");
-
-        displayNames.put(COMPLETED_ATTEMPTS, "Tentativi completati");
-        displayNames.put(INTERRUPTED_ATTEMPTS, "Tentativi interrotti");
-        displayNames.put(PASSED_ATTEMPTS, "Tentativi superati");
-        displayNames.put(FAILED_ATTEMPTS, "Tentativi falliti");
-        displayNames.put(MEAN_PERFORMANCE, "Performance media");
-        displayNames.put(MAX_LEVEL_REACHED, "Livello massimo raggiunto");
-        displayNames.put(TOTAL_RESPONSES, "Risposte totali");
-        displayNames.put(CORRECT_RESPONSES, "Risposte corrette");
-        displayNames.put(WRONG_RESPONSES, "Risposte sbagliate");
-        displayNames.put(MISSING_RESPONSES, "Omissioni");
-        displayNames.put(REL_COMPLETED_ATTEMPTS, "Tentativi completati (%)");
-        displayNames.put(REL_INTERRUPTED_ATTEMPTS, "Tentativi interrotti (%)");
-        displayNames.put(REL_PASSED_ATTEMPTS, "Tentativi superati (%)");
-        displayNames.put(REL_FAILED_ATTEMPTS, "Tentativi falliti (%)");
-        displayNames.put(REL_CORRECT_RESPONSES, "Risposte corrette (%)");
-        displayNames.put(REL_WRONG_RESPONSES, "Risposte sbagliate (%)");
-        displayNames.put(REL_MISSING_RESPONSES, "Omissioni (%)");
+    static
+    {
 
         fields.addAll(Arrays.asList(
                 DATE,
+                USER_ID,
+                USER_NAME,
                 TOTAL_TIME,
                 EFFECTIVE_TIME,
                 TOTAL_ATTEMPTS,
@@ -111,10 +98,36 @@ public class MetricsService
                 REL_MISSING_RESPONSES
         ));
 
+
+        displayNames.put(DATE, "Data");
+
+        displayNames.put(USER_NAME, "Nome utente");
+        displayNames.put(USER_ID, "ID utente");
+
+        displayNames.put(TOTAL_TIME, "Tempo di connessione totale (mins)");
+        displayNames.put(EFFECTIVE_TIME, "Tempo di attivita' effettiva (mins)");
+        displayNames.put(TOTAL_ATTEMPTS, "Tentativi totali");
+
+        displayNames.put(COMPLETED_ATTEMPTS, "Tentativi completati");
+        displayNames.put(INTERRUPTED_ATTEMPTS, "Tentativi interrotti");
+        displayNames.put(PASSED_ATTEMPTS, "Tentativi superati");
+        displayNames.put(FAILED_ATTEMPTS, "Tentativi falliti");
+        displayNames.put(MEAN_PERFORMANCE, "Performance media");
+        displayNames.put(MAX_LEVEL_REACHED, "Livello massimo raggiunto");
+        displayNames.put(TOTAL_RESPONSES, "Risposte totali");
+        displayNames.put(CORRECT_RESPONSES, "Risposte corrette");
+        displayNames.put(WRONG_RESPONSES, "Risposte sbagliate");
+        displayNames.put(MISSING_RESPONSES, "Omissioni");
+        displayNames.put(REL_COMPLETED_ATTEMPTS, "Tentativi completati (%)");
+        displayNames.put(REL_INTERRUPTED_ATTEMPTS, "Tentativi interrotti (%)");
+        displayNames.put(REL_PASSED_ATTEMPTS, "Tentativi superati (%)");
+        displayNames.put(REL_FAILED_ATTEMPTS, "Tentativi falliti (%)");
+        displayNames.put(REL_CORRECT_RESPONSES, "Risposte corrette (%)");
+        displayNames.put(REL_WRONG_RESPONSES, "Risposte sbagliate (%)");
+        displayNames.put(REL_MISSING_RESPONSES, "Omissioni (%)");
     }
 
-
-    private String getCreationDate(History history)
+    private String getDateStringFromCreationTimestamp(History history)
     {
         return new LocalDate(history.getCreationTimestamp()).toString("dd-MM-yyyy");
     }
@@ -130,7 +143,7 @@ public class MetricsService
     {
         return model.getEntityController(MSRUser.class)
                 .findEntity(history.getUserid())
-                .orElseThrow(IllegalStateException::new);
+                .orElse(null); // Case where history has a deleted patient
     }
 
     private Map<String, Object> computeSessionMetrics(String date, List<History> sessionHistory)
@@ -300,10 +313,21 @@ public class MetricsService
         metrics.put(REL_WRONG_RESPONSES, relIncorrectResponses);
         metrics.put(REL_MISSING_RESPONSES, relMissingResponses);
 
+        MSRUser user = getPatient(sessionHistory.get(0));
+
+        if(user != null)
+        {
+            metrics.put(USER_NAME, user.getName() + " " + user.getSurname());
+            metrics.put(USER_ID, user.getId());
+        }
+        else
+        {
+            metrics.put(USER_NAME, "");
+            metrics.put(USER_ID, "");
+        }
+
+
         return metrics;
-
-
-
     }
 
 
@@ -312,8 +336,8 @@ public class MetricsService
      * Returns the exercises metrics as a json object
      * {
      * fields : list of fields
-     * displayNames : map of field -> field readable name
-     * data : list of datapoints as maps where each entry is a map of field-value pair
+     * displayNames : map of {field : field display name}
+     * data : list of datapoints as maps where each entry is a map {field : value}
      * }
      *
      * @param request
@@ -328,23 +352,31 @@ public class MetricsService
             @RequestParam(required = false) Integer[] userId,
             @RequestParam(required = false) String[] exerciseCategory,
             @RequestParam(required = false) String[] exerciseName,
-            @RequestParam(required = false) Integer[] userGroup
+            @RequestParam(required = false) Integer[] userGroup,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone
     )
     {
+
+
         Map<String, List<History>> sessions = model.getEntityController(History.class)
                 .getAllEntities()
                 .stream()
-                .filter(h -> userId == null || Arrays.asList(userId).contains(h.getUserid()))
+                .filter(h -> checkUserId(h, userId))
+                .filter(h -> checkEmailAndPhone(h, email, phone))
                 .filter(h -> exerciseCategory == null || Arrays.asList(exerciseCategory).contains(getExercise(h).getCategory().toString()))
                 .filter(h -> exerciseName == null || Arrays.asList(exerciseName).contains(getExercise(h).getName().toString()))
-                .filter(h -> userGroup == null || Arrays.asList(userGroup).contains(getPatient(h).getGid()))
-                .collect(Collectors.groupingBy(this::getCreationDate));
+                .filter(h -> checkGroupId(h, userGroup))
+                .collect(Collectors.groupingBy(this::getDateStringFromCreationTimestamp));
+
 
         List<Map<String, Object>> sessionMetricsList = sessions.keySet()
                 .stream()
-                .sorted()
+                .sorted(Comparator.comparing(this::getTimestamp))
                 .map(e -> computeSessionMetrics(e, sessions.get(e)))
                 .collect(Collectors.toList());
+
+
 
 
         Map<String, Object> metrics = new HashMap<>();
@@ -355,7 +387,55 @@ public class MetricsService
         return ResponseEntity.ok().body(
                 serializer.deepSerialize(metrics)
         );
+    }
 
+    private boolean checkUserId(History history, Integer[] ids)
+    {
+        return ids == null || Arrays.asList(ids).contains(history.getUserid());
+    }
+
+    private boolean checkGroupId(History history, Integer[] groupIds)
+    {
+        MSRUser patient = getPatient(history);
+        if(patient == null)
+            return false;
+        return groupIds == null || Arrays.asList(groupIds).contains(patient.getGid());
+    }
+
+    private boolean checkEmailAndPhone(History history, String email, String phone)
+    {
+        boolean result = true;
+
+        MSRUser patient = getPatient(history);
+
+        if(patient == null)
+            return false;
+
+        if(email != null && !email.isEmpty())
+        {
+            String userEmail = patient.getEmail();
+            result = result && (userEmail != null && userEmail.contains(email));
+        }
+        if(phone != null && !phone.isEmpty())
+        {
+            String userPhone = patient.getPhone();
+            result = result && (userPhone != null && userPhone.contains(phone));
+        }
+        return result;
+    }
+
+    DateTimeFormatter dateFormatter = new DateTimeFormatterBuilder()
+            .appendDayOfMonth(1)
+            .appendLiteral("-")
+            .appendMonthOfYear(1)
+            .appendLiteral("-")
+            .appendYear(4, 4)
+            .toFormatter();
+
+    private long getTimestamp(String dateString)
+    {
+        LocalDate date = LocalDate.parse(dateString, dateFormatter);
+        return date.toDate().toInstant().toEpochMilli();
     }
 
 }

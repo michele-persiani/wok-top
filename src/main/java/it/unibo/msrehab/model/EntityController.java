@@ -2,8 +2,12 @@ package it.unibo.msrehab.model;
 
 import it.unibo.msrehab.model.entities.BaseEntity;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Controller to manage a collection of entities
@@ -29,16 +33,15 @@ public interface EntityController<T extends BaseEntity>
      * Inserts an entity
      *
      * @param entity entity to insert
-     * @return true if the entity was inserted, false if the entity already exists or an error occurred
      */
-    boolean insertEntity(T entity);
+    void insertEntity(T entity);
 
     /**
      * Updates an entity
+     *
      * @param entity entity to update
-     * @return true if the entity was updated, false if the entity was not found (is new or with invalid id) or an error occurred
      */
-    boolean updateEntity(T entity);
+    void updateEntity(T entity);
 
     /**
      * Removes an entity
@@ -46,7 +49,7 @@ public interface EntityController<T extends BaseEntity>
      * @param entity entity to remove
      * @return true if the entity was removed, false if the entity was not found or an error occurred
      */
-    boolean removeEntity(T entity);
+    void removeEntity(T entity);
 
     /**
      * Puts an entity, namely it inserts it if it is new, or updates it if it is not new.
@@ -54,12 +57,12 @@ public interface EntityController<T extends BaseEntity>
      * @param entity entity to put
      * @return whether the operation was successful
      */
-    default boolean putEntity(T entity)
+    default void putEntity(T entity)
     {
         if (entity.isNew())
-            return insertEntity(entity);
+            insertEntity(entity);
         else
-            return updateEntity(entity);
+            updateEntity(entity);
     }
 
     /**
@@ -67,9 +70,39 @@ public interface EntityController<T extends BaseEntity>
      *
      * @param id entity id
      * @return the entity with id {@code id}
+     * @throws IllegalArgumentException if the entity with id {@code id} is not found
      */
     default T getEntity(Object id)
     {
         return findEntity(id).orElseThrow(() -> new IllegalArgumentException(String.format("Entity with id %s not found", id.toString())));
+    }
+
+
+    /**
+     * Decorates this controller with a decorator.
+     *
+     * @param decorator decorator class to decorate the current controller with. This class must have a constructor with
+     *                  first argument being an EntityController<T>. The current instance will be passed as the first argument.
+     * @param args      other arguments for the constructor
+     * @param <C>       class of the decorator
+     * @return
+     */
+    default <C extends EntityController<T>> C decorated(Class<C> decorator, Object... args)
+    {
+        try
+        {
+            Class<?>[] argsClasses = Stream.concat(
+                            Stream.of(EntityController.class),
+                            Stream.of(args).map(Object::getClass)
+                    )
+                    .toArray(Class<?>[]::new);
+            Constructor<C> constructor = decorator.getConstructor(argsClasses);
+
+            Object[] argsWithController = Stream.concat(Stream.of(this), Stream.of(args)).toArray();
+            return constructor.newInstance(argsWithController);
+        } catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

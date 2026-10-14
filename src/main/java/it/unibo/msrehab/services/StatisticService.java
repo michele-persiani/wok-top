@@ -5,14 +5,17 @@
  */
 package it.unibo.msrehab.services;
 
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.controller.ExerciseController;
 import it.unibo.msrehab.model.controller.MSRGroupController;
 import it.unibo.msrehab.model.controller.MSRUserController;
+import it.unibo.msrehab.model.entities.MSRGroup;
+import it.unibo.msrehab.model.entities.MSRUser;
 import it.unibo.msrehab.util.CookiesManager;
-import it.unibo.msrehab.util.WebPagesUtilities;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 //import org.apache.commons.lang3.ArrayUtils;
@@ -34,138 +37,145 @@ public class StatisticService
     private final MSRUserController userController;
     private final MSRGroupController groupController;
 
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
 
     public StatisticService(){
         super();
-        this.userController = new MSRUserController();
-        this.exerciseController = new ExerciseController();
-        this.groupController = new MSRGroupController();
+        this.userController = new MSRUserController(model);
+        this.exerciseController = new ExerciseController(model);
+        this.groupController = new MSRGroupController(model);
     }
 
+    /**
+     * Vista per selezionare il paziente
+     * @param request
+     * @param model
+     * @return
+     */
     @RequestMapping(value = "/patientsstatistics", method = RequestMethod.GET)
     public ModelAndView patientsstatistics(
             HttpServletRequest request,
-            Model model) {
+            Model model)
+    {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request)||((!CookiesManager.isUserAdmin(request))))
             return new ModelAndView("login");
-        }
-        else {
+        else
+        {
             int cid = CookiesManager.getLoggedUserCenter(request);
-            model.addAttribute("patients", userController.findAllPatientsInCenter(cid));
+            List<MSRUser> usersInCenter = userController.findAllPatientsInCenter(cid);
+            model.addAttribute("patients", usersInCenter);
             return new ModelAndView("selectPatientStatistics");
         }
     }
 
+    /**
+     *  Vista per scegliere i grafici per le varie categorie di esercizi
+      */
+
     @RequestMapping(value = "/patientchosegraph", method = RequestMethod.GET)
     public ModelAndView patientchosegraph(
-            @RequestParam(value = "patientid", required = true) Integer id,
             HttpServletRequest request,
-            Model model) {
+            @RequestParam Integer patientid,
+            Model model)
+    {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request)||((!CookiesManager.isUserAdmin(request))))
             return new ModelAndView("login");
-        }
+
 
         List<String> types = exerciseController.getAllExerciseTypes();
+        MSRUser user = userController.getEntity(patientid);
 
-
-        model.addAttribute("patient", userController.findEntity(id).get());
+        model.addAttribute("patient", user);
         model.addAttribute("types", types);
         return new ModelAndView("patientchosegraph");
     }
 
+    /**
+     * Vista per scegliere l'esercizio data una sua categoria (kind)
+     */
 
     @RequestMapping(value = "/patientchosegraph2", method = RequestMethod.GET)
     public ModelAndView patientchosegraph2(
-            @RequestParam(value = "patientid", required = true) Integer id,
-            @RequestParam(value = "kind", required = true) String kind,
             HttpServletRequest request,
-            Model model) {
+            @RequestParam Integer patientid,
+            @RequestParam(value = "kind") String type,
+            Model model)
+    {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request)||((!CookiesManager.isUserAdmin(request))))
             return new ModelAndView("login");
+
+
+        List<Exercise> exercises = exerciseController.findAllExercisesByType(type)
+                .stream()
+                .filter(Exercise::isEnabled)
+                .collect(Collectors.toList());
+
+        ArrayList<String> category = new ArrayList<>();
+        ArrayList<String> category_testo = new ArrayList<>();
+        ArrayList<String> globalcategory = new ArrayList<>();
+
+        for(Exercise ex: exercises)
+        {
+            category.add(ex.getCategory().toString());
+
+            globalcategory.add(exerciseController.getDisplayName(ex));
+
+            String[] parts = ex.getGlobalCategory().split("(?=-)");
+            String displayText = Arrays.stream(parts)
+                    .limit(2)
+                    .map(String::trim)
+                    .collect(Collectors.joining(" "));
+
+            category_testo.add(displayText);
         }
 
-        try{
-            Exercise.ExerciseCategoryValue q = Exercise.ExerciseCategoryValue.valueOf(kind);
-            String type = exerciseController.findExerciseTypeFromCategory(q);
-            if(!type.equals("")){
-                kind = type;
-            }
-        }catch(IllegalArgumentException e){
-
-        }
-
-        List<Exercise> lcategory = exerciseController.findAllExercisesByType(kind);
-        ArrayList<String> category = new ArrayList<String>();
-        ArrayList<String> category_testo = new ArrayList<String>();
-        ArrayList<String> globalcategory = new ArrayList<String>();
-        ArrayList<String> category_nested = new ArrayList<String>();
-
-        for(Exercise c: lcategory){
-        	/*if (!category.contains(""+c.getCategory())) {
-        		category.add(""+c.getCategory());
-        	}
-        	if (!globalcategory.contains(""+c.getGlobalCategory())) {
-        		globalcategory.add(""+c.getGlobalCategory());
-        	}
-            if (category_testo.contains(""+c.getFullName())) {
-        		category_testo.add(""+c.getFullName());
-        	}*/
-            category.add(""+c.getCategory());
-            globalcategory.add(""+c.getGlobalCategory());
-            category_nested.add(""+c.getFullName());
-            String[] parts = (""+c.getGlobalCategory()).split("(?=-)");
-            String temp="";
-        	//temp= parts[0]+parts[1]+parts[2];
-            for (int i=0; i<2; i++) {
-            	temp = temp+parts[i];
-            }
-            category_testo.add(temp);
-            temp = temp+" ";
-            category_nested.add(temp);
-        }
+        MSRUser patient = userController.getEntity(patientid);
 
         model.addAttribute("category",category);
         model.addAttribute("globalcategory",globalcategory);
         model.addAttribute("category_testo",category_testo);
-        model.addAttribute("tipo",getItaNameKind(kind));
-        model.addAttribute("kind", kind);
-
-        model.addAttribute("patient", userController.getEntity(id));
+        model.addAttribute("kind", type);
+        model.addAttribute("patient", patient);
 
         return new ModelAndView("patientchosegraph2");
     }
 
-
-
+    /**
+     * Vista per visualizzare le statistiche dato un utente e tipo di esercizio
+     */
     @RequestMapping(value = "/patientbuildgraph", method = RequestMethod.GET)
     public ModelAndView patientbuildgraph(
-            @RequestParam(value = "patientid", required = true) Integer id,
-            @RequestParam(value = "kind", required = true) String kind,
-            HttpServletRequest request,
-            Model model) {
-
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+            @RequestParam Integer patientid,
+            @RequestParam String kind,
+            HttpServletRequest request
+    )
+    {
+        if (!CookiesManager.isUserLogged(request)||((!CookiesManager.isUserAdmin(request))))
             return new ModelAndView("login");
-        }
+
 
 
         return new ModelAndView("patientgraphoverview_new")
-                .addObject("userId", id)
+                .addObject("userId", patientid)
                 .addObject("exerciseCategory", kind)
                 ;
     }
 
-
+    /**
+     * Vista per visualizzare le statistiche generali di un utente
+     */
     @RequestMapping(value = "/patientbuildgraphoverview", method = RequestMethod.GET)
     public ModelAndView patientbuildgraphoverview(
             @RequestParam Integer patientid,
-            HttpServletRequest request,
-            Model model) {
+            HttpServletRequest request
+    )
+    {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request))))
+        {
             return new ModelAndView("login");
         }
 
@@ -173,88 +183,95 @@ public class StatisticService
                 .addObject("userId", patientid);
     }
 
-
+    /**
+     * Vista per selezionare il gruppo da visualizzare le statistiche
+     */
     @RequestMapping(value = "/groupstatistics", method = RequestMethod.GET)
     public ModelAndView groupstatistics(
             HttpServletRequest request,
-            Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ModelAndView("login");
-        }
-        else {
-            int cid = CookiesManager.getLoggedUserCenter(request);
-            model.addAttribute("groups", groupController.findAllGroupsInCenter(cid));
-            return new ModelAndView("selectGroupStatistics");
-        }
-    }
-
-    @RequestMapping(value = "/groupgraph", method = RequestMethod.GET)
-    public ModelAndView groupgraph(
-            @RequestParam(value = "groupid", required = true) Integer groupid,
-            HttpServletRequest request,
-            Model model) {
-
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ModelAndView("login");
-        }
-
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ModelAndView("login");
-        }
-
-
-        return new ModelAndView("patientgraphoverview_new")
-                .addObject("groupId", groupid)
-                ;
-    }
-
-
-    @RequestMapping(value = "/displaystatistics", method = RequestMethod.GET)
-    public ModelAndView displaystatistics(
-            @RequestParam Integer userid,
-            @RequestParam Integer groupid,
-            @RequestParam String exercisename,
-            @RequestParam String exercisecategory,
-            HttpServletRequest request,
             Model model)
     {
-
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request))))
-        {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request))))
             return new ModelAndView("login");
-        }
 
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request))))
-        {
+        int cid = CookiesManager.getLoggedUserCenter(request);
+        List<MSRGroup> groupsInCenter = groupController.findAllGroupsInCenter(cid);
+
+        model.addAttribute("groups", groupsInCenter);
+        return new ModelAndView("selectGroupStatistics");
+    }
+
+    /**
+     * Vista per visualizzare le statistiche del gruppo
+     */
+    @RequestMapping(value = "/groupgraph", method = RequestMethod.GET)
+    public ModelAndView groupgraph(
+            HttpServletRequest request,
+            @RequestParam Integer groupid
+    )
+    {
+
+        if (!CookiesManager.isUserLogged(request) || !CookiesManager.isUserAdmin(request))
             return new ModelAndView("login");
-        }
 
 
         return new ModelAndView("patientgraphoverview_new")
-                .addObject("UserId", userid)
                 .addObject("groupId", groupid)
-                .addObject("exerciseName", exercisename)
-                .addObject("exerciseCategory", exercisecategory)
                 ;
     }
 
-    public String getItaNameKind(String kind){
-        /*String[] key=new String[]{"attenzione","memoria","funzioni esecutive","ATT_SEL_STD","ATT_SEL_FLW","ATT_ALT","ATT_DIV","MEM_VIS_1","MEM_VIS_2","NBACK","FUN_EXC"};
-        String[] name = new String[]{"Attenzione","Memoria","Funzioni esecutive","Attenzione selettiva standard","Attenzione selettiva scorrimento","Attenzione alternata","Attenzione divisa","Memoria visiva 1","Memoria visiva 2","N-Back","Funzioni esecutive"};
-        for(int i=0;i<key.length;i++){
-            if(key[i].equals(kind))
-                return name[i];
-        }*/
 
-        try{
-            Exercise.ExerciseCategoryValue q = Exercise.ExerciseCategoryValue.valueOf(kind);
-            String s=exerciseController.findGlobalCategory(q);
-            return s;
-        }catch(IllegalArgumentException e){
+    @RequestMapping(value = "/downloadstatistics", method = RequestMethod.GET)
+    public ModelAndView downloadStatisticsForm()
+    {
 
-        }
-        return kind.substring(0,1).toUpperCase()+kind.substring(1,kind.length()).toLowerCase();
-        //return "undefined";
+        List<MSRUser> patients = userController.getAllEntities()
+                .stream()
+                .filter(u -> MSRUser.RoleValue.PATIENT.equals(u.getMsrrole()))
+                .collect(Collectors.toList());
+
+        return new ModelAndView("patient-statistics-downloader")
+                .addObject("patients", patients)
+                .addObject("downloadForm", new DownloadForm())
+                ;
     }
 
+    public static class DownloadForm
+    {
+        private List<Integer> patients = new ArrayList<>();
+
+        private String email;
+
+        private String phone;
+
+        public List<Integer> getPatients()
+        {
+            return patients;
+        }
+
+        public void setPatients(List<Integer> patients)
+        {
+            this.patients = patients;
+        }
+
+        public String getEmail()
+        {
+            return email;
+        }
+
+        public void setEmail(String email)
+        {
+            this.email = email;
+        }
+
+        public String getPhone()
+        {
+            return phone;
+        }
+
+        public void setPhone(String phone)
+        {
+            this.phone = phone;
+        }
+    }
 }

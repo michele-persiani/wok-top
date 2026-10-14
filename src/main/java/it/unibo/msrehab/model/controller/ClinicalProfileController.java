@@ -5,21 +5,19 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.JPAModel;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.*;
 import it.unibo.msrehab.model.entities.ClinicalProfile;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class ClinicalProfileController extends JPAEntityController<ClinicalProfile>
+public class ClinicalProfileController extends DecoratorEntityController<ClinicalProfile>
 {
 
-    public ClinicalProfileController()
+    public ClinicalProfileController(Model model)
     {
-        super(ClinicalProfile.class, PersistenceUnit.DEFAULT_PU);
+        super(model, ClinicalProfile.class);
     }
 
 

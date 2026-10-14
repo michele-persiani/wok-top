@@ -7,6 +7,7 @@ package it.unibo.msrehab.services;
 
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
@@ -21,7 +22,7 @@ import it.unibo.msrehab.model.controller.MSRGroupController;
 import it.unibo.msrehab.model.controller.MSRSessionController;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.util.CookiesManager;
-import it.unibo.msrehab.util.WebPagesUtilities;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,11 +50,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class ExerciseLiveService
 {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ExerciseService.class);
     private final HistoryController historyController;
-    private final Configuration config;
-    private final FitnessWeightController fitnessController;
     private final ExerciseController exerciseController;
     private final MSRSessionController sessionController;
     private final ChangeDifficultyController changeDiffController;
@@ -64,24 +61,16 @@ public class ExerciseLiveService
   //  public static final int MAX_DIFFICULTY_LEVEL = 10;
     public static final int MIN_DIFFICULTY_LEVEL = 1;
 
-    public enum SessionValue {
-        easy, medium, hard;
-    };
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
 
     public ExerciseLiveService() {
         super();
-        this.historyController = new HistoryController();
-        this.fitnessController = new FitnessWeightController();
-        this.userController = new MSRUserController();
-        this.exerciseController = new ExerciseController();
-        this.sessionController = new MSRSessionController();
-        this.changeDiffController = new ChangeDifficultyController();
-        this.groupController = new MSRGroupController();
-
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
+        this.historyController = new HistoryController(model);
+        this.userController = new MSRUserController(model);
+        this.exerciseController = new ExerciseController(model);
+        this.sessionController = new MSRSessionController(model);
+        this.changeDiffController = new ChangeDifficultyController(model);
+        this.groupController = new MSRGroupController(model);
     }
 
     public String getItaNameKind(String kind) {
@@ -109,7 +98,7 @@ public class ExerciseLiveService
             HttpServletRequest request,
             Model model) {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ModelAndView("login");
         } else {
             int cid = CookiesManager.getLoggedUserCenter(request);
@@ -122,7 +111,7 @@ public class ExerciseLiveService
     public ModelAndView showgrouplivelist(
             HttpServletRequest request,
             Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ModelAndView("login");
         } else {
             int cid = CookiesManager.getLoggedUserCenter(request);
@@ -137,7 +126,7 @@ public class ExerciseLiveService
             @RequestParam(value = "id", required = true) Integer patientid,
             HttpServletRequest request,
             Model model) {
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ModelAndView("login");
         }
         MSRUser patient = userController.findEntity(patientid).orElse(null);
@@ -168,7 +157,7 @@ public class ExerciseLiveService
             HttpServletRequest request,
             Model model) {
         HttpHeaders headers = new HttpHeaders();
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ResponseEntity<String>("", headers,
                     HttpStatus.UNAUTHORIZED);
         }
@@ -318,7 +307,7 @@ public class ExerciseLiveService
             HttpServletRequest request,
             Model model) {
 
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ModelAndView("login");
         }
         MSRGroup group = groupController.findEntity(groupid).get();
@@ -347,7 +336,7 @@ public class ExerciseLiveService
             HttpServletRequest request,
             Model model) {
         HttpHeaders headers = new HttpHeaders();
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ResponseEntity<String>("", headers,
                     HttpStatus.UNAUTHORIZED);
         }
@@ -379,7 +368,7 @@ public class ExerciseLiveService
     {
         HttpHeaders headers = new HttpHeaders();
 
-        if (WebPagesUtilities.redirectIfNotLogged(request) || ((WebPagesUtilities.redirectIfNotAdmin(request)))) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
             return new ResponseEntity<String>("", headers,
                     HttpStatus.UNAUTHORIZED);
         }
@@ -407,18 +396,14 @@ public class ExerciseLiveService
         {
             ChangeDifficulty cd = cdl.get(0);
             cd.setLevel(level);
-            if (!changeDiffController.updateEntity(cd)) {
-                logger.error("Error updating ChangeDifficulty to DB");
-                return new ResponseEntity<>(headers,HttpStatus.SERVICE_UNAVAILABLE);
-            }
+            changeDiffController.updateEntity(cd);
         }
         else
         {
             ChangeDifficulty cd = new ChangeDifficulty();
             cd.setHistoryid(historyid);
             cd.setLevel(level);
-            if (!changeDiffController.insertEntity(cd))
-                return new ResponseEntity<>(headers,HttpStatus.SERVICE_UNAVAILABLE);
+            changeDiffController.insertEntity(cd);
         }
 
         return new ResponseEntity<>(level + "/" + maxdiff, headers, HttpStatus.OK);

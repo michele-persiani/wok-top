@@ -7,6 +7,7 @@ package it.unibo.msrehab.services;
 
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 import it.unibo.msrehab.model.entities.History;
 import it.unibo.msrehab.model.controller.PDDLGeneratorZooMap;
@@ -46,13 +47,7 @@ public class PddlZooMapService {
     private static final Logger logger = LoggerFactory
             .getLogger(ExerciseService.class);
     private final HistoryController historyController;
-    private final Configuration config;
     private final FitnessWeightController fitnessController;
-    private final ExerciseController exerciseController;
-    private final MSRSessionController sessionController;
-
-    private final MSRUserController userController;
-    private final MSRGroupController groupController;
     private final ChangeDifficultyController changeDiffController;
 
     private static final int EASY_MIN = 1;
@@ -64,32 +59,27 @@ public class PddlZooMapService {
 
     private HashMap<Integer, Integer> targetGoals = new HashMap<>();
 
-    public PddlZooMapService() {
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
+
+    public PddlZooMapService()
+    {
         super();
-        this.historyController = new HistoryController();
-        this.fitnessController = new FitnessWeightController();
-        this.userController = new MSRUserController();
-        this.exerciseController = new ExerciseController();
-        this.sessionController = new MSRSessionController();
-        this.groupController = new MSRGroupController();
-        this.changeDiffController = new ChangeDifficultyController();
-
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
-
+        this.historyController = new HistoryController(model);
+        this.fitnessController = new FitnessWeightController(model);
+        this.changeDiffController = new ChangeDifficultyController(model);
     }
+
 
     @RequestMapping(value = "/pianificazione2", method = RequestMethod.GET)
     public ModelAndView pianificazione2(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
+            @RequestParam String difficulty,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
             @RequestParam(value = "exname", required = false) String exname,
             @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model) {
+            Model model)
+    {
 
         logger.debug("pianificazion21()");
 
@@ -105,36 +95,34 @@ public class PddlZooMapService {
     @RequestMapping(value = "/pianificazione2phase1", method = RequestMethod.GET)
     public ModelAndView pianificazione2(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
+            @RequestParam String difficulty,
             @RequestParam(value = "level", required = false, defaultValue = "1") Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "color", required = true, defaultValue = "true") Boolean color,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam(value = "color", required = false, defaultValue = "true") Boolean color,
             Model model) {
 
         Random r = new Random();
-        if (difficulty.equals("training") || difficulty.equals("demo")) {
+        if (difficulty.equals("training") || difficulty.equals("demo"))
             level = 1;
-        }
-        else {
+        else
+        {
             // TODO: Attualmente restituisce solo l'agente reattivo
             List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
-            if (historyList.isEmpty()) {
-                if (difficulty.equals("easy")) {
+            if (historyList.isEmpty())
+            {
+                if (difficulty.equals("easy"))
                     level = EASY_MIN;
-                }
-                if (difficulty.equals("medium")) {
+
+                if (difficulty.equals("medium"))
                     level = MEDIUM_MIN;
-                    //color = r.nextBoolean();
-                }
-                if (difficulty.equals("difficult")) {
+
+                if (difficulty.equals("difficult"))
                     level = DIFFICULT_MIN;
-                    //color = false;
-                   // color = r.nextBoolean(); // color or bw are chosen with equal probability
-                }
             }
-            else {
+            else
+            {
                 level = historyList.get(0).getLevel();
                 if(historyList.size()>=2
                         && historyList.get(0).getPassed().equals(true)&&historyList.get(1).getPassed().equals(true)
@@ -142,21 +130,19 @@ public class PddlZooMapService {
                     level=historyList.get(0).getLevel()+1;
                 }
                 List<ChangeDifficulty> cdl = changeDiffController.findFromHistory(historyList.get(0).getId());
-                if ((cdl != null) && (!cdl.isEmpty())) {
+                if ((cdl != null) && (!cdl.isEmpty()))
                     level = cdl.get(0).getLevel();
-                }
-                if (level >= EASY_MIN && level < MEDIUM_MIN) {
+
+                if (level >= EASY_MIN && level < MEDIUM_MIN)
+                {
                     difficulty = "easy";
                     color=true;
                 }
-                else if (level >= MEDIUM_MIN && level < DIFFICULT_MIN) {
+                else if (level >= MEDIUM_MIN && level < DIFFICULT_MIN)
                     difficulty="medium";
-                    //color=r.nextBoolean();
-                }
-                else { // level >= MAXIMUM_MIN
+                else
                     difficulty = "difficult";
-                   // color = r.nextBoolean();
-                }
+
             }
         }
 
@@ -173,12 +159,12 @@ public class PddlZooMapService {
     @RequestMapping(value = "/pianificazione2phase2", method = RequestMethod.GET)
     public ModelAndView pianificazione2(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "idproblem", required = true) Integer idproblem,
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam Integer idproblem,
             @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
             Model model) {
 
@@ -198,11 +184,6 @@ public class PddlZooMapService {
         targetGoals.put(8, 4);
         targetGoals.put(9, 6);
         targetGoals.put(10, 7); //difficult max
-        //targetGoals.put(11, 7);
-        //targetGoals.put(12, 7);
-        //targetGoals.put(13, 7);
-        //targetGoals.put(14, 7);
-        //targetGoals.put(15, 7);
 
         //cambio mappa in base alla difficolta
         switch (difficulty) {
@@ -254,25 +235,26 @@ public class PddlZooMapService {
         int pMissed = 0;
         int pWrong = 0;
 
-        if (passed) {
+        if (passed)
+        {
             pCorrect = PDDLsolution.size();
-            if (actionsList.size() - PDDLsolution.size() > 0) {
+            if (actionsList.size() - PDDLsolution.size() > 0)
                 pWrong = actionsList.size() - PDDLsolution.size();
-            }
-        } else {
-            for (String action : actionsList) {
-                if (PDDLsolution.contains(action)) {
+
+        }
+        else
+        {
+            for (String action : actionsList)
+            {
+                if (PDDLsolution.contains(action))
                     ++pCorrect;
-                } else {
+                else
                     ++pWrong;
-                }
             }
 
             pMissed = PDDLsolution.stream().filter((solutionAction) -> (!actionsList.contains(solutionAction))).map((_item) -> 1).reduce(pMissed, Integer::sum);
         }
 
-        //List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
-        //int newLevel = ExerciseService.findChangedLevel(changeDiffController, lastHistory);
         History history = new History();
         history.setExid(exerciseid);
         history.setSessid(sessid);
@@ -292,56 +274,53 @@ public class PddlZooMapService {
         Long t = LocalDateTime.now().toDateTime().getMillis();
         history.setCreateTimestamp(t);
 
-        /*
-         history.setLevel(level);
-         history.setDifficulty(difficulty);
-         history.setpTime(pTime);*/
         return history;
     }
 
     @RequestMapping(value = "/getzooperformance", method = RequestMethod.GET)
     public ResponseEntity<String> getproblemperformance(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "idproblem", required = true) Integer idproblem,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "actions", required = true) String[] actions,
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam Integer idproblem,
+            @RequestParam Boolean passed,
+            @RequestParam Double pTime,
+            @RequestParam String[] actions,
             @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
-            Model model) {
-        HttpHeaders headers = new HttpHeaders();
+            Model model)
+    {
         System.out.println("Entrato nella richiesta");
 
         History h = calculateFitness(actions, pTime, difficulty, idproblem, passed, patientid, exerciseid, sessid);
         String html = "<p>Performance: " + (Math.floor(h.getAbsperformance() * 100)) + " % </p>";
 
-        if (Boolean.FALSE.equals(passed)) {
+        if (!passed)
+        {
 
             List<String> unsolved = new ArrayList<>();
             List<String> actionsList = Arrays.asList(actions);
 
-            for (String goal : listGoals) {
-                if (!actionsList.contains(goal)) {
+            for (String goal : listGoals)
+                if (!actionsList.contains(goal))
                     unsolved.add(goal);
-                }
-            }
 
-            if (unsolved.size() > 0) {
+            if (!unsolved.isEmpty())
+            {
                 html += "<h4>Obiettivi non risolti:</h4><ul>";
                 for (String unsolved1 : unsolved) {
                     html += "<li>" + unsolved1 + "</li>";
                 }
                 html += "</ul>";
             }
-        } else {
-            System.out.println("esercizio superato!");
         }
+        else
+            System.out.println("esercizio superato!");
 
-        return new ResponseEntity<String>(html, headers, HttpStatus.OK);
+
+        return new ResponseEntity<>(html, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/pianificazione2phase3", method = RequestMethod.GET)
@@ -357,18 +336,22 @@ public class PddlZooMapService {
             @RequestParam(value = "pTime", required = true) Double pTime,
             @RequestParam(value = "actions", required = true) String[] actions,
             @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
-            Model model) {
+            Model model)
+    {
 
-        if (patientid == -1) {
-            if (difficulty.equals("training")) {
+        if (patientid == -1)
+        {
+            if (difficulty.equals("training"))
                 return new ModelAndView("redirect: patienttraining");
-            } else {  //difficulty.equals("demo"))
+            else
                 return new ModelAndView("redirect: patientdemo");
-            }
-        } else {
-            if (difficulty.equals("training") || difficulty.equals("demo")) {
+
+        }
+        else
+        {
+            if (difficulty.equals("training") || difficulty.equals("demo"))
                 return new ModelAndView("redirect: patientrehabilitation");
-            }
+
 
             int nstep = PDDLsolution.size();
             List<String> actionsList = Arrays.asList(actions);
@@ -377,40 +360,34 @@ public class PddlZooMapService {
             int pMissed = 0;
             int pWrong = 0;
 
-            if (passed) {
+            if (passed)
+            {
                 pCorrect = PDDLsolution.size();
-                if (actionsList.size() - PDDLsolution.size() > 0) {
+                if (actionsList.size() - PDDLsolution.size() > 0)
                     pWrong = actionsList.size() - PDDLsolution.size();
-                }
-            } else {
-
-                for (String action : actionsList) {
-                    if (PDDLsolution.contains(action)) {
+            }
+            else
+            {
+                for (String action : actionsList)
+                    if (PDDLsolution.contains(action))
                         ++pCorrect;
-                    } else {
+                    else
                         ++pWrong;
-                    }
-                }
 
-                for (String solutionAction : PDDLsolution) {
-                    if (!actionsList.contains(solutionAction)) {
+                for (String solutionAction : PDDLsolution)
+                    if (!actionsList.contains(solutionAction))
                         ++pMissed;
-                    }
-                }
             }
 
-            //List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
-            //int newLevel = ExerciseService.findChangedLevel(changeDiffController,lastHistory);
             History history = new History();
             history.setExid(exerciseid);
             history.setPassed(passed);
             history.setUserid(patientid);
             history.setpTime(pTime);
-            history.setpCorrect(pCorrect);
+        history.setpCorrect(pCorrect);
             history.setpMissed(pMissed);
             history.setpWrong(pWrong);
             history.setMaxtime((double) nstep * 20);    // 20 secs per action
-            //history.setDifficulty(session);
 
             history.setDifficulty(difficulty);
             

@@ -2,6 +2,7 @@ package it.unibo.msrehab.services;
 
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.ChangeDifficulty;
 import it.unibo.msrehab.model.entities.Environment;
 import it.unibo.msrehab.model.entities.History;
@@ -21,7 +22,8 @@ import it.unibo.msrehab.model.controller.MSRSessionController;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.model.controller.PDDLEnvironmentController;
 import it.unibo.msrehab.model.controller.PDDLProblemController;
-import it.unibo.msrehab.util.WebPagesUtilities;
+import it.unibo.msrehab.util.CookiesManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -46,48 +48,37 @@ import org.springframework.web.servlet.ModelAndView;
  * @author danger
  */
 @Controller
-public class PddlBrainService {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ExerciseService.class);
+public class PddlBrainService
+{
+    private static final Logger logger = LoggerFactory.getLogger(ExerciseService.class);
     private final HistoryController historyController;
-    private final Configuration config;
     private final FitnessWeightController fitnessController;
-    private final ExerciseController exerciseController;
-    private final MSRSessionController sessionController;
-
-    private final MSRUserController userController;
-    private final MSRGroupController groupController;
     private final ChangeDifficultyController changeDiffController;
     
     private static final int EASY_MIN = 1;
     private static final int MEDIUM_MIN = 6;
     private static final int DIFFICULT_MIN = 11;
-    
-    public PddlBrainService(){
-        super();
-        this.historyController = new HistoryController();
-        this.fitnessController  = new FitnessWeightController();
-        this.userController = new MSRUserController();
-        this.exerciseController = new ExerciseController();
-        this.sessionController = new MSRSessionController();
-        this.groupController = new MSRGroupController();
-        this.changeDiffController = new ChangeDifficultyController();
 
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
+
+    public PddlBrainService()
+    {
+        super();
+        this.historyController = new HistoryController(model);
+        this.fitnessController  = new FitnessWeightController(model);
+        this.changeDiffController = new ChangeDifficultyController(model);
     }
 
     @RequestMapping(value = "/pianificazione1", method = RequestMethod.GET)
     public ModelAndView pianificazione1(
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "exname", required = false) String exname,
-            @RequestParam(value = "exdescr", required = false) String exdescr,
-            Model model) {
+            @RequestParam String difficulty,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam(required = false) String exname,
+            @RequestParam(required = false) String exdescr,
+            Model model)
+    {
 
         logger.debug("pianificazione1()");
 
@@ -103,76 +94,80 @@ public class PddlBrainService {
     @RequestMapping(value = "/pianificazione1phase1", method = RequestMethod.GET)
     public ModelAndView pianificazione1(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = false, defaultValue = "1") Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "color", required = true, defaultValue="true") Boolean color,
-            Model model) {
-        Random r=new Random();
-        if (difficulty.equals("training") || difficulty.equals("demo")) {
+            @RequestParam String difficulty,
+            @RequestParam(required = false, defaultValue = "1") Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam(required = false, defaultValue="true") Boolean color,
+            Model model)
+    {
+        Random r = new Random();
+        if (difficulty.equals("training") || difficulty.equals("demo"))
             level = 1;
-        }
-        else {
+        else
+        {
             List<History> historyList = historyController.findAllSolvedByUserAndExerciseAndSessidAndAgent(patientid, exerciseid, sessid, null);
-            if (historyList.isEmpty()) {
-                if(difficulty.equals("easy")){
+            if (historyList.isEmpty())
+            {
+                if(difficulty.equals("easy"))
                     level=EASY_MIN;
-                }
-                if(difficulty.equals("medium")){
+
+                if(difficulty.equals("medium"))
+                {
                     level=MEDIUM_MIN;
                     color=r.nextBoolean();
                 }
-                if(difficulty.equals("difficult")){
+                if(difficulty.equals("difficult"))
+                {
                     level=DIFFICULT_MIN;
                     color=false;
                  }
             }
-            else {
+            else
+            {
                 level = historyList.get(0).getLevel();
-                if(historyList.size()>=2
+                if(historyList.size() >= 2
                         && historyList.get(0).getPassed().equals(true)&&historyList.get(1).getPassed().equals(true)
                         && historyList.get(0).getLevel().equals(historyList.get(1).getLevel())) {    
                     level=historyList.get(0).getLevel()+1;
                 }
                 List<ChangeDifficulty> cdl = changeDiffController.findFromHistory(historyList.get(0).getId());
-                if ((cdl != null) && (!cdl.isEmpty())) {
+
+                if ((cdl != null) && (!cdl.isEmpty()))
                     level = cdl.get(0).getLevel();
-                }
-                if (level >= EASY_MIN && level < MEDIUM_MIN) {
+
+                if (level >= EASY_MIN && level < MEDIUM_MIN)
+                {
                     difficulty = "easy";
                     color=true;
                 }
-                else if (level >= MEDIUM_MIN && level < DIFFICULT_MIN) {
+                else if (level >= MEDIUM_MIN && level < DIFFICULT_MIN)
+                {
                     difficulty="medium";
                     color=r.nextBoolean();
                 }
-                else { // level >= MAXIMUM_MIN
+                else {
                     difficulty = "difficult";
                     color = false;
                 }
             }
         }
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+
         int id; //chose from db a number
         PDDLProblemController ppc=new PDDLProblemController();
-        
+
         List<Problem> lp=ppc.getRecordFromDifficulty(level);
         if(level>=10 &&level <=11)
-        {
-        lp.addAll(ppc.getRecordFromDifficulty(level+1));//TODO REMOVE THIS
-        }
+            lp.addAll(ppc.getRecordFromDifficulty(level+1));//TODO REMOVE THIS
+
         if(level>11)
         {
-        lp.addAll(ppc.getRecordFromDifficulty(level+1));//TODO REMOVE THIS
-        lp.addAll(ppc.getRecordFromDifficulty(level+2));//TODO REMOVE THIS
-        lp.addAll(ppc.getRecordFromDifficulty(level+3));//TODO REMOVE THIS
+            lp.addAll(ppc.getRecordFromDifficulty(level+1));//TODO REMOVE THIS
+            lp.addAll(ppc.getRecordFromDifficulty(level+2));//TODO REMOVE THIS
+            lp.addAll(ppc.getRecordFromDifficulty(level+3));//TODO REMOVE THIS
         }
-        
+
         System.out.println(lp.size());
         int idx = r.nextInt(lp.size());
         Problem p=lp.get(idx);       
@@ -190,19 +185,15 @@ public class PddlBrainService {
     @RequestMapping(value = "/pianificazione1phase2", method = RequestMethod.GET)
     public ModelAndView pianificazione2(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "idproblem", required = true) Integer idproblem,
-            @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
-            Model model) {
-        
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam Integer idproblem,
+            @RequestParam(required = false, defaultValue = "false") boolean color,
+            Model model)
+    {
         model.addAttribute("difficulty", difficulty);
         model.addAttribute("level", level);
         model.addAttribute("patientid", patientid);
@@ -215,10 +206,10 @@ public class PddlBrainService {
     
     private History calculateFitness(String[] actions, Double pTime, String difficulty, int idproblem, boolean passed, int patientid, int exerciseid, int sessid) {
         int nstep = 0;
-        List<PDDLGoal> a = new ArrayList<PDDLGoal>();
-        for (String action : actions) {
+        List<PDDLGoal> a = new ArrayList<>();
+        for (String action : actions)
             a.add(new PDDLGoal(action));
-        }
+
 
         PDDLProblemController ppc = new PDDLProblemController();
         Problem p = ppc.findEntity(idproblem).get();
@@ -231,13 +222,15 @@ public class PddlBrainService {
 
         if (passed) {
             pCorrect = step.size();
-            if (a.size() - step.size() > 0) {
+            if (a.size() - step.size() > 0)
                 pWrong = a.size() - step.size();
-            }
-        } else {
-            for (int i = 0; i < a.size() - 1; i++) {
+
+        }
+        else
+        {
+            for (int i = 0; i < a.size() - 1; i++)
                 problem.binds(a.get(i));
-            }
+
             String solution = problem.thinkSolution();
             if (!solution.equals("")) {
                 String[] stepMissed = solution.split("\n");
@@ -251,16 +244,14 @@ public class PddlBrainService {
                         pCorrect = 0;
                     }
                 }
-                if (stepMissed.length > 0) {
+                if (stepMissed.length > 0)
                     pMissed = stepMissed.length;
-                }
-            } else {
-                System.out.println("Errore nella risoluzione dell'esercizio! aiuto");
-            }
-        }
 
-        //List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
-        //int newLevel = ExerciseService.findChangedLevel(changeDiffController, lastHistory);
+            }
+            else
+                System.out.println("Errore nella risoluzione dell'esercizio! aiuto");
+
+        }
 
         History history = new History();
         history.setExid(exerciseid);
@@ -275,49 +266,44 @@ public class PddlBrainService {
         history.setpWrong(pWrong);
         history.setMaxtime((double) nstep * 20);    // 20 secs per action
 
-            // Calculate performance
+        // Calculate performance
         double ft = Double.NaN;
         ft = fitnessController.calculateFitness(false, history);
         history.setAbsperformance(ft);
         Long t = LocalDateTime.now().toDateTime().getMillis();
         history.setCreateTimestamp(t);
 
-        /*
-         history.setLevel(level);
-         history.setDifficulty(difficulty);
-         history.setpTime(pTime);*/
         return history;
     }
     
     @RequestMapping(value = "/getproblemperformance", method = RequestMethod.GET)
     public ResponseEntity<String> getproblemperformance(
-            HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "idproblem", required = true) Integer idproblem,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "actions", required = true) String[] actions,
+            @RequestParam String difficulty,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam Integer idproblem,
+            @RequestParam Boolean passed,
+            @RequestParam Double pTime,
+            @RequestParam String[] actions,
             String belief,
-            @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
-            Model model) {
-         HttpHeaders headers = new HttpHeaders();
+            Model model)
+    {
          System.out.println("Entrato nella richiesta");
          
          History h=calculateFitness(actions, pTime, difficulty, idproblem, passed, patientid, exerciseid, sessid);
          String html = "<p>Performance: "+(Math.floor(h.getAbsperformance() * 100))+" % </p>";
 
-         if(Boolean.FALSE.equals(passed)){ 
+         if(!passed)
+         {
             PDDLProblemController ppc=new PDDLProblemController();
             Problem p=ppc.findEntity(idproblem).get();
             PDDLProblem problem=p.getPDDLproblem();
             List<PDDLGoal> b=PDDLProblem.splitStringInGoals(belief);
             problem.setBelief(b);
             List<PDDLGoal> unsolved =problem.unsolvedGoal();
-            if(unsolved.size()>0){
+            if(!unsolved.isEmpty())
+            {
                 PDDLEnvironmentController pec=new PDDLEnvironmentController();
                 Environment pe=pec.findEntity(p.getIdenvironment()).get();
                 html+="<h4>Obiettivi non risolti:</h4></ul>";            
@@ -326,180 +312,156 @@ public class PddlBrainService {
                 }
                 html+="</ul>";
             }
-         }else{
-             System.out.println("esercizio superato!");
          }
+         else
+             System.out.println("esercizio superato!");
+
         
-        return new ResponseEntity<String>(html, headers,
-                HttpStatus.OK);
+        return new ResponseEntity<>(html, HttpStatus.OK);
     }
     
     @RequestMapping(value = "/pianificazione1phase3", method = RequestMethod.GET)
     public ModelAndView pianificazione3(
             HttpServletRequest request,
-            @RequestParam(value = "difficulty", required = true) String difficulty,
-            @RequestParam(value = "level", required = true) Integer level,
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "exerciseid", required = true) Integer exerciseid,
-            @RequestParam(value = "sessid", required = true) Integer sessid,
-            @RequestParam(value = "idproblem", required = true) Integer idproblem,
-            @RequestParam(value = "passed", required = true) Boolean passed,
-            @RequestParam(value = "pTime", required = true) Double pTime,
-            @RequestParam(value = "actions", required = true) String[] actions,
+            @RequestParam String difficulty,
+            @RequestParam Integer level,
+            @RequestParam Integer patientid,
+            @RequestParam Integer exerciseid,
+            @RequestParam Integer sessid,
+            @RequestParam Integer idproblem,
+            @RequestParam Boolean passed,
+            @RequestParam Double pTime,
+            @RequestParam String[] actions,
             @RequestParam(value = "color", required = false, defaultValue = "false") boolean color,
-            Model model) {
-        
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            Model model)
+    {
         int nstep=0;
 
-        if (patientid == -1) {
-            if (difficulty.equals("training")) {
+        if (patientid == -1)
+        {
+            if (difficulty.equals("training"))
                 return new ModelAndView("redirect: patienttraining");
-            }
-            else {  //difficulty.equals("demo"))
+            else
                 return new ModelAndView("redirect: patientdemo");
-            }
         }
-        else {
+        else
+        {
             if (difficulty.equals("training") || difficulty.equals("demo")) {
-                return new ModelAndView("redirect: patientrehabilitation");
-            }
-        
-        else {
-            List<PDDLGoal> a=new ArrayList<PDDLGoal>();
-            for (String action : actions) {
-                a.add(new PDDLGoal(action));
-            }
-            
-            PDDLProblemController ppc=new PDDLProblemController();
-            Problem p=ppc.findEntity(idproblem).get();
-            List<PDDLGoal> step=PDDLProblem.splitStringInGoals(p.getSolutions());
-            nstep=step.size();
-            PDDLProblem problem=p.getPDDLproblem();
-            int pCorrect=0;
-            int pMissed=0;
-            int pWrong=0;
-            
-            if(passed){
-                pCorrect=step.size();
-                if(a.size()-step.size()>0)
-                    pWrong=a.size()-step.size();
-            }else{
-                for(int i=0;i<a.size()-1;i++){
-                    problem.binds(a.get(i));
-                }
-                String solution=problem.thinkSolution();
-                if(!solution.equals("")){
-                    String stepMissed[] = solution.split("\n");
-                    pCorrect = a.size()-1;
-                    if(stepMissed.length + a.size() - 1 - step.size()>0){
-                        pWrong = stepMissed.length + a.size() - 1 - step.size();
-                        if(pCorrect-pWrong>0) {
-                            pCorrect-=pWrong;
-                            pWrong++;
-                        }
-                        else {
-                            pCorrect=0;
-                        }
-                    }
-                    if(stepMissed.length >0)
-                        pMissed = stepMissed.length;
-                }else{
-                    System.out.println("Errore nella risoluzione dell'esercizio! aiuto");
-                }
-            }
-            
-            
-            //List<History> lastHistory = historyController.findAllByUserAndExerciseAndSessid(patientid, exerciseid, sessid);
-            //int newLevel = ExerciseService.findChangedLevel(changeDiffController,lastHistory);
-
-            History history = new History();
-            history.setExid(exerciseid);
-            history.setPassed(passed);
-            history.setUserid(patientid);
-            history.setpTime(pTime);
-            history.setpCorrect(pCorrect);
-            history.setpMissed(pMissed);
-            history.setpWrong(pWrong);
-            history.setMaxtime((double) nstep * 20);    // 20 secs per action
-            //history.setDifficulty(session);
-           // history.setLevel(p.getDifficulty());
-            history.setDifficulty(difficulty);
-
-            // Calculate performance
-            double ft = Double.NaN;
-            ft = fitnessController.calculateFitness(false, history);
-            history.setAbsperformance(ft);
-            ft = fitnessController.calculateFitness(true, history);
-            history.setRelperformance(ft);
-
-            Long t = LocalDateTime.now().toDateTime().getMillis();
-            history.setCreateTimestamp(t);
-            history.setLevel(p.getDifficulty());
-            history.setSessid(sessid);
-
-            if (!historyController.insertEntity(history))
+                return new ModelAndView("redirect: patientrehabilitation");}
+            else
             {
-                logger.error("Error adding History to DB");
-                model.addAttribute("message", "ERRORE GRAVE: interrompere l'uso del sistema e contattare l'assistenza");
-                model.addAttribute("back", "patienthome");
-                model.addAttribute("home", "patienthome");
-                return new ModelAndView("error");
+                List<PDDLGoal> a=new ArrayList<>();
+                for (String action : actions)
+                    a.add(new PDDLGoal(action));
+
+
+                PDDLProblemController ppc=new PDDLProblemController();
+                Problem p=ppc.getEntity(idproblem);
+                List<PDDLGoal> step=PDDLProblem.splitStringInGoals(p.getSolutions());
+                nstep=step.size();
+                PDDLProblem problem=p.getPDDLproblem();
+                int pCorrect=0;
+                int pMissed=0;
+                int pWrong=0;
+
+                if(passed)
+                {
+                    pCorrect=step.size();
+                    if(a.size()-step.size()>0)
+                        pWrong=a.size()-step.size();
+                }
+                else
+                {
+                    for(int i=0;i<a.size()-1;i++)
+                        problem.binds(a.get(i));
+
+                    String solution=problem.thinkSolution();
+                    if(!solution.equals(""))
+                    {
+                        String stepMissed[] = solution.split("\n");
+                        pCorrect = a.size()-1;
+                        if(stepMissed.length + a.size() - 1 - step.size()>0){
+                            pWrong = stepMissed.length + a.size() - 1 - step.size();
+                            if(pCorrect-pWrong>0) {
+                                pCorrect-=pWrong;
+                                pWrong++;
+                            }
+                            else {
+                                pCorrect=0;
+                            }
+                        }
+                        if(stepMissed.length >0)
+                            pMissed = stepMissed.length;
+                    }
+                    else
+                        System.out.println("Errore nella risoluzione dell'esercizio! aiuto");
+                }
+
+                History history = new History();
+                history.setExid(exerciseid);
+                history.setPassed(passed);
+                history.setUserid(patientid);
+                history.setpTime(pTime);
+                history.setpCorrect(pCorrect);
+                history.setpMissed(pMissed);
+                history.setpWrong(pWrong);
+                history.setMaxtime((double) nstep * 20);    // 20 secs per action
+                //history.setDifficulty(session);
+                // history.setLevel(p.getDifficulty());
+                history.setDifficulty(difficulty);
+
+
+                // Calculate performance
+                double ft = Double.NaN;
+                ft = fitnessController.calculateFitness(false, history);
+                history.setAbsperformance(ft);
+                ft = fitnessController.calculateFitness(true, history);
+                history.setRelperformance(ft);
+
+                Long t = LocalDateTime.now().toDateTime().getMillis();
+                history.setCreateTimestamp(t);
+                history.setLevel(p.getDifficulty());
+                history.setSessid(sessid);
+                historyController.insertEntity(history);
             }
-               
-        }
-        //pianificazione1phase1
-        String url = "/pianificazione1phase1"
-                + "?difficulty=" + difficulty
-                + "&level=" + level
-                + "&patientid=" + patientid
-                + "&exerciseid=" + exerciseid
-                + "&color=" + color
-                + "&sessid=" + sessid;
-                
-        return new ModelAndView("redirect:" + url);
+            //pianificazione1phase1
+            String url = "/pianificazione1phase1"
+                    + "?difficulty=" + difficulty
+                    + "&level=" + level
+                    + "&patientid=" + patientid
+                    + "&exerciseid=" + exerciseid
+                    + "&color=" + color
+                    + "&sessid=" + sessid;
+
+            return new ModelAndView("redirect:" + url);
         }
     }
     @RequestMapping(value = "/getproblemjson", method = RequestMethod.GET)
     public ResponseEntity<String> getproblemjson(
             HttpServletRequest request,
             int id,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            Model model)
+    {
         PDDLProblemController ppc=new PDDLProblemController();
-        Problem p=ppc.findEntity(id).get();
+        Problem p=ppc.getEntity(id);
 
         JSONObject res=new JSONObject();
         res.put("map", p.getMapjson());
         res.put("belief",p.getBelief());
-        return new ResponseEntity<String>(res.toString(), headers,
-                HttpStatus.OK);
+        return new ResponseEntity<String>(res.toString(), HttpStatus.OK);
     }
     
     @RequestMapping(value = "/getproblemsolution", method = RequestMethod.GET)
     public ResponseEntity<String> getproblemsolution(
             HttpServletRequest request,
             int id,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            Model model)
+    {
+
         PDDLProblemController ppc=new PDDLProblemController();
-        Problem p=ppc.findEntity(id).get();
+        Problem p=ppc.getEntity(id);
         
-        return new ResponseEntity<String>(p.getSolutions(), headers,
-                HttpStatus.OK);
+        return new ResponseEntity<>(p.getSolutions(), HttpStatus.OK);
     }
     
     
@@ -507,23 +469,18 @@ public class PddlBrainService {
     public ResponseEntity<String> getproblemdescription(
             HttpServletRequest request,
             int id,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            Model model)
+    {
+
         PDDLProblemController ppc=new PDDLProblemController();
         PDDLEnvironmentController pec=new PDDLEnvironmentController();
-        Problem p=ppc.findEntity(id).get();
+        Problem p=ppc.getEntity(id);
         
-        Environment pe=pec.findEntity(p.getIdenvironment()).get();
+        Environment pe=pec.getEntity(p.getIdenvironment());
         PDDLProblem problem=p.getPDDLproblem();
         String description = problem.getProblemDescription(pe);
         
-        return new ResponseEntity<String>(description, headers,
-                HttpStatus.OK);
+        return new ResponseEntity<>(description, HttpStatus.OK);
     }
     
     @RequestMapping(value = "/doaction", method = RequestMethod.POST)
@@ -532,15 +489,11 @@ public class PddlBrainService {
             int id,//?ma sta cosa qui si può fare?
             String belief,
             String action,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
+            Model model)
+    {
+
         PDDLProblemController ppc=new PDDLProblemController();
-        Problem p=ppc.findEntity(id).get();
+        Problem p=ppc.getEntity(id);
         PDDLProblem problem=p.getPDDLproblem();
         List<PDDLGoal> b=PDDLProblem.splitStringInGoals(belief);
         System.out.println("Abbiamo ricevuto: "+b.size()+" belief");
@@ -559,21 +512,19 @@ public class PddlBrainService {
                 System.out.println("Il problema è risolto!!!");
                 isSolved = true;
                 hasSolution=true;
-            }else{
-                hasSolution=problem.hasSolution();
             }
-        }else{
-            
-        }     
+            else
+                hasSolution=problem.hasSolution();
+        }
         
         res.put("isSolved", isSolved);
         res.put("hasSolution", hasSolution);
         res.put("belief",PDDLProblem.concatGoalsInString(problem.getBelief()));
-        return new ResponseEntity<String>(res.toString(), headers,
-                HttpStatus.OK);
+        return new ResponseEntity<String>(res.toString(), HttpStatus.OK);
     }
     public static int MINIMUM_NUMBER_OF_STEP_FOR_SOLUTION=4;
-    public static Problem generateProblemFromNumberOfGoals(int numberOfGoals,int idEnvironment){
+    public static Problem generateProblemFromNumberOfGoals(int numberOfGoals,int idEnvironment)
+    {
         Random r=new Random();
         PDDLPlace.r=r;
         PDDLMap.r=r;
@@ -596,41 +547,31 @@ public class PddlBrainService {
         
         problema.setDifficulty(difficulty);
         // TODO manage problem addition failure
-        boolean success = ppc.insertEntity(problema);
+        ppc.insertEntity(problema);
         return problema;
     }
     
     @RequestMapping(value = "/createproblem", method = RequestMethod.GET)
     public ResponseEntity<String> createproblem(
             HttpServletRequest request,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        /*if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }*/
-        
+            Model model)
+    {
         Problem problema = generateProblemFromNumberOfGoals(3, 1);
-        
-       
-        return new ResponseEntity<String>("Id: "+problema.getId()+"\n<br />difficulty: "+problema.getDifficulty(), headers, HttpStatus.OK);
+
+        return new ResponseEntity<>("Id: "+problema.getId()+"\n<br />difficulty: "+problema.getDifficulty(), HttpStatus.OK);
     }
     
     @RequestMapping(value = "/getsolution", method = RequestMethod.GET)
     public ResponseEntity<String> getsolution(
             HttpServletRequest request,
-            Model model) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        if (WebPagesUtilities.redirectIfNotLogged(request)||((WebPagesUtilities.redirectIfNotAdmin(request)))) {
-            return new ResponseEntity<String>("", headers,
-                HttpStatus.UNAUTHORIZED);
-        }
-        //PDDLproblem p = new PDDLProblem();
-        //String solution = p.thinkSolution();
-        return new ResponseEntity<String>("".toString(), headers,
-                HttpStatus.OK);
+            Model model)
+    {
+
+        if (!CookiesManager.isUserLogged(request)||((!CookiesManager.isUserAdmin(request))))
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+
+
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
     
 }

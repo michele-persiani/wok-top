@@ -41,6 +41,8 @@
 
         <!-- Custom styles for this template -->
         <link rel="stylesheet" href="resources/jumbotron-narrow.css">
+
+        <script type="text/javascript" src="resources/js/hello.js"></script>
     </head>
     <body>
         <div class="container">
@@ -101,10 +103,14 @@
                         <c:if test="${empty patients}">
                                 disabled
                         </c:if>
-                                
-                                >Visualizza Statistiche</button>
+                               >Visualizza Statistiche</button>
                     </div>
                 </form:form>
+            </div>
+            <div class="well">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success" onclick="goToDownload()">Scarica statistiche</button>
+                </div>
             </div>
 
             <footer class="footer">
@@ -115,18 +121,36 @@
         
         <jsp:include page="modal-patstat.jsp"/>        
         
-        <script>
+        <script type="application/javascript">
+
+            function goToDownload()
+            {
+                window.location.href = "downloadstatistics";
+            }
+
+            function downloadAllData()
+            {
+                $.get(
+                    "metrics/history",
+                    {},
+                    function(data){
+                        let csv = createCSV(data["fields"], data["data"])
+                        download("parametri.csv", csv, "text/csv;charset=utf-8;header=present")
+                    },
+                    "json"
+                );
+            }
+
+
             history.pushState(null, null, document.URL);
             window.addEventListener('popstate', function () {
                 history.pushState(null, null, document.URL);
             });
-        </script>
-        
-        <script>
             $(document).ready(function(){
                 $('[data-toggle="tooltip"]').tooltip();
             });
         </script>
+
         
     </body>
 </html>

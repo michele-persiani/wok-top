@@ -477,7 +477,7 @@
                     </div>
                     <hr> 
                     <div class="form-group">
-                        <button id="submit-data" disabled="" type="submit" class="btn btn-success">Configura</button>
+                        <button id="submit-data" type="submit" class="btn btn-success">Configura</button>
                     </div>
                 </form:form>
             </div>

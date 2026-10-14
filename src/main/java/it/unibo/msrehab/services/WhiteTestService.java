@@ -1,7 +1,6 @@
 package it.unibo.msrehab.services;
 
-import it.unibo.msrehab.config.ApplicationContextLoader;
-import it.unibo.msrehab.config.Configuration;
+import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.WhiteTest;
 import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.model.controller.WhiteTestController;
@@ -34,65 +33,49 @@ public class WhiteTestService {
             .getLogger(WhiteTestService.class);
     private MSRUserController userController;
     private WhiteTestController whiteTestController;
-    private final Configuration config;
 
-    public WhiteTestService() {
+    private final it.unibo.msrehab.model.Model model = JPAModel.getInstance();
+
+    public WhiteTestService()
+    {
         super();
-        this.whiteTestController = new WhiteTestController();
-        this.userController = new MSRUserController();
-        ApplicationContextLoader l = new ApplicationContextLoader();
-        l.load(Configuration.class,
-                "META-INF/spring/applicationContext.xml");
-        this.config = l.getApplicationContext().getBean(Configuration.class);
+        this.whiteTestController = new WhiteTestController(model);
+        this.userController = new MSRUserController(model);
 
     }
 
     @RequestMapping(value = "/deletewhitetest", method = RequestMethod.POST)
     public ModelAndView deleteWhiteTest(
             @RequestParam(value = "whitetestid", required = true) Integer whitetestid,
-            Model model) {
+            Model model)
+    {
 
         logger.info("Start to delete profile " + whitetestid);
-        if (whitetestid == null) {
+        if (whitetestid == null)
             return new ModelAndView("redirect:/showpatients");
-        }
-        WhiteTest whiteTest = (WhiteTest) whiteTestController.findEntity(whitetestid).get();
-        
-        if (whiteTest == null) {
-            logger.warn("White Test " + whitetestid + " not found");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            model.addAttribute("message", "White Test non trovato");
-            return new ModelAndView("error");            
-        }
-        if (whiteTestController.removeEntity(whiteTest)) {
-            logger.info("White Test " + whitetestid + " deleted with success");
-            return new ModelAndView("redirect:/showpatients");
-        } else {  // deleteRecord(user) == -1
-            logger.error("...white test delete failed");
-            model.addAttribute("message", "White test " + whitetestid + ", cancellazione fallita");
-            model.addAttribute("back", "showpatients");
-            model.addAttribute("home", "adminhome");
-            return new ModelAndView("error");    
-        }
+
+        WhiteTest whiteTest = whiteTestController.getEntity(whitetestid);
+
+        whiteTestController.removeEntity(whiteTest);
+        logger.info("White Test " + whitetestid + " deleted with success");
+        return new ModelAndView("redirect:/showpatients");
     }
 
    // show update form
     @RequestMapping(value = "/whitetestform", method = RequestMethod.GET)
     public ModelAndView whitetestform(
-            @RequestParam(value = "patientid", required = true) Integer  patientid,
-            @RequestParam(value = "formid", required = true) Integer formid,
-            Model model) {
+            @RequestParam Integer  patientid,
+            @RequestParam Integer formid,
+            Model model)
+    {
         
         logger.debug("whitetestform() : {}", patientid);
-        
-        //if (personalDataController.findAllByUser(patientid).isEmpty()) {
-        //    return new ModelAndView("redirect:/showpatients");
-        //} else {
+
         WhiteTest test;
-        if (formid != null) {
-            test = whiteTestController.findEntity(formid).get();
-        } else {
+        if (formid != null)
+            test = whiteTestController.getEntity(formid);
+        else
+        {
             test = new WhiteTest();
             test.setPatientid(patientid);
         }
@@ -100,8 +83,8 @@ public class WhiteTestService {
         model.addAttribute("whiteTestForm", test);
         model.addAttribute(
                 "patientname",
-                userController.findEntity(patientid).get().getName()
-                + " " + userController.findEntity(patientid).get().getSurname());
+                userController.getEntity(patientid).getName()
+                + " " + userController.getEntity(patientid).getSurname());
 
         return new ModelAndView("whitetest-form");
     }
@@ -115,19 +98,19 @@ public class WhiteTestService {
      */
     @RequestMapping(value = "/whitetestsel", method = RequestMethod.GET)
     public ModelAndView whitetestsel(
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            Model model) {
+            @RequestParam Integer patientid,
+            Model model)
+    {
 
         logger.debug("whitetestsel() : {}", patientid);
 
-        List<WhiteTest> whiteTestList
-                = whiteTestController.findAllByUser(patientid);
+        List<WhiteTest> whiteTestList = whiteTestController.findAllByUser(patientid);
         model.addAttribute("patientid", patientid);
         model.addAttribute("whitetestlist", whiteTestList);
         model.addAttribute(
                 "patientname",
-                userController.findEntity(patientid).get().getName()
-                + " " + userController.findEntity(patientid).get().getSurname());
+                userController.getEntity(patientid).getName()
+                + " " + userController.getEntity(patientid).getSurname());
 
         return new ModelAndView("whitetestsel");
     }
@@ -143,23 +126,24 @@ public class WhiteTestService {
      */
     @RequestMapping(value = "/whitetestcompform", method = RequestMethod.GET)
     public ModelAndView whitetestcompform(
-            @RequestParam(value = "patientid", required = true) Integer patientid,
-            @RequestParam(value = "formid1", required = true) Integer formid1,
-            @RequestParam(value = "formid2", required = true) Integer formid2,
-            Model model) {
+            @RequestParam Integer patientid,
+            @RequestParam Integer formid1,
+            @RequestParam Integer formid2,
+            Model model)
+    {
 
         logger.debug("whitetestcompform() : {}", formid1, formid2);
 
-        WhiteTest test1 = whiteTestController.findEntity(formid1).get(),
-                test2 = whiteTestController.findEntity(formid2).get();
+        WhiteTest test1 = whiteTestController.getEntity(formid1),
+                test2 = whiteTestController.getEntity(formid2);
         
         model.addAttribute("patientid", patientid);
         model.addAttribute("test1", test1);
         model.addAttribute("test2", test2);
         model.addAttribute(
                 "patientname",
-                userController.findEntity(patientid).get().getName()
-                + " " + userController.findEntity(patientid).get().getSurname());
+                userController.getEntity(patientid).getName()
+                + " " + userController.getEntity(patientid).getSurname());
 
         return new ModelAndView("whitetestcomp-table");
     }
@@ -168,44 +152,25 @@ public class WhiteTestService {
     public ModelAndView saveorupdatewhitetest(
             @Valid @ModelAttribute("whiteTestForm") WhiteTest whiteTestForm,
             BindingResult result,
-            Model model) {
+            Model model)
+    {
 
         logger.debug("saveOrUpdateWhiteTest() : {}", whiteTestForm);
 
-        if (result.hasErrors()) {
+        if (result.hasErrors())
+        {
             model.addAttribute("patientid", whiteTestForm.getPatientid());
             model.addAttribute(
-                "patientname", userController.findEntity(whiteTestForm.getPatientid()).get().getName()
-                + " " + userController.findEntity(whiteTestForm.getPatientid()).get().getSurname());
+                "patientname", userController.getEntity(whiteTestForm.getPatientid()).getName()
+                + " " + userController.getEntity(whiteTestForm.getPatientid()).getSurname());
             return new ModelAndView("whitetest-form");
         }
 
         whiteTestForm.setTimestamp(LocalDateTime.now().toDateTime().getMillis());
 
-        if (whiteTestForm.isNew()) {
-            if (whiteTestController.insertEntity(whiteTestForm))
-            {
-                logger.info("Add of White Test " + whiteTestForm.getId() + " terminated with success");
-                return new ModelAndView("redirect:/npsprofileform?patientid="+whiteTestForm.getPatientid());
-            } else {  // addRecord(whiteTestForm) == -1
-                logger.error("...White test addition failed");
-                model.addAttribute("message", "Inserimento White test fallito");
-                model.addAttribute("back", "whitetest-form");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");
-            }
-        } else { // update
-            if (whiteTestController.updateEntity(whiteTestForm)) {
-                logger.info("Update of White Test " + whiteTestForm.getId() + " terminated with success");
-                return new ModelAndView("redirect:/npsprofileform?patientid="+whiteTestForm.getPatientid());
-            } else {    // updateRecord(whiteTestForm) == -1
-                logger.error("...white test update failed");
-                model.addAttribute("message", "Aggiornamento White test fallito");
-                model.addAttribute("back", "whitetest-form");
-                model.addAttribute("home", "adminhome");
-                return new ModelAndView("error");
-            }
-        }
+        whiteTestController.putEntity(whiteTestForm);
+        logger.info("Add of White Test " + whiteTestForm.getId() + " terminated with success");
+        return new ModelAndView("redirect:/npsprofileform?patientid="+whiteTestForm.getPatientid());
     }
 
 }

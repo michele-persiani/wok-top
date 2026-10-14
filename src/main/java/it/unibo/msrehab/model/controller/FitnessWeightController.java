@@ -1,7 +1,7 @@
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.DecoratorEntityController;
+import it.unibo.msrehab.model.Model;
 import it.unibo.msrehab.model.entities.FitnessWeight;
 import it.unibo.msrehab.model.entities.History;
 
@@ -9,12 +9,12 @@ import it.unibo.msrehab.model.entities.History;
 /**
  * @author danger
  */
-public class FitnessWeightController extends JPAEntityController<FitnessWeight>
+public class FitnessWeightController extends DecoratorEntityController<FitnessWeight>
 {
 
-    public FitnessWeightController()
+    public FitnessWeightController(Model model)
     {
-        super(FitnessWeight.class, PersistenceUnit.DEFAULT_PU);
+        super(model, FitnessWeight.class);
     }
 
 
@@ -52,31 +52,27 @@ public class FitnessWeightController extends JPAEntityController<FitnessWeight>
         String difficulty = h.getDifficulty();
 
         double precision = pC / (pC + pW);
+
         if (Double.isNaN(precision))
-        {
             precision = 1;
-        }
+
         double recall = pC / (pC + pM);
+
         if (Double.isNaN(recall))
-        {
             recall = 1;
-        }
+
         double t = (maxT - pT) / maxT;
         double t1 = (1 - thr) * t + thr;
 
         if (precision == 0 && recall == 0)
-        {
             ft = 0;
-        }
         else
-        {
             ft = (1 + Math.pow(beta, 2.0)) * (precision * recall / (Math.pow(beta, 2.0) * precision + recall));
-        }
+
 
         if (timeFlag)
-        {
             ft *= t1;
-        }
+
 
         if (difficultyFlag)
         {
@@ -97,7 +93,7 @@ public class FitnessWeightController extends JPAEntityController<FitnessWeight>
             ft = ft * d;
         }
 
-        return ft;
+        return Math.max(0, Math.min(1, ft));
     }
 
 }

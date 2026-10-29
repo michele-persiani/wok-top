@@ -2238,7 +2238,6 @@ public class ExerciseService
     }
 
 
-
     @RequestMapping(value = "/attention1phase2", method = RequestMethod.GET)
     public ModelAndView attention1phase2(
             @RequestParam String difficulty,

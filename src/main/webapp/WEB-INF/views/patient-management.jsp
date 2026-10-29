@@ -47,6 +47,7 @@
         <![endif]-->
 
         <script type="text/javascript" src="resources/js/hello.js"></script>
+        <script type="text/javascript" src="resources/js/datadownloader.js"></script>
 
         <!-- Latest compiled bootbox -->
         <script type="text/javascript" src="resources/js/bootbox.min.js"></script>
@@ -214,28 +215,24 @@
                         </table>
                     </div>
 
-                    <button type="button" class="btn-default btn-lg"
-                            onclick="post('exportpatients',{email: '${email}'});">
+                    <button id="downloadUsers" type="button" class="btn-default btn-lg">
                         Esporta pazienti
                     </button>
-                    <button type="button" class="btn-default btn-lg"
-                            onclick="post('exportpersonalprofiles',{email: '${email}'});">
+                    <button id="downloadPersonalData" type="button" class="btn-default btn-lg">
                         Esporta profili anagrafici 
                     </button>
-                    <button type="button" class="btn-default btn-lg"
-                            onclick="post('exportclinicalprofiles',{email: '${email}'});">
-                        Esporta profili clinici
+                    <button id="downloadHistories" type="button" class="btn-default btn-lg">
+                        Esporta storia partecipanti
                     </button>
-                    <button type="button" class="btn-default btn-lg"
-                            onclick="post('exportnpsprofiles',{email: '${email}'});">
-                        Esporta profili NPS
+                    <button id="downloadSessions" type="button" class="btn-default btn-lg">
+                        Esporta sessioni partecipanti
                     </button>
-                    <button type="button" class="btn-default btn-lg"
-                            onclick="post('exportpatienthistory',{email: '${email}'});">
-                        Esporta storia <!--pazienti-->partecipanti
+                    <button id="downloadGroups" type="button" class="btn-default btn-lg">
+                        Esporta gruppi
                     </button>
-                        
-                    <h4> Riceverai un email con i dati esportati</h4>
+                    <button id="downloadCenters" type="button" class="btn-default btn-lg">
+                        Esporta centri
+                    </button>
                 </c:if>
             </div>
 
@@ -249,6 +246,26 @@
         <jsp:include page="modal-photo.jsp"/>
         <jsp:include page="modal-pat-man.jsp"/>                
         <jsp:include page="modal-no-anag.jsp"/>                
+
+
+        <script type="text/javascript">
+            let downloader = new DataDownloader();
+
+            document.getElementById("downloadUsers")
+                .addEventListener("click", downloader.downloadUsers)
+            document.getElementById("downloadHistories")
+                .addEventListener("click", downloader.downloadHistories)
+            document.getElementById("downloadSessions")
+                .addEventListener("click", downloader.downloadSessions)
+            document.getElementById("downloadPersonalData")
+                .addEventListener("click", downloader.downloadPersonalData)
+            document.getElementById("downloadGroups")
+                .addEventListener("click", downloader.downloadGroups)
+            document.getElementById("downloadCenters")
+                .addEventListener("click", downloader.downloadCenters)
+
+        </script>
+
 
         <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
         <script src="resources/assets/js/ie10-viewport-bug-workaround.js"></script>

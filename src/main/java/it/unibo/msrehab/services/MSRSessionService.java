@@ -1,7 +1,5 @@
 package it.unibo.msrehab.services;
 
-import it.unibo.msrehab.config.ApplicationContextLoader;
-import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.*;
 
@@ -16,10 +14,9 @@ import it.unibo.msrehab.util.CookiesManager;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
 
-import it.unibo.msrehab.util.Tuple;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -153,17 +150,40 @@ public class MSRSessionService
     }
 
 
-    private void buildNames(List<MSRSession> sessions, List<MSRUser> patients, List<String> patientNames, List<List<JSONObject>> exerciseNames)
+    private class ExerciseNamePlaceholder implements Comparable<ExerciseNamePlaceholder>
     {
-        for (MSRSession session : sessions)
-        {
-            int patid = session.getUsrgrpid();
-            MSRUser patient = patients.stream()
-                    .filter(u -> u.getId() == patid)
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Patient not found"));
+        private MSRSession session;
 
-            patientNames.add(patient.getName() + " " + patient.getSurname());
+        private MSRUser patient;
+
+        private ExerciseNamePlaceholder(MSRSession session)
+        {
+            this.session = session;
+            this.patient = userController.getEntity(session.getUsrgrpid());
+        }
+
+        public MSRSession getSession()
+        {
+            return session;
+        }
+
+        public String getPatientName()
+        {
+            return patient.getName() + " " + patient.getSurname();
+        }
+
+        public boolean isHospital()
+        {
+            return session.getHospital();
+        }
+
+        public boolean isHome()
+        {
+            return !session.getHospital();
+        }
+
+        public List<JSONObject> getExerciseNames()
+        {
             String exs = session.getExercises();
             JSONArray exsJsonArr = new JSONArray(exs);
             List<JSONObject> exerciseNamesPatient = new ArrayList<>();
@@ -172,64 +192,28 @@ public class MSRSessionService
             {
                 JSONObject exJson = exsJsonArr.getJSONObject(i);
                 int exId = exJson.getInt("id");
-                boolean visible = !exJson.has("visible") || exJson.getBoolean("visible");
-                exerciseController.findEntity(exId)
-                        .ifPresent(ex ->
-                        {
-                            String exName = exerciseController.getDisplayName(ex);
-                            String exElCategory = ex.getExelementcat() != null ? ex.getExelementcat().getDisplayName() : "";
+                boolean visible = sessionController.getExerciseVisibilityInSession(session, exId);
+                Exercise ex = exerciseController.getEntity(exId);
+                String exName = exerciseController.getDisplayName(ex);
+                String exElCategory = ex.getExelementcat() != null ? ex.getExelementcat().getDisplayName() : "";
 
-                            exJson.put("sessionid", session.getId());
-                            exJson.put("name", String.format("%s - %s", exName, exElCategory));
-                            exJson.put("visible", visible);
-                            exerciseNamesPatient.add(exJson);
-                        });
+                exJson.put("sessionid", session.getId());
+                exJson.put("name", String.format("%s - %s", exName, exElCategory));
+                exJson.put("visible", visible);
+                exerciseNamesPatient.add(exJson);
 
             }
             exerciseNamesPatient.sort(Comparator.comparing(jobj -> jobj.getString("name")));
-
-            exerciseNames.add(exerciseNamesPatient);
+            return exerciseNamesPatient;
         }
-    }
 
-    private static class SessionSorter implements Comparable<SessionSorter>
-    {
-        public MSRSession session;
-        public String patientName;
-        public List<JSONObject> exerciseNames;
-
-        public SessionSorter(MSRSession session, String patientName, List<JSONObject> exerciseNames)
+        @Override
+        public int compareTo(@NotNull MSRSessionService.ExerciseNamePlaceholder other)
         {
-            this.session = session;
-            this.patientName = patientName;
-            this.exerciseNames = exerciseNames;
-        }
-
-        public int compareTo(SessionSorter other)
-        {
-            return patientName.toLowerCase().compareTo(other.patientName.toLowerCase());
+            return getPatientName().toLowerCase().compareTo(other.getPatientName().toLowerCase());
         }
     }
 
-    private void sortNames(List<MSRSession> sessions, List<String> patientNames, List<List<JSONObject>> exerciseNames)
-    {
-        if(patientNames.size() != exerciseNames.size())
-            throw new IllegalStateException("Lists must have the same size");
-
-        List<SessionSorter> sortedExercises = IntStream.range(0, patientNames.size())
-                .mapToObj(i -> new SessionSorter(sessions.get(i), patientNames.get(i), exerciseNames.get(i)))
-                .sorted()
-                .collect(Collectors.toList());
-        sessions.clear();
-        patientNames.clear();
-        exerciseNames.clear();
-
-        sortedExercises.forEach(tp -> {
-            sessions.add(tp.session);
-            patientNames.add(tp.patientName);
-            exerciseNames.add(tp.exerciseNames);
-        });
-    }
 
     @RequestMapping(value = "/patientsessionmanagement", method = RequestMethod.GET)
     @ResponseBody
@@ -238,19 +222,44 @@ public class MSRSessionService
             Model model)
     {
         int cid = CookiesManager.getLoggedUserCenter(request);
-        List<MSRUser> patients = userController.findAllPatientsInCenter(cid);
-        List<String> hospitalPatientNames = new ArrayList<>();
-        List<String> homePatientNames = new ArrayList<>();
-        List<List<JSONObject>> hospitalExerciseNames = new ArrayList<>();
-        List<List<JSONObject>> homeExerciseNames = new ArrayList<>();
-        List<MSRSession> hospitalActiveSessions = sessionController.findAllHospitalActiveForPatients();
-        List<MSRSession> homeActiveSessions = sessionController.findAllHomeActiveForPatients();
 
-        buildNames(hospitalActiveSessions, patients, hospitalPatientNames, hospitalExerciseNames); // Esercizi regolari
-        buildNames(homeActiveSessions, patients, homePatientNames, homeExerciseNames); // Esercizi assegnati a casa
+        List<ExerciseNamePlaceholder> names = sessionController.getAllEntities()
+                .stream()
+                .filter(MSRSession::getActive)
+                .map(ExerciseNamePlaceholder::new)
+                .sorted()
+                .collect(Collectors.toList());
 
-        sortNames(hospitalActiveSessions, hospitalPatientNames, hospitalExerciseNames);
-        sortNames(homeActiveSessions, homePatientNames, homeExerciseNames);
+
+        List<String> hospitalPatientNames = names.stream()
+                .filter(ExerciseNamePlaceholder::isHospital)
+                .map(ExerciseNamePlaceholder::getPatientName)
+                .collect(Collectors.toList());
+
+        List<String> homePatientNames = names.stream()
+                .filter(ExerciseNamePlaceholder::isHome)
+                .map(ExerciseNamePlaceholder::getPatientName)
+                .collect(Collectors.toList());;
+
+        List<List<JSONObject>> hospitalExerciseNames = names.stream()
+                .filter(ExerciseNamePlaceholder::isHospital)
+                .map(ExerciseNamePlaceholder::getExerciseNames)
+                .collect(Collectors.toList());
+
+        List<List<JSONObject>> homeExerciseNames = names.stream()
+                .filter(ExerciseNamePlaceholder::isHome)
+                .map(ExerciseNamePlaceholder::getExerciseNames)
+                .collect(Collectors.toList());
+
+        List<MSRSession> hospitalActiveSessions = names.stream()
+                .filter(ExerciseNamePlaceholder::isHospital)
+                .map(ExerciseNamePlaceholder::getSession)
+                .collect(Collectors.toList());
+
+        List<MSRSession> homeActiveSessions = names.stream()
+                .filter(ExerciseNamePlaceholder::isHome)
+                .map(ExerciseNamePlaceholder::getSession)
+                .collect(Collectors.toList());
 
                     
         if (hospitalActiveSessions.isEmpty() && homeActiveSessions.isEmpty())
@@ -259,8 +268,7 @@ public class MSRSessionService
 
         boolean newSession = userController.findAllPatientsNotInGroupsInCenter(cid)
                 .stream()
-                .anyMatch(patient -> sessionController.findAllActiveByUserOrGroup(patient.getId()).isEmpty())
-                ;
+                .anyMatch(patient -> sessionController.findAllActiveByUserOrGroup(patient.getId()).isEmpty());
 
         model.addAttribute("newsession", newSession);
         model.addAttribute("hospitalsessions", hospitalActiveSessions);

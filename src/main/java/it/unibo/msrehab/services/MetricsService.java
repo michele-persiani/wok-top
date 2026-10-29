@@ -6,6 +6,7 @@ import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.entities.Exercise;
 import it.unibo.msrehab.model.entities.History;
 import it.unibo.msrehab.model.entities.MSRUser;
+import it.unibo.msrehab.util.Tuple;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
@@ -146,7 +147,7 @@ public class MetricsService
                 .orElse(null); // Case where history has a deleted patient
     }
 
-    private Map<String, Object> computeSessionMetrics(String date, List<History> sessionHistory)
+    private Map<String, Object> computeSessionMetrics(Integer userId, String date, List<History> sessionHistory)
     {
 
         /*
@@ -313,7 +314,9 @@ public class MetricsService
         metrics.put(REL_WRONG_RESPONSES, relIncorrectResponses);
         metrics.put(REL_MISSING_RESPONSES, relMissingResponses);
 
-        MSRUser user = getPatient(sessionHistory.get(0));
+        MSRUser user = JPAModel.getInstance()
+                .getEntityController(MSRUser.class)
+                .getEntity(userId);
 
         if(user != null)
         {
@@ -357,9 +360,7 @@ public class MetricsService
             @RequestParam(required = false) String phone
     )
     {
-
-
-        Map<String, List<History>> sessions = model.getEntityController(History.class)
+        Map<Tuple<Integer, String>, List<History>> sessions = model.getEntityController(History.class)
                 .getAllEntities()
                 .stream()
                 .filter(h -> checkUserId(h, userId))
@@ -367,15 +368,17 @@ public class MetricsService
                 .filter(h -> exerciseCategory == null || Arrays.asList(exerciseCategory).contains(getExercise(h).getCategory().toString()))
                 .filter(h -> exerciseName == null || Arrays.asList(exerciseName).contains(getExercise(h).getName().toString()))
                 .filter(h -> checkGroupId(h, userGroup))
-                .collect(Collectors.groupingBy(this::getDateStringFromCreationTimestamp));
+                .collect(Collectors.groupingBy(h -> {
+                    String date = getDateStringFromCreationTimestamp(h);
+                    return Tuple.of(h.getUserid(), date);
+                }));
 
 
         List<Map<String, Object>> sessionMetricsList = sessions.keySet()
                 .stream()
-                .sorted(Comparator.comparing(this::getTimestamp))
-                .map(e -> computeSessionMetrics(e, sessions.get(e)))
+                .sorted(Comparator.comparing(tp -> getTimestamp(tp.second)))
+                .map(e -> computeSessionMetrics(e.first, e.second, sessions.get(e)))
                 .collect(Collectors.toList());
-
 
 
 
@@ -402,21 +405,30 @@ public class MetricsService
         return groupIds == null || Arrays.asList(groupIds).contains(patient.getGid());
     }
 
+    /**
+     * Email and phone filter. Checks if the history's user has the given email and phone number. If the email or phone
+     * are null the check is skipped.
+     *
+     * @param history
+     * @param email   nullable email to check
+     * @param phone   nullable phone to check
+     * @return
+     */
     private boolean checkEmailAndPhone(History history, String email, String phone)
     {
         boolean result = true;
 
         MSRUser patient = getPatient(history);
 
-        if(patient == null)
+        if (patient == null)
             return false;
 
-        if(email != null && !email.isEmpty())
+        if (email != null && !email.isEmpty())
         {
             String userEmail = patient.getEmail();
             result = result && (userEmail != null && userEmail.contains(email));
         }
-        if(phone != null && !phone.isEmpty())
+        if (phone != null && !phone.isEmpty())
         {
             String userPhone = patient.getPhone();
             result = result && (userPhone != null && userPhone.contains(phone));

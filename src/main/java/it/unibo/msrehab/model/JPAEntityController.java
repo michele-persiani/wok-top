@@ -79,7 +79,7 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
      * Finds an entity with the given id
      *
      * @param id id of the entity
-     * @return the found entity, or null
+     * @return an optional with the found entity, or null. Null if id is null
      */
     public Optional<T> findEntity(Object id)
     {
@@ -87,6 +87,7 @@ public class JPAEntityController<T extends BaseEntity> implements EntityControll
         if (id == null)
             return Optional.empty();
         EntityManager em = getEntityManager();
+
         T entity = null;
         try
         {

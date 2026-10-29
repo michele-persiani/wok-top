@@ -106,6 +106,9 @@ export class Game
         this.gameTimer = null;
         this.obstacleSpawnInterval = null;
 
+        this.lastAvoidanceTime = 0;
+        this.minimumAvoidanceInterval = 1000;
+
         this.onInitialized = () => {};
         this.onGameOver = () => {};
 
@@ -398,10 +401,16 @@ export class Game
     }
 
 
+
     performObstacleAvoidance()
     {
         if(this.playerBike.isAnimating)
             return;
+
+        let now = Date.now();
+        if(now - this.lastAvoidanceTime < this.minimumAvoidanceInterval)
+            return;
+        this.lastAvoidanceTime = now;
 
         let pos = structuredClone(this.playerBike.position);
         let trg = structuredClone(this.playerBike.position);
@@ -417,7 +426,6 @@ export class Game
                         game.playerBike.isAnimating = false;
                     });
                 }, animationDuration)
-
             })
         }
 

@@ -346,12 +346,9 @@ public class History extends BaseEntity
 
     public Double getAbsperformance()
     {
-        if(Double.isNaN(absperformance)){
-            return 0.0;
-        }else{
-            return absperformance;
-        }
-        
+        if(absperformance == null)
+            return Double.NaN;
+        return absperformance;
     }
 
     public void setAbsperformance(Double absperformance) {
@@ -359,6 +356,8 @@ public class History extends BaseEntity
     }
 
     public Double getRelperformance() {
+        if(relperformance == null)
+            return Double.NaN;
         return relperformance;
     }
 

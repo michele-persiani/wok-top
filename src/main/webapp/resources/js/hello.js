@@ -92,18 +92,25 @@ function addBackground(parentImg, backgroundColor, opacity = 0.35)
 }
 
 
-function createCSV(columns, rows)
+/**
+ *
+ * @param columns array of strings
+ * @param rows array of objects {column0 : value0, column1 : value1, ...}
+ * @param delimeter delimiter character. default is ","
+ * @returns {string} the csv
+ */
+function createCSV(columns, rows, delimeter=",")
 {
 	columns = Array.from(columns);
 	rows = Array.from(rows);
 	var csv = "";
 	columns.forEach(col => {
-		csv += col + ","
+		csv += col + delimeter
 	})
 	csv += "\n";
 	rows.forEach(row => {
 		columns.forEach(col => {
-			csv += row[col] + ","
+			csv += row[col] + delimeter
 		})
 		csv += "\n";
 	})

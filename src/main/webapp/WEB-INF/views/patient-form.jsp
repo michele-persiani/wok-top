@@ -144,6 +144,21 @@
                         </div>
                     </spring:bind>
 
+                    <spring:bind path="notificationsEnabled">
+                        <div class="form-group ${status.error ? 'has-error' : ''}">
+                            <label class="col-sm-4 control-label">Notifiche mail abilitate</label>
+                            <div class="col-sm-20">
+                                <form:checkbox
+                                            path="notificationsEnabled"
+                                            class="form-control"
+                                            id="notificationsEnabled"
+                                            placeholder="Notifiche abilitate"
+                                />
+                                <form:errors path="notificationsEnabled" class="control-label" />
+                            </div>
+                        </div>
+                    </spring:bind>
+
                     <spring:bind path="phone">
                         <div class="form-group ${status.error ? 'has-error' : ''}">
                             <label class="col-sm-4 control-label">Telefono</label>

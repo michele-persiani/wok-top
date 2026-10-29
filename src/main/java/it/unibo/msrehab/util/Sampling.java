@@ -42,7 +42,7 @@ public class Sampling
 
 
     /**
-     * Randomly samples with replacement elements from a collection, ensuring that all elements are present if possible.
+     * Randomly samples with replacement elements from a collection, ensuring that all collection elements are present if possible.
      *
      * @param n num elements to sample
      * @param items collection to sample from
@@ -55,11 +55,11 @@ public class Sampling
     }
 
     /**
-     * Randomly samples with replacement elements from a collection, ensuring that all elements are present if possible.
+     * Randomly samples with replacement elements from a collection, ensuring that all unique collection elements are present if possible.
      *
      * @param n num elements to sample
      * @param items collection to sample from
-     * @param uniqueKeyExtractor key extractor to associate keys to elements
+     * @param uniqueKeyExtractor key extractor to associate unique keys to elements
      * @param <T> type of elements
      * @return list with the sampled elements
      */

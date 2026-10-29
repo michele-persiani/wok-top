@@ -130,9 +130,10 @@
                                 <a class="btn btn-lg btn-primary disabled" style="pointer-events:auto" data-toggle="tooltip" data-placement="bottom" title="Non ci sono pazienti definiti!" role="button"><!--pazienti-->partecipanti</a>
                             </c:if>
                             <c:if test="${existpatients=='true'}">
-                                <a class="btn btn-lg btn-primary" href="showlivelist" role="button"><!--pazienti-->partecipanti</a>
+                                <a class="btn btn-lg btn-primary" href="showlivelist" role="button">Partecipanti</a>
                             </c:if>
                         </div>
+                        <!--
                         <div class="col-sm-12">
                             <c:if test="${existgroups=='false'}">
                                 <a class="btn btn-lg btn-primary disabled" style="pointer-events:auto" data-toggle="tooltip" data-placement="bottom" title="Non ci sono gruppi definiti!" role="button">Gruppi</a>
@@ -141,6 +142,7 @@
                                 <a class="btn btn-lg btn-primary" href="showgrouplivelist" role="button">Gruppi</a>
                             </c:if>
                         </div>
+                        -->
                     </div>
                 </div>
                 <div class="well col-sm-12">

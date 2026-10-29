@@ -73,6 +73,7 @@ public class ExerciseService
     private final FitnessWeightController fitnessController;
     private final ChangeDifficultyController changeDiffController;
     private final ExerciseController exerciseController;
+    private final NotificationsController notificationsController;
     private final Model model = JPAModel.getInstance();
 
 
@@ -85,6 +86,7 @@ public class ExerciseService
         this.fitnessController = new FitnessWeightController(model);
         this.changeDiffController = new ChangeDifficultyController(model);
         this.exerciseController = new ExerciseController(model);
+        this.notificationsController = new NotificationsController(model);
     }
 
 
@@ -2015,7 +2017,6 @@ public class ExerciseService
             Integer sessionId
     )
     {
-
         // descending order
         List<HistoryRecord> records = model.getEntityController(History.class)
                 .getAllEntities()
@@ -2040,7 +2041,6 @@ public class ExerciseService
             Integer sessionId
     )
     {
-
         // descending order
         List<HistoryRecord> records = model.getEntityController(History.class)
                 .getAllEntities()
@@ -2363,7 +2363,7 @@ public class ExerciseService
 
         historyController.putEntity(history);
 
-        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -2373,6 +2373,7 @@ public class ExerciseService
                 model.addAttribute("home", "patienthome");
                 return new ModelAndView("error");
             }
+            notificationsController.notifyExerciseCompleted(patientid, exerciseid);
             return new ModelAndView("redirect:patienthome");
         }
 
@@ -2698,7 +2699,7 @@ public class ExerciseService
         historyController.putEntity(history);
 
 
-        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -2708,6 +2709,7 @@ public class ExerciseService
                 model.addAttribute("home", "patienthome");
                 return new ModelAndView("error");
             }
+            notificationsController.notifyExerciseCompleted(patientid, exerciseid);
             return new ModelAndView("redirect:patienthome");
         }
 
@@ -3230,7 +3232,7 @@ public class ExerciseService
                 historyController.putEntity(history);
 
 
-                if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+                if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
                 {
                     if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
                     {
@@ -3240,6 +3242,7 @@ public class ExerciseService
                         model.addAttribute("home", "patienthome");
                         return new ModelAndView("error");
                     }
+                    notificationsController.notifyExerciseCompleted(patientid, exerciseid);
                     return new ModelAndView("redirect:patienthome");
                 }
 
@@ -3598,7 +3601,7 @@ public class ExerciseService
 
 
 
-        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -3608,6 +3611,7 @@ public class ExerciseService
                 model.addAttribute("home", "patienthome");
                 return new ModelAndView("error");
             }
+            notificationsController.notifyExerciseCompleted(patientid, exerciseid);
             return new ModelAndView("redirect:patienthome");
         }
 
@@ -4733,7 +4737,7 @@ public class ExerciseService
         historyController.putEntity(history);
 
 
-        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -4743,6 +4747,7 @@ public class ExerciseService
                 model.addAttribute("home", "patienthome");
                 return new ModelAndView("error");
             }
+            notificationsController.notifyExerciseCompleted(patientid, exerciseid);
             return new ModelAndView("redirect:patienthome");
         }
 
@@ -5037,7 +5042,7 @@ public class ExerciseService
         historyController.putEntity(history);
 
 
-        if (Objects.equals(level, exercise.getMaxLevel()) && passed) // Max level is completed, mark session as done and redirect user to home
+        if (level != null && level >= exercise.getMaxLevel() && passed) // Max level is completed, mark session as done and redirect user to home
         {
             if (!sessionController.updateExerciseDone(sessid, exerciseid, true))
             {
@@ -5047,6 +5052,7 @@ public class ExerciseService
                 model.addAttribute("home", "patienthome");
                 return new ModelAndView("error");
             }
+            notificationsController.notifyExerciseCompleted(patientid, exerciseid);
             return new ModelAndView("redirect:patienthome");
         }
 

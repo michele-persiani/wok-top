@@ -88,7 +88,6 @@ public class MSRUserService
         this.historyController = new HistoryController(model);
 
         this.config = Configuration.getInstance();
-
     }
 
 
@@ -267,10 +266,7 @@ public class MSRUserService
         }
         logger.info("...user found with the given email");
 
-        SendMail.sendCredentials(
-                user.getEmail(),
-                user.getId(),
-                user.getPassword());
+        SendMail.sendCredentials(user);
 
         return new ModelAndView("login");
 
@@ -549,7 +545,9 @@ public class MSRUserService
             return new ModelAndView("error");
         }
 
-
+        /*
+        There could be multiple sessions per user because of groups
+         */
         MSRSession session = sessionList.get(0);                // The first session is the most recent one
         JSONArray jArr = new JSONArray(session.getExercises());
 
@@ -811,6 +809,7 @@ public class MSRUserService
         user.setSurname(patientForm.getSurname());
         user.setEmail(patientForm.getEmail());
         user.setPhone(patientForm.getPhone());
+        user.setNotificationsEnabled(patientForm.getNotificationsEnabled());
 
         if (user.isNew())
         {

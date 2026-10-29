@@ -329,9 +329,6 @@
 
         function showexercises(isHospital, idx)
         {
-
-
-
             var sessions;
             if(isHospital)
                 sessions = hospitalSessions;
@@ -353,29 +350,18 @@
                     label.setAttribute('for', exercise.id);
                     label.innerText = " " + exercise.name;
                     if(exercise.visible)
-                        checkbox.setAttribute('checked', true);
+                    checkbox.setAttribute('checked', true);
                     checkbox.addEventListener('change', (event) => {
-                        if (event.currentTarget.checked) {
-                            $.post("setexercisevisibility",
-                                {
-                                    sessionid : exercise.sessionid,
-                                    exerciseid : exercise.id,
-                                    visible : true
-                                },
-                                function () {
-                                exercise.visible = true;
-                                });
-                        } else {
-                            $.post("setexercisevisibility",
-                                {
-                                    sessionid : exercise.sessionid,
-                                    exerciseid : exercise.id,
-                                    visible : false
-                                },
-                                function () {
-                                    exercise.visible = false;
-                                });
-                        }
+                        let checked = event.currentTarget.checked;
+                        $.post("setexercisevisibility",
+                            {
+                                sessionid : exercise.sessionid,
+                                exerciseid : exercise.id,
+                                visible : checked
+                            },
+                            function () {
+                                exercise.visible = checked;
+                            });
                     })
                     let li = document.createElement("li");
 

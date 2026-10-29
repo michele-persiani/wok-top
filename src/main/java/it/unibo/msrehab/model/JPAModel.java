@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class JPAModel implements Model
 {
-    public static final String persistenceUnit = PersistenceUnit.DEFAULT_PU;
+    public static final String persistenceUnit = "DEFAULT_PU";
 
     private static JPAModel instance;
 

@@ -1,7 +1,6 @@
 package it.unibo.msrehab.services;
 
 import flexjson.JSONDeserializer;
-import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.JPAModel;
 import it.unibo.msrehab.model.controller.MSRUserController;

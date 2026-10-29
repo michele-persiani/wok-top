@@ -5,18 +5,17 @@
  */
 package it.unibo.msrehab.model.controller;
 
-import it.unibo.msrehab.model.JPAEntityController;
-import it.unibo.msrehab.model.PersistenceUnit;
+import it.unibo.msrehab.model.*;
 import it.unibo.msrehab.model.entities.Environment;
 
 /**
  *
  * @author danger
  */
-public class PDDLEnvironmentController extends JPAEntityController<Environment>
+public class PDDLEnvironmentController extends DecoratorEntityController<Environment>
 {
     public PDDLEnvironmentController()
     {
-        super(Environment.class, PersistenceUnit.DEFAULT_PU);
+        super(JPAModel.getInstance(), Environment.class);
     }
 }

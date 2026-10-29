@@ -271,11 +271,6 @@
                 )
             }
 
-            function getMoment(dateText)
-            {
-
-            }
-
             function sortData(response)
             {
                 response.data = response.data.sort(
@@ -313,7 +308,7 @@
 
             // Inizializzazione datepickers
 
-            var startDate = moment().subtract(7, 'days');
+            var startDate = moment().subtract(30, 'days');
             var endDate = moment();
             $('.datainiziale').datepicker({
                 format: "dd-mm-yyyy",

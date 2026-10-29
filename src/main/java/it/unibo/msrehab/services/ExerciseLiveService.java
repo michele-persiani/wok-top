@@ -5,6 +5,8 @@
  */
 package it.unibo.msrehab.services;
 
+import flexjson.JSONDeserializer;
+import flexjson.JSONSerializer;
 import it.unibo.msrehab.config.ApplicationContextLoader;
 import it.unibo.msrehab.config.Configuration;
 import it.unibo.msrehab.model.JPAModel;
@@ -24,11 +26,16 @@ import it.unibo.msrehab.model.controller.MSRUserController;
 import it.unibo.msrehab.util.CookiesManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -73,6 +80,122 @@ public class ExerciseLiveService
         this.groupController = new MSRGroupController(model);
     }
 
+
+
+    @RequestMapping(value = "/showlivelist", method = RequestMethod.GET)
+    public ModelAndView showlivelist(
+            HttpServletRequest request,
+            Model model) {
+
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
+            return new ModelAndView("login");
+        } else {
+            int cid = CookiesManager.getLoggedUserCenter(request);
+            model.addAttribute("patients", userController.findAllPatientsInCenter(cid));
+            return new ModelAndView("patientlivelist");
+        }
+    }
+
+    private Map<String, Object> getMonitorRow(List<History> histories)
+    {
+
+        String exerciseName = histories.stream()
+                .findFirst()
+                .map(h -> {
+                    Exercise ex = exerciseController.getEntity(h.getExid());
+                    return ex.getFullName();
+                })
+                .orElse("Non trovato");
+
+        double performance = histories.stream()
+                .filter(History::isSolved)
+                .max(Comparator.comparing(History::getFinishTimestamp))
+                .map(History::getAbsperformance)
+                .orElse(0d);
+
+
+        int level = histories.stream()
+                .filter(h -> h.getPassed() != null && h.getPassed())
+                .map(History::getLevel)
+                .max(Comparator.comparing(lvl -> lvl))
+                .orElse(0);
+
+        int maxLevel =  histories.stream()
+                .findFirst()
+                .map(h -> {
+                    Exercise ex = exerciseController.getEntity(h.getExid());
+                    return ex.getMaxLevel();
+                })
+                .orElse(0);
+        boolean completato = level >= maxLevel;
+
+        long lastAccessTimestamp = histories.stream()
+                .map(History::getCreationTimestamp)
+                .max(Comparator.comparing(v -> v))
+                .orElse(0L);
+
+        LocalDateTime lastAccessTime = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(lastAccessTimestamp),
+                ZoneId.systemDefault()
+        );
+        String lastAccess = lastAccessTime.format(
+                java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+        );
+
+
+        HashMap<String, Object> row = new HashMap<>();
+        row.put("exerciseName", exerciseName);
+        row.put("level", level);
+        row.put("performance", performance);
+        row.put("completed", completato);
+        row.put("lastAccess", lastAccess);
+        return row;
+    }
+
+    @RequestMapping(value = "/patientlive/data", method = RequestMethod.GET)
+    public ResponseEntity<String> getMonitorData(
+            @RequestParam Integer patientid
+            )
+    {
+        Map<Integer, List<History>> historyByExercises = historyController.getAllEntities()
+                .stream()
+                .filter(h -> Objects.equals(h.getUserid(), patientid))
+                .collect(Collectors.groupingBy(History::getExid));
+
+        List<Map<String, Object>> monitorData = historyByExercises.values()
+                .stream()
+                .map(this::getMonitorRow)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new JSONSerializer().serialize(monitorData));
+    }
+
+
+
+    @RequestMapping(value = "/patientlive", method = RequestMethod.GET)
+    public ModelAndView patientlive(
+            @RequestParam(value = "id", required = true) Integer patientid,
+            HttpServletRequest request,
+            Model model) {
+        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
+            return new ModelAndView("login");
+        }
+        MSRUser patient = userController.getEntity(patientid);
+
+
+        if(patient == null)
+            return new ModelAndView("/error")
+                    .addObject("message", "Patient not found");
+
+
+        model.addAttribute("patient", patient);
+        return new ModelAndView("patientlive");
+    }
+
+
+    /*
+
+
     public String getItaNameKind(String kind) {
         try {
             Exercise.ExerciseCategoryValue q = Exercise.ExerciseCategoryValue.valueOf(kind);
@@ -93,20 +216,6 @@ public class ExerciseLiveService
         return -1;
     }
 
-    @RequestMapping(value = "/showlivelist", method = RequestMethod.GET)
-    public ModelAndView showlivelist(
-            HttpServletRequest request,
-            Model model) {
-
-        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
-            return new ModelAndView("login");
-        } else {
-            int cid = CookiesManager.getLoggedUserCenter(request);
-            model.addAttribute("patients", userController.findAllPatientsInCenter(cid));
-            return new ModelAndView("patientlivelist");
-        }
-    }
-
     @RequestMapping(value = "/showgrouplivelist", method = RequestMethod.GET)
     public ModelAndView showgrouplivelist(
             HttpServletRequest request,
@@ -121,36 +230,6 @@ public class ExerciseLiveService
         }
     }
 
-    @RequestMapping(value = "/patientlive", method = RequestMethod.GET)
-    public ModelAndView patientlive(
-            @RequestParam(value = "id", required = true) Integer patientid,
-            HttpServletRequest request,
-            Model model) {
-        if (!CookiesManager.isUserLogged(request) || ((!CookiesManager.isUserAdmin(request)))) {
-            return new ModelAndView("login");
-        }
-        MSRUser patient = userController.findEntity(patientid).orElse(null);
-
-
-        if(patient == null)
-            return new ModelAndView("/error")
-                    .addObject("message", "Patient not found");
-
-
-        List<Exercise> es = exerciseController.getAllEntities();
-
-        List<History> lh = new ArrayList<>(); //historyController.findAllByUser(patientid);
-        JSONArray jhistory = new JSONArray();
-
-        jhistory = loadFilterHistory(lh, es, jhistory, patient);
-
-
-        model.addAttribute("exercise", es);
-        model.addAttribute("history", jhistory);
-        model.addAttribute("patient", patient);
-        return new ModelAndView("patientlive");
-    }
-
     @RequestMapping(value = "/patientlivejson", method = RequestMethod.GET)
     public ResponseEntity<String> patientlivejson(
             @RequestParam(value = "id", required = true) Integer patientid,
@@ -161,7 +240,7 @@ public class ExerciseLiveService
             return new ResponseEntity<String>("", headers,
                     HttpStatus.UNAUTHORIZED);
         }
-        MSRUser patient = userController.findEntity(patientid).get();
+        MSRUser patient = userController.getEntity(patientid);
 
         List<Exercise> es;
         es = exerciseController.getAllEntities();
@@ -214,7 +293,7 @@ public class ExerciseLiveService
                     }
 
                     int exid = lhe.get(0).getExid();
-                    int maxdiff = exerciseController.findEntity(exid).get().getMaxLevel();
+                    int maxdiff = exerciseController.getEntity(exid).getMaxLevel();
                     ob.put("maxdiff", maxdiff);
 
                     if (lhe.size() > 1) {
@@ -270,15 +349,6 @@ public class ExerciseLiveService
                     ob.put("level", 1);
                     ob.put("changed", false);
                     ob.put("oldlevel", 1);
-                    /*if ((cdlist != null) && (!cdlist.isEmpty())) {
-                        ob.put("level", 1);
-                        ob.put("changed", false);
-                        ob.put("oldlevel", 1);
-                    } else {
-                        ob.put("level", 1);
-                        ob.put("changed", false);
-                        ob.put("oldlevel", 1);
-                    }*/
 
                     int exid = o.getInt("id");
                     int maxdiff = exerciseController.findEntity(exid).get().getMaxLevel();
@@ -300,6 +370,7 @@ public class ExerciseLiveService
         }
         return jhistory;
     }
+
 
     @RequestMapping(value = "/grouplive", method = RequestMethod.GET)
     public ModelAndView grouplive(
@@ -409,4 +480,5 @@ public class ExerciseLiveService
         return new ResponseEntity<>(level + "/" + maxdiff, headers, HttpStatus.OK);
 
     }
+    */
 }

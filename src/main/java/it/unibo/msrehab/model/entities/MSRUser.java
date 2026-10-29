@@ -41,6 +41,7 @@ import javax.validation.constraints.*;
   
 public class MSRUser extends BaseEntity
 {
+
     /**
      * Enumeration of the system roles
      */
@@ -109,8 +110,11 @@ public class MSRUser extends BaseEntity
     @Column(name = "cid", table = "msruser")
     @Basic
     private Integer cid;
-    
 
+
+    @Column(name = "notificationsenabled", table = "msruser")
+    @Basic
+    private Boolean notificationsEnabled;
     
      public String getUsername() {
         return username;
@@ -191,6 +195,17 @@ public class MSRUser extends BaseEntity
     public void setCid(Integer cid) {
         this.cid = cid;
     }
+
+    public void setNotificationsEnabled(boolean notificationsEnabled)
+    {
+        this.notificationsEnabled = notificationsEnabled;
+    }
+
+    public boolean getNotificationsEnabled()
+    {
+        return notificationsEnabled != null && notificationsEnabled;
+    }
+
 
     /**
      * Checks if an email address is formally valid

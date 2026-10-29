@@ -362,7 +362,7 @@
                     soundintervalsecs = 7+Math.floor(Math.random()*4);
 
                 var totalTime = Math.round(time * nelements);
-                var startTimer = totalTime;
+                var startTimer = totalTime + 2;
 
                 var nCorrect=0, nWrong=0; nMissed=0;
 

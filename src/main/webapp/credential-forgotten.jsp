@@ -63,7 +63,7 @@
                     <label for="email" class="sr-only">email</label>
                     <input type="text" id="email" class="form-control" placeholder="email" name="email" required autofocus>
                     <p></p>
-                    <input type="submit" class="btn btn-primary" value="Invia" disabled>
+                    <input type="submit" class="btn btn-primary" value="Invia">
                 </form>
                 <p class="text-danger"><b>${message}</b></p>
             </div>
